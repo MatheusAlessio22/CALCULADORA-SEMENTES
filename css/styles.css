@@ -1,0 +1,304 @@
+/* CSS proprio da ficha (layout, cores, componentes). */
+
+  :root{
+    /* trocado por JS conforme a cultura ativa */
+    --accent: #5C8A26;
+    --accent-soft: rgba(92,138,38,.10);
+    --accent-light: #8FC33B;
+    --accent-line: rgba(92,138,38,.30); /* borda da caixa de totais, na cor da cultura */
+  }
+
+  html,body{-webkit-text-size-adjust:100%;}
+  body{font-family:Inter,"Segoe UI",system-ui,-apple-system,Arial,sans-serif;}
+
+  /* Celular: some com o "elástico" cinza/branco nas bordas ao puxar a página
+     (Android e iOS) e desliga o puxar-para-atualizar, que senão recarrega a
+     página sem aviso e derruba os dados já digitados na ficha. */
+  html{overscroll-behavior-y:none;}
+  body{overscroll-behavior-y:contain;}
+
+  /* Margem de segurança para notch/câmera e para a barra de gestos (home
+     indicator) do iPhone — viewport-fit=cover deixa a página ir até a borda,
+     então sem isso o conteúdo ficaria colado ou escondido atrás deles.
+     !important e min-width alto (desktop já tem seu próprio padding do
+     Tailwind, sobrescrito em regra própria mais abaixo no arquivo) garantem
+     que isto vença o padding compilado do Tailwind só no celular. */
+  @media (max-width:1023.98px){
+    body{
+      padding-left:max(1rem, env(safe-area-inset-left)) !important;
+      padding-right:max(1rem, env(safe-area-inset-right)) !important;
+      padding-bottom:max(4rem, env(safe-area-inset-bottom) + 1rem) !important;
+    }
+  }
+
+  /* Fundo da marca: lavagem suave nas cores Coasul + o emblema do logo repetido
+     em diagonal, bem apagado, para não competir com os números da ficha. */
+  body{
+    background-color:#F4F7F0;
+    background-image:
+      radial-gradient(900px 520px at 6% -12%, rgba(143,195,59,.13), transparent 62%),
+      radial-gradient(760px 480px at 104% -4%, rgba(0,141,208,.07), transparent 58%),
+      radial-gradient(720px 520px at 50% 112%, rgba(253,186,45,.08), transparent 62%);
+    background-attachment:fixed;
+  }
+  /* background-attachment:fixed é instável em navegadores touch (repintura/
+     tremor ao rolar no Safari iOS); em celular o fundo rola junto da página. */
+  @media (hover:none) and (pointer:coarse){
+    body{background-attachment:scroll;}
+  }
+  .field-pattern::before{
+    content:"";
+    position:fixed;
+    top:-25%; left:-25%;
+    width:150%; height:150%;
+    background-image:url('../assets/mark.png');
+    background-repeat:repeat;
+    background-size:340px auto;
+    transform:rotate(-12deg);
+    opacity:.045;
+    pointer-events:none;
+    z-index:0;
+  }
+  /* uma marca maior no canto, dando profundidade sem poluir */
+  .field-pattern::after{
+    content:"";
+    position:fixed;
+    right:-90px; bottom:-70px;
+    width:340px; height:340px;
+    background-image:url('../assets/mark.png');
+    background-repeat:no-repeat;
+    background-size:300px auto;
+    background-position:center;
+    opacity:.07;
+    pointer-events:none;
+    z-index:0;
+  }
+
+  /* tabs de cultura: no celular rolam na horizontal, com um degradê avisando que há mais */
+  .tabs-fade{position:relative;}
+  .tabs-fade::after{
+    content:"";
+    position:absolute;
+    top:0; right:0; bottom:4px;
+    width:40px;
+    background:linear-gradient(to right, rgba(244,247,240,0), #F4F7F0 70%);
+    pointer-events:none;
+  }
+  @media (min-width:640px){ .tabs-fade::after{display:none;} }
+
+  .tab-btn{
+    --tab: var(--accent);
+    transition:background .15s, color .15s, border-color .15s, box-shadow .15s;
+  }
+  .tab-btn:hover{border-color:var(--tab); color:var(--tab);}
+  .tab-btn.is-active{
+    background:var(--tab);
+    border-color:var(--tab);
+    color:#fff;
+    box-shadow:0 6px 16px -8px var(--tab);
+  }
+  .tab-btn.is-active:hover{color:#fff;}
+  .tab-btn:focus-visible{outline:3px solid #FDBA2D; outline-offset:2px;}
+
+  /* alternância entre a calculadora de sementes e a regulagem de plantadeira */
+  .view-btn{transition:background .15s, color .15s, border-color .15s, box-shadow .15s;}
+  .view-btn:hover{border-color:#5C8A26; color:#5C8A26;}
+  .view-btn.is-active{background:#5C8A26; border-color:#5C8A26; color:#fff; box-shadow:0 6px 16px -8px rgba(92,138,38,.5);}
+  .view-btn.is-active:hover{color:#fff;}
+  .view-btn:focus-visible{outline:3px solid #FDBA2D; outline-offset:2px;}
+
+  /* segmented control das variantes */
+  .variant-btn{transition:background .15s, color .15s, box-shadow .15s;}
+  .variant-btn.is-active{
+    background:#fff;
+    color:var(--accent);
+    box-shadow:0 1px 2px rgba(30,36,32,.08), 0 4px 10px -6px rgba(30,36,32,.4);
+  }
+
+  /* Toque no celular: tira o atraso/o zoom de duplo-toque em tudo que é
+     clicável, e garante ~44px de altura nos botões de ação do topo (PDF/
+     Imagem), a altura mínima recomendada para dedo no iOS e no Android. */
+  button, [role="tab"], select{ touch-action:manipulation; }
+  #btnPdf, #btnPng{
+    min-height:44px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  /* inputs: sem setinhas, alvo de toque grande, foco visível */
+  input[type=number]{-moz-appearance:textfield; appearance:textfield;}
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
+  .inp{
+    width:100%;
+    min-height:48px;
+    border:1.5px solid #DFE5D6;
+    border-radius:10px;
+    background:#F8FAF4;
+    padding:12px 14px;
+    font-size:16px; /* evita zoom automático no iOS */
+    color:#1E2420;
+    transition:border-color .15s, background .15s, box-shadow .15s;
+  }
+  .inp:hover{border-color:#C9D2BC;}
+  .inp:focus{
+    outline:none;
+    background:#fff;
+    border-color:var(--accent);
+    box-shadow:0 0 0 4px var(--accent-soft);
+  }
+  .inp-num{font-family:Consolas,"SFMono-Regular",Menlo,monospace; font-variant-numeric:tabular-nums;}
+  .inp-money{padding-left:40px;} /* espaço para o prefixo R$ */
+  /* 16px no celular: abaixo disso o Safari/Chrome mobile dão zoom automático
+     ao focar o campo (aqui é a data de vencimento), o que sacode a tela. */
+  .inp-sm{min-height:40px; padding:6px 10px; font-size:16px;}
+  @media (min-width:1024px){ .inp-sm{min-height:34px; padding:4px 9px; font-size:13.5px;} }
+  @media (min-width:1024px){
+    .inp{min-height:38px; padding:7px 11px; font-size:14.5px;}
+    .inp-money{padding-left:34px;}
+  }
+  select.inp{
+    appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235B6660' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;
+    background-position:right 12px center;
+    background-size:18px;
+    padding-right:38px;
+  }
+
+  #pmsBox[open] > summary > span:last-child{visibility:hidden;}
+  #pmsBox > summary::-webkit-details-marker{display:none;}
+
+  .lbl{
+    display:block;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.07em;
+    text-transform:uppercase;
+    color:#5B6660;
+    margin-bottom:6px;
+    min-height:17px;      /* todos os rótulos ocupam a mesma altura */
+    line-height:1.25;
+  }
+
+  /* Grade dos blocos de entrada (Identificação, parâmetros, regulagem).
+     Celular: um campo por linha. Tablet: dois por linha, e o campo marcado
+     com .fld-wide (o mais longo, ex.: Cliente) ocupa a linha inteira para
+     não sobrar meia coluna vazia. Desktop: todos lado a lado.
+     align-items:start mantém os inputs começando na MESMA altura mesmo
+     quando um dos campos tem nota embaixo — era isso que deixava a linha
+     da identificação torta. */
+  .fld-grid{
+    display:grid;
+    grid-template-columns:1fr;
+    align-items:start;
+    gap:16px;
+  }
+  @media (min-width:640px){
+    .fld-grid{grid-template-columns:1fr 1fr; gap:14px;}
+    .fld-grid > .fld-wide{grid-column:1 / -1;}
+  }
+  @media (min-width:1024px){
+    .fld-grid{gap:12px;}
+    .fld-grid > .fld-wide{grid-column:auto;}
+    .fld-grid-id{grid-template-columns:1.1fr 1.1fr .95fr;}
+    .fld-grid-3{grid-template-columns:repeat(3, minmax(0,1fr));}
+  }
+
+  /* nota discreta abaixo de um campo (ex.: a conversão alqueire → hectare).
+     Fica fora do fluxo de altura dos outros campos, então não desalinha nada. */
+  .field-note{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:5px;
+    margin-top:6px;
+    min-height:16px;
+    font-family:Consolas,"SFMono-Regular",Menlo,monospace;
+    font-variant-numeric:tabular-nums;
+    font-size:11.5px;
+    font-weight:700;
+    line-height:1;
+    color:var(--accent);
+    white-space:nowrap;
+  }
+  .field-note .note-ico{font-size:11px; opacity:.8;}
+
+  /* faixa de leitura (população final, equivalências): ocupa a largura toda
+     e separa claramente o que é entrada do que é resultado calculado. */
+  .readout{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    border:1px solid #DFE5D6;
+    border-radius:12px;
+    background:rgba(244,247,240,.7);
+    padding:10px 14px;
+  }
+  @media (min-width:1024px){ .readout{padding:7px 12px;} }
+
+  /* caixa dos totais: painel escuro, para o resultado saltar da ficha */
+  .result-card{
+    background:
+      linear-gradient(158deg, var(--accent-soft) 0%, rgba(255,255,255,.55) 62%),
+      #FFFFFF;
+    border:1px solid var(--accent-line);
+    box-shadow:0 1px 2px rgba(30,36,32,.04), 0 10px 26px -20px rgba(30,36,32,.5);
+  }
+
+  /* folha de impressão / PDF: só aparece na hora de imprimir */
+  #printSheet{display:none;}
+  @media print{
+    @page{ margin:12mm; }
+    .no-print, .app-shell, footer{display:none !important;}
+    .field-pattern::before, .field-pattern::after{display:none !important;}
+    body{background:#fff !important; padding:0 !important; height:auto !important; overflow:visible !important;}
+    #printSheet{display:block !important;}
+  }
+
+
+/*
+  CSS do Tailwind já compilado e embutido abaixo: esta ficha roda 100% offline,
+  sem CDN e sem nenhuma requisição de rede (logo e textura são arquivos reais
+  em /assets, cacheados pelo service worker).
+  Para regerar depois de mexer nas classes: abrir uma CÓPIA do index.html carregando
+  o Play CDN do Tailwind (cdn.tailwindcss.com) junto com a config abaixo, navegar por
+  todas as culturas e variantes, e colar de volta aqui o CSS que o Tailwind gerar.
+
+  Config usada:
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink:   "#1E2420",
+        canvas:"#F4F7F0",
+        line:  "#DFE5D6",
+        muted: "#5B6660",
+        brand: {
+          green:"#8FC33B", greenDeep:"#5C8A26",
+          blue:"#008DD0",  blueDeep:"#0678A8",
+          red:"#ED3237",   redDeep:"#C42A2E",
+          gold:"#FDBA2D",  goldDeep:"#D99A1E",
+          soil:"#8C6D46",  money:"#2E6B5E",
+        },
+      },
+      fontFamily: {
+        sans: ['Inter', 'Segoe UI', 'system-ui', '-apple-system', 'Arial', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'Consolas', '"SFMono-Regular"', 'Menlo', 'monospace'],
+      },
+      boxShadow: {
+        card: "0 1px 2px rgba(30,36,32,.05), 0 12px 32px -18px rgba(30,36,32,.35)",
+        pop:  "0 2px 6px rgba(30,36,32,.06), 0 18px 40px -22px rgba(30,36,32,.45)",
+      },
+      borderRadius: { xl2: "14px" },
+    },
+  },
+};
+*/
+
+/* CSS do Tailwind compilado (utilitários), colado logo abaixo. */
+
+*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:Inter, Segoe UI, system-ui, -apple-system, Arial, sans-serif;font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:"JetBrains Mono", Consolas, "SFMono-Regular", Menlo, monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.pointer-events-none{pointer-events:none}.absolute{position:absolute}.relative{position:relative}.inset-x-0{left:0px;right:0px}.top-0{top:0px}.left-3\.5{left:0.875rem}.top-1\/2{top:50%}.z-\[1\]{z-index:1}.col-span-2{grid-column:span 2 / span 2}.-mx-4{margin-left:-1rem;margin-right:-1rem}.mx-auto{margin-left:auto;margin-right:auto}.mb-0{margin-bottom:0px}.mb-1{margin-bottom:0.25rem}.mb-2{margin-bottom:0.5rem}.mb-3{margin-bottom:0.75rem}.mb-4{margin-bottom:1rem}.mb-5{margin-bottom:1.25rem}.mb-6{margin-bottom:1.5rem}.ml-auto{margin-left:auto}.mt-1{margin-top:0.25rem}.mt-1\.5{margin-top:0.375rem}.mt-2{margin-top:0.5rem}.mt-3{margin-top:0.75rem}.mt-4{margin-top:1rem}.mt-5{margin-top:1.25rem}.mt-6{margin-top:1.5rem}.mt-0\.5{margin-top:0.125rem}.flex{display:flex}.grid{display:grid}.hidden{display:none}.h-1{height:0.25rem}.h-1\.5{height:0.375rem}.h-14{height:3.5rem}.h-4{height:1rem}.h-full{height:100%}.min-h-screen{min-height:100vh}.w-1{width:0.25rem}.w-\[150px\]{width:150px}.w-auto{width:auto}.w-full{width:100%}.min-w-max{min-width:max-content}.max-w-2xl{max-width:42rem}.shrink-0{flex-shrink:0}.-translate-y-1\/2{--tw-translate-y:-50%;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.cursor-pointer{cursor:pointer}.list-none{list-style-type:none}.grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.items-center{align-items:center}.items-baseline{align-items:baseline}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-1{gap:0.25rem}.gap-1\.5{gap:0.375rem}.gap-2{gap:0.5rem}.gap-2\.5{gap:0.625rem}.gap-3{gap:0.75rem}.gap-4{gap:1rem}.gap-x-2{column-gap:0.5rem}.gap-x-3{column-gap:0.75rem}.gap-y-2{row-gap:0.5rem}.gap-y-1{row-gap:0.25rem}.space-y-3 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.75rem * var(--tw-space-y-reverse))}.overflow-hidden{overflow:hidden}.overflow-x-auto{overflow-x:auto}.whitespace-nowrap{white-space:nowrap}.rounded-2xl{border-radius:1rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:0.5rem}.rounded-xl{border-radius:0.75rem}.border{border-width:1px}.border-2{border-width:2px}.border-t{border-top-width:1px}.border-dashed{border-style:dashed}.border-ink\/10{border-color:rgb(30 36 32 / 0.1)}.border-line{--tw-border-opacity:1;border-color:rgb(223 229 214 / var(--tw-border-opacity, 1))}.border-ink\/\[\.08\]{border-color:rgb(30 36 32 / .08)}.bg-brand-money\/10{background-color:rgb(46 107 94 / 0.1)}.bg-canvas{--tw-bg-opacity:1;background-color:rgb(244 247 240 / var(--tw-bg-opacity, 1))}.bg-canvas\/60{background-color:rgb(244 247 240 / 0.6)}.bg-canvas\/70{background-color:rgb(244 247 240 / 0.7)}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255 / var(--tw-bg-opacity, 1))}.bg-white\/80{background-color:rgb(255 255 255 / 0.8)}.p-1{padding:0.25rem}.p-4{padding:1rem}.p-5{padding:1.25rem}.p-3\.5{padding:0.875rem}.px-2{padding-left:0.5rem;padding-right:0.5rem}.px-3\.5{padding-left:0.875rem;padding-right:0.875rem}.px-4{padding-left:1rem;padding-right:1rem}.px-5{padding-left:1.25rem;padding-right:1.25rem}.py-0\.5{padding-top:0.125rem;padding-bottom:0.125rem}.py-2{padding-top:0.5rem;padding-bottom:0.5rem}.py-2\.5{padding-top:0.625rem;padding-bottom:0.625rem}.py-4{padding-top:1rem;padding-bottom:1rem}.px-3{padding-left:0.75rem;padding-right:0.75rem}.pb-1{padding-bottom:0.25rem}.pb-16{padding-bottom:4rem}.pt-3{padding-top:0.75rem}.pt-6{padding-top:1.5rem}.text-center{text-align:center}.font-mono{font-family:"JetBrains Mono", Consolas, "SFMono-Regular", Menlo, monospace}.text-\[10px\]{font-size:10px}.text-\[11px\]{font-size:11px}.text-\[12\.5px\]{font-size:12.5px}.text-\[12px\]{font-size:12px}.text-\[13px\]{font-size:13px}.text-\[14px\]{font-size:14px}.text-\[17px\]{font-size:17px}.text-\[26px\]{font-size:26px}.text-\[34px\]{font-size:34px}.text-\[9\.5px\]{font-size:9.5px}.text-\[10\.5px\]{font-size:10.5px}.text-\[11\.5px\]{font-size:11.5px}.text-\[13\.5px\]{font-size:13.5px}.text-\[16px\]{font-size:16px}.text-\[18px\]{font-size:18px}.font-bold{font-weight:700}.font-extrabold{font-weight:800}.font-normal{font-weight:400}.font-semibold{font-weight:600}.uppercase{text-transform:uppercase}.normal-case{text-transform:none}.tabular-nums{--tw-numeric-spacing:tabular-nums;font-variant-numeric:var(--tw-ordinal) var(--tw-slashed-zero) var(--tw-numeric-figure) var(--tw-numeric-spacing) var(--tw-numeric-fraction)}.leading-none{line-height:1}.leading-snug{line-height:1.375}.leading-tight{line-height:1.25}.tracking-\[\.12em\]{letter-spacing:.12em}.tracking-\[\.16em\]{letter-spacing:.16em}.tracking-tight{letter-spacing:-0.025em}.tracking-wide{letter-spacing:0.025em}.tracking-wider{letter-spacing:0.05em}.tracking-normal{letter-spacing:0em}.text-brand-money{--tw-text-opacity:1;color:rgb(46 107 94 / var(--tw-text-opacity, 1))}.text-ink{--tw-text-opacity:1;color:rgb(30 36 32 / var(--tw-text-opacity, 1))}.text-ink\/75{color:rgb(30 36 32 / 0.75)}.text-muted{--tw-text-opacity:1;color:rgb(91 102 96 / var(--tw-text-opacity, 1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.antialiased{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}.opacity-70{opacity:0.7}.shadow-card{--tw-shadow:0 1px 2px rgba(30,36,32,.05), 0 12px 32px -18px rgba(30,36,32,.35);--tw-shadow-colored:0 1px 2px var(--tw-shadow-color), 0 12px 32px -18px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-sm{--tw-shadow:0 1px 2px 0 rgb(0 0 0 / 0.05);--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.drop-shadow-sm{--tw-drop-shadow:drop-shadow(0 1px 1px rgb(0 0 0 / 0.05));filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.transition{transition-property:color, background-color, border-color, fill, stroke, opacity, box-shadow, transform, filter, -webkit-text-decoration-color, -webkit-backdrop-filter;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-text-decoration-color, -webkit-backdrop-filter;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.transition-colors{transition-property:color, background-color, border-color, fill, stroke, -webkit-text-decoration-color;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, -webkit-text-decoration-color;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.duration-200{transition-duration:200ms}.\[scrollbar-width\:none\]{scrollbar-width:none}.marker\:content-none *::marker{--tw-content:none;content:var(--tw-content)}.marker\:content-none::marker{--tw-content:none;content:var(--tw-content)}.hover\:brightness-105:hover{--tw-brightness:brightness(1.05);filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.hover\:brightness-110:hover{--tw-brightness:brightness(1.1);filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.active\:translate-y-px:active{--tw-translate-y:1px;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}@media (min-width: 640px){.sm\:col-span-2{grid-column:span 2 / span 2}.sm\:min-w-0{min-width:0px}.sm\:max-w-\[50\%\]{max-width:50%}.sm\:grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.sm\:grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}.sm\:flex-wrap{flex-wrap:wrap}.sm\:p-5{padding:1.25rem}.sm\:p-7{padding:1.75rem}.sm\:pt-8{padding-top:2rem}.sm\:text-3xl{font-size:1.875rem;line-height:2.25rem}.sm\:text-\[40px\]{font-size:40px}}@media (min-width: 1024px){.lg\:col-span-1{grid-column:span 1 / span 1}.lg\:mx-0{margin-left:0px;margin-right:0px}.lg\:mb-0{margin-bottom:0px}.lg\:mb-3{margin-bottom:0.75rem}.lg\:mb-4{margin-bottom:1rem}.lg\:mt-0{margin-top:0px}.lg\:mt-2{margin-top:0.5rem}.lg\:mt-3{margin-top:0.75rem}.lg\:mt-4{margin-top:1rem}.lg\:block{display:block}.lg\:inline{display:inline}.lg\:flex{display:flex}.lg\:grid{display:grid}.lg\:hidden{display:none}.lg\:h-12{height:3rem}.lg\:h-full{height:100%}.lg\:h-screen{height:100vh}.lg\:min-h-0{min-height:0px}.lg\:w-\[44\%\]{width:44%}.lg\:w-\[56\%\]{width:56%}.lg\:max-w-\[1300px\]{max-width:1300px}.lg\:flex-1{flex:1 1 0%}.lg\:shrink-0{flex-shrink:0}.lg\:grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}.lg\:grid-cols-4{grid-template-columns:repeat(4, minmax(0, 1fr))}.lg\:grid-cols-\[1\.2fr_1\.2fr_\.9fr\]{grid-template-columns:1.2fr 1.2fr .9fr}.lg\:grid-cols-\[1\.45fr_\.9fr_\.9fr_1\.02fr_1\.02fr\]{grid-template-columns:1.45fr .9fr .9fr 1.02fr 1.02fr}.lg\:flex-col{flex-direction:column}.lg\:items-end{align-items:flex-end}.lg\:items-center{align-items:center}.lg\:justify-end{justify-content:flex-end}.lg\:gap-2{gap:0.5rem}.lg\:gap-3{gap:0.75rem}.lg\:gap-4{gap:1rem}.lg\:space-y-1\.5 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.375rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.375rem * var(--tw-space-y-reverse))}.lg\:overflow-hidden{overflow:hidden}.lg\:overflow-y-auto{overflow-y:auto}.lg\:border-r{border-right-width:1px}.lg\:border-line{--tw-border-opacity:1;border-color:rgb(223 229 214 / var(--tw-border-opacity, 1))}.lg\:p-0{padding:0px}.lg\:p-3{padding:0.75rem}.lg\:p-6{padding:1.5rem}.lg\:p-2{padding:0.5rem}.lg\:px-2\.5{padding-left:0.625rem;padding-right:0.625rem}.lg\:px-3\.5{padding-left:0.875rem;padding-right:0.875rem}.lg\:py-1\.5{padding-top:0.375rem;padding-bottom:0.375rem}.lg\:py-2{padding-top:0.5rem;padding-bottom:0.5rem}.lg\:pb-4{padding-bottom:1rem}.lg\:pt-2{padding-top:0.5rem}.lg\:pt-5{padding-top:1.25rem}.lg\:pb-0\.5{padding-bottom:0.125rem}.lg\:text-left{text-align:left}.lg\:text-\[10\.5px\]{font-size:10.5px}.lg\:text-\[12px\]{font-size:12px}.lg\:text-\[23px\]{font-size:23px}.lg\:text-\[30px\]{font-size:30px}.lg\:text-\[10px\]{font-size:10px}.lg\:text-\[12\.5px\]{font-size:12.5px}.lg\:text-\[14px\]{font-size:14px}.lg\:text-\[15px\]{font-size:15px}.lg\:leading-tight{line-height:1.25}}.\[\&\:\:-webkit-scrollbar\]\:hidden::-webkit-scrollbar{display:none}
