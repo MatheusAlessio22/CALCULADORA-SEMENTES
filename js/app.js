@@ -939,11 +939,12 @@ function montarFolha(r){
 
   return `
   <div style="font-family:'Segoe UI',Arial,sans-serif;color:#1E2420;font-size:12px;">
+    <div style="height:3px;border-radius:999px;background:#D99A1E;margin-bottom:12px;"></div>
     <div style="display:flex;align-items:center;gap:12px;border-bottom:3px solid ${r.accent};padding-bottom:10px;">
       <img src="${logo}" alt="Coasul" style="height:42px;">
       <div style="flex:1;">
-        <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#5B6660;font-weight:700;">Ficha de cotação · Coasul</div>
-        <div style="font-size:19px;font-weight:800;">${esc(r.icone)} ${esc(r.cultura)}${r.cultivar ? " · " + esc(r.cultivar) : ""}</div>
+        <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#5B6660;font-weight:700;">Coasul Agro · Ficha de Cotação</div>
+        <div style="font-size:19px;font-weight:600;">${esc(r.icone)} ${esc(r.cultura)}${r.cultivar ? " · " + esc(r.cultivar) : ""}</div>
       </div>
       <div style="text-align:right;font-size:10.5px;color:#5B6660;">${esc(r.data)}</div>
     </div>
@@ -1056,12 +1057,16 @@ function layoutFicha(ctx, draw, r, logo){
   const W = 1000, P = 40, dir = W - P;
   let y = P;
 
+  // linha dourada no topo, igual ao cabeçalho da ficha na tela
+  if(draw){ ctx.fillStyle = "#D99A1E"; ctx.fillRect(P, y, dir - P, 3); }
+  y += 3 + 16;
+
   // cabeçalho com o logo
   const logoH = 44, logoW = logo && logo.naturalWidth ? logoH * logo.naturalWidth / logo.naturalHeight : 60;
   if(draw && logo) ctx.drawImage(logo, P, y, logoW, logoH);
   const xt = P + logoW + 16;
-  texto(ctx, draw, "FICHA DE COTAÇÃO · COASUL", xt, y + 14, {font:"bold 10px " + FONTE, cor:"#5B6660", espaco:"1.6px"});
-  texto(ctx, draw, `${r.icone} ${r.cultura}${r.cultivar ? " · " + r.cultivar : ""}`, xt, y + 36, {font:"bold 21px " + FONTE, maxW:dir - xt - 110});
+  texto(ctx, draw, "COASUL AGRO · FICHA DE COTAÇÃO", xt, y + 14, {font:"bold 10px " + FONTE, cor:"#5B6660", espaco:"1.6px"});
+  texto(ctx, draw, `${r.icone} ${r.cultura}${r.cultivar ? " · " + r.cultivar : ""}`, xt, y + 36, {font:"600 21px " + FONTE, maxW:dir - xt - 110});
   texto(ctx, draw, r.data, dir, y + 14, {font:"11px " + FONTE, cor:"#5B6660", align:"right"});
   y += logoH + 12;
   risco(ctx, draw, P, y, dir, r.accent);
