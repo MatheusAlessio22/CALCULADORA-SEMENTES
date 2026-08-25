@@ -80,6 +80,118 @@ const ALQ_HA = 2.42; // 1 alqueire (padrão paulista) = 2,42 hectares
 
 const tabs = document.querySelectorAll(".tab-btn");
 
+// Seletor personalizado: troca a lista nativa do <select> (impossível de
+// estilizar de verdade em todo navegador — no iPhone vira sempre uma rodinha
+// do sistema) por uma lista HTML nossa, com a cara do resto do app. O
+// <select> original some visualmente mas continua no DOM guardando o valor
+// de verdade, então o resto do código (calc(), fórmulas, estado por
+// cultura...) não precisa saber que ele foi trocado: continua lendo/gravando
+// ".value" e escutando "change" normalmente.
+function enhanceSelect(selectEl){
+  const wrap = document.createElement("div");
+  wrap.className = "csel";
+  selectEl.parentNode.insertBefore(wrap, selectEl);
+
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "csel-trigger " + selectEl.className;
+  btn.setAttribute("aria-haspopup", "listbox");
+  btn.setAttribute("aria-expanded", "false");
+  const labelSpan = document.createElement("span");
+  labelSpan.className = "csel-label";
+  btn.appendChild(labelSpan);
+
+  const list = document.createElement("ul");
+  list.className = "csel-list hidden";
+  list.setAttribute("role", "listbox");
+  list.tabIndex = -1;
+
+  selectEl.classList.add("csel-native");
+  selectEl.tabIndex = -1;
+  wrap.appendChild(btn);
+  wrap.appendChild(list);
+  wrap.appendChild(selectEl);
+
+  let activeIndex = -1;
+
+  function render(){
+    const opts = Array.from(selectEl.options);
+    list.innerHTML = "";
+    opts.forEach((opt) => {
+      const li = document.createElement("li");
+      const selecionada = opt.value === selectEl.value;
+      li.className = "csel-option" + (selecionada ? " is-selected" : "");
+      li.textContent = opt.textContent;
+      li.setAttribute("role", "option");
+      li.setAttribute("aria-selected", selecionada ? "true" : "false");
+      li.addEventListener("click", () => {
+        selectEl.value = opt.value;
+        selectEl.dispatchEvent(new Event("change", { bubbles: true }));
+        close();
+        btn.focus();
+      });
+      list.appendChild(li);
+    });
+    const atual = opts.find((o) => o.value === selectEl.value);
+    labelSpan.textContent = atual ? atual.textContent : "";
+  }
+
+  function updateActive(){
+    Array.from(list.children).forEach((li, i) => li.classList.toggle("is-active", i === activeIndex));
+    const activeLi = list.children[activeIndex];
+    if(activeLi) activeLi.scrollIntoView({ block: "nearest" });
+  }
+  function open(){
+    list.classList.remove("hidden");
+    btn.setAttribute("aria-expanded", "true");
+    wrap.classList.add("is-open");
+    const selecionada = list.querySelector(".is-selected");
+    activeIndex = selecionada ? Array.from(list.children).indexOf(selecionada) : 0;
+    updateActive();
+    document.addEventListener("click", onOutsideClick);
+  }
+  function close(){
+    list.classList.add("hidden");
+    btn.setAttribute("aria-expanded", "false");
+    wrap.classList.remove("is-open");
+    document.removeEventListener("click", onOutsideClick);
+  }
+  function onOutsideClick(e){
+    if(!wrap.contains(e.target)) close();
+  }
+
+  btn.addEventListener("click", () => {
+    if(list.classList.contains("hidden")) open(); else close();
+  });
+  btn.addEventListener("keydown", (e) => {
+    const opts = Array.from(list.children);
+    if(list.classList.contains("hidden")){
+      if(["ArrowDown","ArrowUp","Enter"," "].includes(e.key)){ e.preventDefault(); open(); }
+      return;
+    }
+    if(e.key === "ArrowDown"){ e.preventDefault(); activeIndex = Math.min(activeIndex+1, opts.length-1); updateActive(); }
+    else if(e.key === "ArrowUp"){ e.preventDefault(); activeIndex = Math.max(activeIndex-1, 0); updateActive(); }
+    else if(e.key === "Enter" || e.key === " "){ e.preventDefault(); const li = opts[activeIndex]; if(li) li.click(); }
+    else if(e.key === "Escape"){ close(); btn.focus(); }
+    else if(e.key === "Tab"){ close(); }
+  });
+
+  // ".value = x" e "appendChild(...)" continuam existindo no resto do
+  // código (montar as opções, restaurar valor salvo por cultura etc.) — só
+  // interceptamos os dois pra re-renderizar a lista bonita automaticamente,
+  // sem precisar tocar em nenhuma outra função do app.
+  const nativeValueDesc = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value");
+  Object.defineProperty(selectEl, "value", {
+    get(){ return nativeValueDesc.get.call(selectEl); },
+    set(v){ nativeValueDesc.set.call(selectEl, v); render(); },
+    configurable: true,
+  });
+  const originalAppendChild = selectEl.appendChild.bind(selectEl);
+  selectEl.appendChild = (child) => { const r = originalAppendChild(child); render(); return r; };
+
+  render();
+}
+
 // build transpasse dropdown 5-10%
 const transSel = $("transpasse");
 for(let t=5;t<=10;t++){
@@ -87,6 +199,8 @@ for(let t=5;t<=10;t++){
   o.value=t; o.textContent=t+"%";
   transSel.appendChild(o);
 }
+enhanceSelect(transSel);
+enhanceSelect($("espacamento"));
 
 // espaçamentos padrão; cada cultura pode ter a própria lista (ex.: trigo só 0,17)
 const ESPACAMENTOS_PADRAO = ["0.40","0.42","0.45","0.50"];

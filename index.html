@@ -286,26 +286,32 @@
         </div>
 
         <div id="regSementeBox">
-        <section class="mb-6 lg:mb-4">
+        <div class="lg:flex lg:items-start lg:gap-6">
+        <div class="lg:w-[44%]">
+        <section class="mb-6 lg:mb-0">
           <h2 class="mb-3 flex items-center gap-2 text-[12px] font-extrabold uppercase tracking-wider text-muted">
             <span class="h-4 w-1 rounded-full" style="background:var(--accent)"></span>Dados da regulagem
           </h2>
-          <div class="fld-grid fld-grid-3">
-            <div class="fld-wide">
+          <div class="grid gap-4">
+            <div>
               <label class="lbl" for="regPopulacao">Stand de plantas (plantas/ha)</label>
               <input type="number" id="regPopulacao" class="inp inp-num" step="1" min="0" inputmode="decimal" placeholder="Ex.: 350000">
             </div>
-            <div>
-              <label class="lbl" for="regEspacamento">Espaçamento entre linhas (m)</label>
-              <input type="number" id="regEspacamento" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="Ex.: 0,50">
-            </div>
-            <div>
-              <label class="lbl" for="regGerminacao">Germinação (%)</label>
-              <input type="number" id="regGerminacao" class="inp inp-num" step="1" min="0" max="100" inputmode="decimal" placeholder="Ex.: 90">
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="lbl" for="regEspacamento">Espaçamento (m)</label>
+                <input type="number" id="regEspacamento" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="Ex.: 0,50">
+              </div>
+              <div>
+                <label class="lbl" for="regGerminacao">Germinação (%)</label>
+                <input type="number" id="regGerminacao" class="inp inp-num" step="1" min="0" max="100" inputmode="decimal" placeholder="Ex.: 90">
+              </div>
             </div>
           </div>
         </section>
+        </div>
 
+        <div class="mt-6 lg:mt-0 lg:w-[56%]">
         <section class="result-card relative overflow-hidden rounded-2xl px-5 py-4">
           <span class="pointer-events-none absolute inset-x-0 top-0 h-1" style="background:var(--accent)"></span>
           <h2 class="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[.12em]" style="color:var(--accent)">
@@ -318,44 +324,55 @@
           <p class="mt-1.5 text-[11px] text-muted">quantidade que a semeadora deve entregar a cada metro de linha</p>
         </section>
 
-        <section class="mt-5 rounded-xl border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3">
+        <section class="mt-4 rounded-xl border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3.5">
           <h3 class="mb-3 flex items-center gap-2 text-[13px] font-extrabold">
             <span aria-hidden="true">🧮</span>Passo a passo do cálculo
           </h3>
-          <div class="flex flex-wrap items-center justify-between gap-3">
-            <span class="text-[11px] leading-snug text-muted">1 · Plantas/ha = Stand de plantas ÷ % germinação</span>
-            <strong class="font-mono text-[17px] text-ink" id="regPlantasHa">0</strong>
-          </div>
-          <div class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-dashed border-line pt-3">
-            <span class="text-[11px] leading-snug text-muted">2 · Metros lineares em 1 ha = 10.000 m² ÷ espaçamento</span>
-            <strong class="font-mono text-[17px] text-ink" id="regMetrosLineares">0</strong>
-          </div>
-          <div class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-dashed border-line pt-3">
-            <span class="text-[11px] leading-snug text-muted">3 · Plantas por metro = Plantas/ha ÷ metros lineares</span>
-            <strong class="font-mono text-[17px] text-ink" id="regPlantasMetroStep">0</strong>
+          <div class="grid grid-cols-2 gap-2.5">
+            <div class="rounded-xl border border-line bg-white px-3 py-2.5">
+              <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">1 · Plantas/ha</div>
+              <div class="mt-1 font-mono text-[16px] font-bold tabular-nums text-ink" id="regPlantasHa">0</div>
+              <div class="mt-0.5 text-[10px] leading-snug text-muted">Stand ÷ % germinação</div>
+            </div>
+            <div class="rounded-xl border border-line bg-white px-3 py-2.5">
+              <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">2 · Metros lin./ha</div>
+              <div class="mt-1 font-mono text-[16px] font-bold tabular-nums text-ink" id="regMetrosLineares">0</div>
+              <div class="mt-0.5 text-[10px] leading-snug text-muted">10.000 m² ÷ espaçamento</div>
+            </div>
+            <div class="col-span-2 rounded-xl border border-line bg-white px-3 py-2.5">
+              <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">3 · Plantas por metro</div>
+              <div class="mt-1 font-mono text-[16px] font-bold tabular-nums text-ink" id="regPlantasMetroStep">0</div>
+              <div class="mt-0.5 text-[10px] leading-snug text-muted">Plantas/ha ÷ metros lineares</div>
+            </div>
           </div>
         </section>
 
-        <p class="mt-4 text-[11px] leading-snug text-muted lg:mt-3 lg:text-[10.5px]">Fórmula: Plantas/ha = Stand de plantas ÷ (% germinação ÷ 100) · Metros lineares em 1 ha = 10.000 m² ÷ espaçamento entre linhas · Plantas por metro = Plantas/ha ÷ metros lineares em 1 ha.</p>
+        <p class="mt-3 text-[11px] leading-snug text-muted lg:text-[10.5px]">Fórmula: Plantas/ha = Stand de plantas ÷ (% germinação ÷ 100) · Metros lineares em 1 ha = 10.000 m² ÷ espaçamento entre linhas · Plantas por metro = Plantas/ha ÷ metros lineares em 1 ha.</p>
+        </div>
+        </div>
         </div>
 
         <div id="regAduboBox" class="hidden">
-        <section class="mb-6 lg:mb-4">
+        <div class="lg:flex lg:items-start lg:gap-6">
+        <div class="lg:w-[44%]">
+        <section class="mb-6 lg:mb-0">
           <h2 class="mb-3 flex items-center gap-2 text-[12px] font-extrabold uppercase tracking-wider text-muted">
             <span class="h-4 w-1 rounded-full" style="background:var(--accent)"></span>Dados da regulagem
           </h2>
-          <div class="fld-grid">
+          <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="lbl" for="regAduboDose">Quantidade de adubo (kg/ha)</label>
+              <label class="lbl" for="regAduboDose">Adubo (kg/ha)</label>
               <input type="number" id="regAduboDose" class="inp inp-num" step="1" min="0" inputmode="decimal" placeholder="Ex.: 500">
             </div>
             <div>
-              <label class="lbl" for="regAduboEspacamento">Espaçamento entre linhas (m)</label>
+              <label class="lbl" for="regAduboEspacamento">Espaçamento (m)</label>
               <input type="number" id="regAduboEspacamento" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="Ex.: 0,50">
             </div>
           </div>
         </section>
+        </div>
 
+        <div class="mt-6 lg:mt-0 lg:w-[56%]">
         <section class="result-card relative overflow-hidden rounded-2xl px-5 py-4">
           <span class="pointer-events-none absolute inset-x-0 top-0 h-1" style="background:var(--accent)"></span>
           <h2 class="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[.12em]" style="color:var(--accent)">
@@ -368,25 +385,32 @@
           <p class="mt-1.5 text-[11px] text-muted">quantidade de adubo que a semeadora deve entregar a cada metro de linha</p>
         </section>
 
-        <section class="mt-5 rounded-xl border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3">
+        <section class="mt-4 rounded-xl border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3.5">
           <h3 class="mb-3 flex items-center gap-2 text-[13px] font-extrabold">
             <span aria-hidden="true">🧮</span>Passo a passo do cálculo
           </h3>
-          <div class="flex flex-wrap items-center justify-between gap-3">
-            <span class="text-[11px] leading-snug text-muted">1 · Metros lineares em 1 ha = 10.000 m² ÷ espaçamento</span>
-            <strong class="font-mono text-[17px] text-ink" id="regAduboMetrosLineares">0</strong>
-          </div>
-          <div class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-dashed border-line pt-3">
-            <span class="text-[11px] leading-snug text-muted">2 · Adubo por metro (kg) = Adubo por ha ÷ metros lineares</span>
-            <strong class="font-mono text-[17px] text-ink" id="regAduboPorMetroKg">0</strong>
-          </div>
-          <div class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-dashed border-line pt-3">
-            <span class="text-[11px] leading-snug text-muted">3 · Adubo por metro (g) = Adubo por metro (kg) × 1000</span>
-            <strong class="font-mono text-[17px] text-ink" id="regAduboPorMetroG">0</strong>
+          <div class="grid grid-cols-2 gap-2.5">
+            <div class="rounded-xl border border-line bg-white px-3 py-2.5">
+              <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">1 · Metros lin./ha</div>
+              <div class="mt-1 font-mono text-[16px] font-bold tabular-nums text-ink" id="regAduboMetrosLineares">0</div>
+              <div class="mt-0.5 text-[10px] leading-snug text-muted">10.000 m² ÷ espaçamento</div>
+            </div>
+            <div class="rounded-xl border border-line bg-white px-3 py-2.5">
+              <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">2 · Adubo/m (kg)</div>
+              <div class="mt-1 font-mono text-[16px] font-bold tabular-nums text-ink" id="regAduboPorMetroKg">0</div>
+              <div class="mt-0.5 text-[10px] leading-snug text-muted">Adubo/ha ÷ metros lin.</div>
+            </div>
+            <div class="col-span-2 rounded-xl border border-line bg-white px-3 py-2.5">
+              <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">3 · Adubo/m (g)</div>
+              <div class="mt-1 font-mono text-[16px] font-bold tabular-nums text-ink" id="regAduboPorMetroG">0</div>
+              <div class="mt-0.5 text-[10px] leading-snug text-muted">Adubo/m (kg) × 1000</div>
+            </div>
           </div>
         </section>
 
-        <p class="mt-4 text-[11px] leading-snug text-muted lg:mt-3 lg:text-[10.5px]">Fórmula: Metros lineares em 1 ha = 10.000 m² ÷ espaçamento entre linhas · Adubo por metro (kg) = Adubo por ha ÷ metros lineares em 1 ha · Adubo por metro (g) = Adubo por metro (kg) × 1000.</p>
+        <p class="mt-3 text-[11px] leading-snug text-muted lg:text-[10.5px]">Fórmula: Metros lineares em 1 ha = 10.000 m² ÷ espaçamento entre linhas · Adubo por metro (kg) = Adubo por ha ÷ metros lineares em 1 ha · Adubo por metro (g) = Adubo por metro (kg) × 1000.</p>
+        </div>
+        </div>
         </div>
 
       </div>

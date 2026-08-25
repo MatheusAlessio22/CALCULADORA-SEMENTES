@@ -167,6 +167,49 @@
     padding-right:38px;
   }
 
+  /* Seletor personalizado (Espaçamento, Transpasse): a lista nativa do
+     navegador não dá pra estilizar de forma consistente (no iPhone vira uma
+     rodinha do sistema, sem nenhum CSS conseguir mudar isso). Aqui a lista é
+     HTML normal (um <ul> nosso), então fica com a cara do app em qualquer
+     aparelho. O <select> original continua no DOM, só invisível — é ele quem
+     guarda o valor de verdade, então todo o resto do código (cálculo,
+     fórmulas etc.) continua funcionando sem precisar mudar nada. */
+  .csel{ position:relative; }
+  .csel-native{
+    position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+    overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
+  }
+  button.csel-trigger{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    width:100%; text-align:left; cursor:pointer;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235B6660' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;
+    background-position:right 12px center;
+    background-size:18px;
+    padding-right:38px;
+  }
+  .csel-trigger .csel-label{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .csel.is-open button.csel-trigger{
+    border-color:var(--accent);
+    background-color:#fff;
+    box-shadow:0 0 0 4px var(--accent-soft);
+  }
+  .csel-list{
+    position:absolute; z-index:30; left:0; right:0; top:calc(100% + 6px);
+    max-height:240px; overflow-y:auto;
+    background:#fff; border:1.5px solid var(--accent); border-radius:10px;
+    box-shadow:0 16px 32px -14px rgba(30,36,32,.35), 0 2px 8px rgba(30,36,32,.10);
+    padding:6px; margin:0; list-style:none;
+  }
+  .csel-option{
+    padding:9px 12px; border-radius:8px;
+    font-family:Consolas,"SFMono-Regular",Menlo,monospace; font-variant-numeric:tabular-nums;
+    font-size:15px; color:#1E2420; cursor:pointer;
+    transition:background .1s, color .1s;
+  }
+  .csel-option.is-active{ background:var(--accent-soft); }
+  .csel-option.is-selected{ background:var(--accent); color:#fff; font-weight:700; }
+
   #pmsBox[open] > summary > span:last-child{visibility:hidden;}
   #pmsBox > summary::-webkit-details-marker{display:none;}
 
