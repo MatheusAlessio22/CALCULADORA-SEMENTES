@@ -247,14 +247,18 @@
         <div class="mt-3 grid grid-cols-2 gap-2.5 border-t border-ink/10 pt-3 sm:grid-cols-3 lg:mt-2 lg:gap-2 lg:pt-2" id="packsWrap"></div>
         <p id="comboHint" class="mt-2 hidden text-[11px] leading-snug text-muted"></p>
 
-        <details id="memoriaBox" class="mt-3 rounded-xl border border-line bg-white/70 p-3 sm:p-4">
-          <summary class="flex cursor-pointer list-none items-center gap-2 text-[13px] font-extrabold marker:content-none">
+        <div id="memoriaBox" class="mt-3">
+          <button type="button" id="memoriaToggle" class="mem-toggle flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-[13px] font-extrabold text-ink" aria-expanded="false" aria-controls="memoriaPanel">
             <span aria-hidden="true">🧮</span>Ver memória de cálculo
-            <span class="ml-auto text-[11px] font-semibold text-muted">abrir</span>
-          </summary>
-          <div class="mt-3 grid grid-cols-2 gap-2.5" id="memoriaStepsWrap"></div>
-          <p class="mt-3 text-[11px] leading-snug text-muted" id="memoriaFormula"></p>
-        </details>
+            <svg class="mem-chevron ml-auto h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div id="memoriaPanel" class="mem-panel">
+            <div class="mem-panel-inner">
+              <div class="mem-steps" id="memoriaStepsWrap"></div>
+              <div id="memoriaFormula" class="mem-formula"></div>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- Custos da cultura -->

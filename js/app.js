@@ -557,41 +557,83 @@ function calc(){
 // ---------- Memória de cálculo (passo a passo) da aba Sementes & Adubação ----------
 // Só exibição: lê os mesmos valores que calc() já calculou (área, total e o objeto `mem`
 // com os campos usados em cada ramo), sem recalcular nada com regra própria.
+// Os passos de entrada viram itens da timeline (círculo numerado + linha conectando);
+// o(s) resultado(s) final(is) vira(m) cartão(ões) de destaque separado, com acento dourado.
 function renderMemoria(c, area, total, mem){
   const wrap = $("memoriaStepsWrap");
   wrap.innerHTML = "";
+  let stepNum = 0;
 
-  function addStep(label, value, caption, wide){
+  function addStep(label, value, caption){
+    stepNum++;
     const div = document.createElement("div");
-    div.className = (wide ? "col-span-2 " : "") + "rounded-xl border border-line bg-white px-3 py-2.5";
+    div.className = "mem-step";
     div.innerHTML =
-      `<div class="text-[10px] font-semibold uppercase tracking-wide text-muted">${label}</div>` +
-      `<div class="mt-1 font-mono text-[16px] font-bold tabular-nums text-ink">${value}</div>` +
-      `<div class="mt-0.5 text-[10px] leading-snug text-muted">${caption}</div>`;
+      `<div class="mem-step-marker"><span class="mem-step-dot">${stepNum}</span></div>` +
+      `<div class="mem-step-body">` +
+        `<div class="mem-step-label">${label}</div>` +
+        `<div class="mem-step-value">${value}</div>` +
+        `<div class="mem-step-caption">${caption}</div>` +
+      `</div>`;
+    wrap.appendChild(div);
+  }
+
+  function addResult(label, value, caption){
+    const div = document.createElement("div");
+    div.className = "mem-result";
+    div.innerHTML =
+      `<div class="mem-step-label">${label}</div>` +
+      `<div class="mem-step-value">${value}</div>` +
+      `<div class="mem-step-caption">${caption}</div>`;
     wrap.appendChild(div);
   }
 
   if(c.tipo === "semente"){
-    addStep("1 · Área equivalente", fmtDec(area * ALQ_HA) + " ha", "Área × 2,42");
-    addStep("2 · Espaçamento", fmtDec(mem.espacamento) + " m", "informado ao lado");
-    addStep("3 · População informada", fmtDec(mem.plantas) + " plantas/m", "informado ao lado");
-    addStep("4 · Transpasse", fmtDec(mem.transpasse) + " %", "informado ao lado");
-    addStep("Resultado", fmtInt(total) + " sementes", "(24.200 × área ÷ espaçamento) × plantas/m ÷ ((100 − transpasse) ÷ 100)", true);
+    addStep("Área equivalente", fmtDec(area * ALQ_HA) + " ha", "Área × 2,42");
+    addStep("Espaçamento", fmtDec(mem.espacamento) + " m", "informado ao lado");
+    addStep("População informada", fmtDec(mem.plantas) + " plantas/m", "informado ao lado");
+    addStep("Transpasse", fmtDec(mem.transpasse) + " %", "informado ao lado");
+    addResult("Resultado", fmtInt(total) + " sementes", "(24.200 × área ÷ espaçamento) × plantas/m ÷ ((100 − transpasse) ÷ 100)");
     if(currentCrop === "trigo"){
-      addStep("Peso estimado (via PMS)", fmtDec(mem.kgTrigo) + " kg", "Total × PMS ÷ 1.000.000", true);
+      addResult("Peso estimado (via PMS)", fmtDec(mem.kgTrigo) + " kg", "Total × PMS ÷ 1.000.000");
     }
   } else if(c.tipo === "sacas"){
-    addStep("1 · Área", fmtDec(area) + " alqueires", "informada acima");
-    addStep("2 · Sacas por alqueire", fmtDec(mem.sacasAlq), "informado ao lado");
-    addStep("Resultado", fmtDec(total) + " sacas", "Área × Sacas por alqueire", true);
+    addStep("Área", fmtDec(area) + " alqueires", "informada acima");
+    addStep("Sacas por alqueire", fmtDec(mem.sacasAlq), "informado ao lado");
+    addResult("Resultado", fmtDec(total) + " sacas", "Área × Sacas por alqueire");
   } else {
-    addStep("1 · Área", fmtDec(area) + " alqueires", "informada acima");
-    addStep("2 · Dose por alqueire", fmtDec(mem.doseAlq) + " kg", "informado ao lado");
-    addStep("Resultado", fmtDec(total) + " kg", "Área × Dose por alqueire", true);
+    addStep("Área", fmtDec(area) + " alqueires", "informada acima");
+    addStep("Dose por alqueire", fmtDec(mem.doseAlq) + " kg", "informado ao lado");
+    addResult("Resultado", fmtDec(total) + " kg", "Área × Dose por alqueire");
   }
 
   $("memoriaFormula").textContent = $("formulaHint").textContent;
+  syncMemoriaHeight();
 }
+
+// Abre/fecha o painel animando max-height + opacity (a altura do conteúdo é dinâmica
+// conforme a cultura, por isso é medida via scrollHeight em vez de um valor fixo).
+const memoriaToggle = $("memoriaToggle");
+const memoriaPanel = $("memoriaPanel");
+function syncMemoriaHeight(){
+  if(memoriaPanel.classList.contains("is-open")){
+    memoriaPanel.style.maxHeight = memoriaPanel.scrollHeight + "px";
+  }
+}
+memoriaToggle.addEventListener("click", () => {
+  const abrindo = memoriaToggle.getAttribute("aria-expanded") !== "true";
+  memoriaToggle.setAttribute("aria-expanded", abrindo ? "true" : "false");
+  if(abrindo){
+    memoriaPanel.classList.add("is-open");
+    memoriaPanel.style.maxHeight = memoriaPanel.scrollHeight + "px";
+  } else {
+    memoriaPanel.style.maxHeight = memoriaPanel.scrollHeight + "px"; // trava a altura atual antes de animar pra 0
+    requestAnimationFrame(() => {
+      memoriaPanel.classList.remove("is-open");
+      memoriaPanel.style.maxHeight = "0px";
+    });
+  }
+});
 
 // Quando a conta cai no meio de uma embalagem grande (ex.: 1,90 bag), o produtor pode levar
 // os bags inteiros e completar o resto em sacaria, em vez de arredondar o bag para cima.
