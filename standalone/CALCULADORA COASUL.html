@@ -374,6 +374,16 @@
     box-shadow:0 1px 2px rgba(30,36,32,.04), 0 10px 26px -20px rgba(30,36,32,.5);
   }
 
+  /* Regulagem de plantadeira: mesma divisão em coluna (linha vertical no
+     meio) usada em Identificação/Custo do produtor. O respiro em volta da
+     linha é feito à mão porque o bundle Tailwind pré-compilado só trouxe
+     padding horizontal/topo/base, sem as classes de padding-left e
+     padding-right — lg:pl-6 e lg:pr-6 não existiriam no CSS gerado. */
+  @media (min-width:1024px){
+    .reg-col-left{ padding-right:24px; }
+    .reg-col-right{ padding-left:24px; }
+  }
+
   /* folha de impressão / PDF: só aparece na hora de imprimir */
   #printSheet{display:none;}
   @media print{
@@ -692,8 +702,8 @@ tailwind.config = {
         </div>
 
         <div id="regSementeBox">
-        <div class="lg:flex lg:items-start lg:gap-6">
-        <div class="lg:w-[44%]">
+        <div class="lg:flex lg:items-start">
+        <div class="lg:w-[44%] lg:border-r lg:border-line reg-col-left">
         <section class="mb-6 lg:mb-0">
           <h2 class="mb-3 flex items-center gap-2 text-[12px] font-extrabold uppercase tracking-wider text-muted">
             <span class="h-4 w-1 rounded-full" style="background:var(--accent)"></span>Dados da regulagem
@@ -717,7 +727,7 @@ tailwind.config = {
         </section>
         </div>
 
-        <div class="mt-6 lg:mt-0 lg:w-[56%]">
+        <div class="mt-6 lg:mt-0 lg:w-[56%] reg-col-right">
         <section class="result-card relative overflow-hidden rounded-2xl px-5 py-4">
           <span class="pointer-events-none absolute inset-x-0 top-0 h-1" style="background:var(--accent)"></span>
           <h2 class="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[.12em]" style="color:var(--accent)">
@@ -759,8 +769,8 @@ tailwind.config = {
         </div>
 
         <div id="regAduboBox" class="hidden">
-        <div class="lg:flex lg:items-start lg:gap-6">
-        <div class="lg:w-[44%]">
+        <div class="lg:flex lg:items-start">
+        <div class="lg:w-[44%] lg:border-r lg:border-line reg-col-left">
         <section class="mb-6 lg:mb-0">
           <h2 class="mb-3 flex items-center gap-2 text-[12px] font-extrabold uppercase tracking-wider text-muted">
             <span class="h-4 w-1 rounded-full" style="background:var(--accent)"></span>Dados da regulagem
@@ -778,7 +788,7 @@ tailwind.config = {
         </section>
         </div>
 
-        <div class="mt-6 lg:mt-0 lg:w-[56%]">
+        <div class="mt-6 lg:mt-0 lg:w-[56%] reg-col-right">
         <section class="result-card relative overflow-hidden rounded-2xl px-5 py-4">
           <span class="pointer-events-none absolute inset-x-0 top-0 h-1" style="background:var(--accent)"></span>
           <h2 class="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[.12em]" style="color:var(--accent)">
@@ -872,8 +882,18 @@ const FORMULACOES_750KG = [[33,0,0],[40,0,0],[30,0,20]];
 const $ = id => document.getElementById(id);
 
 // "10.15.15 EVOLUTION", "04-14-08", "MAP 11-52-00": pega os três números do NPK de dentro do texto
+const FORMULACOES_NOMEADAS = [
+  [/cloreto de potassio/, [0, 0, 60]],
+  [/sulfato de amoni[oa]/, [20, 0, 0]],
+  [/superfosfato simples|super simples/, [0, 18, 0]],
+];
+
 function lerFormulacao(texto){
-  const m = String(texto || "").match(/(\d{1,2})\s*[.,\-\/ ]\s*(\d{1,2})\s*[.,\-\/ ]\s*(\d{1,2})/);
+  const norm = String(texto || "").normalize("NFD").replace(new RegExp("[\\u0300-\\u036f]", "g"), "").toLowerCase();
+  for(const [regex, npk] of FORMULACOES_NOMEADAS){
+    if(regex.test(norm)) return npk;
+  }
+  const m = norm.match(/(\d{1,2})\s*[.,\-\/ ]\s*(\d{1,2})\s*[.,\-\/ ]\s*(\d{1,2})/);
   if(!m) return null;
   return [parseInt(m[1], 10), parseInt(m[2], 10), parseInt(m[3], 10)];
 }

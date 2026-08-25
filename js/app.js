@@ -38,9 +38,21 @@ const FORMULACOES_750KG = [[33,0,0],[40,0,0],[30,0,20]];
 
 const $ = id => document.getElementById(id);
 
+// nomes comerciais comuns que não trazem o NPK escrito no rótulo, mas têm formulação padrão conhecida
+const FORMULACOES_NOMEADAS = [
+  [/cloreto de potassio/, [0, 0, 60]],
+  [/sulfato de amoni[oa]/, [20, 0, 0]],
+  [/superfosfato simples|super simples/, [0, 18, 0]],
+];
+
 // "10.15.15 EVOLUTION", "04-14-08", "MAP 11-52-00": pega os três números do NPK de dentro do texto
+// também reconhece nomes comerciais sem número (ex.: "Cloreto de Potássio") via FORMULACOES_NOMEADAS
 function lerFormulacao(texto){
-  const m = String(texto || "").match(/(\d{1,2})\s*[.,\-\/ ]\s*(\d{1,2})\s*[.,\-\/ ]\s*(\d{1,2})/);
+  const norm = String(texto || "").normalize("NFD").replace(new RegExp("[\\u0300-\\u036f]", "g"), "").toLowerCase();
+  for(const [regex, npk] of FORMULACOES_NOMEADAS){
+    if(regex.test(norm)) return npk;
+  }
+  const m = norm.match(/(\d{1,2})\s*[.,\-\/ ]\s*(\d{1,2})\s*[.,\-\/ ]\s*(\d{1,2})/);
   if(!m) return null;
   return [parseInt(m[1], 10), parseInt(m[2], 10), parseInt(m[3], 10)];
 }

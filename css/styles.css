@@ -358,6 +358,16 @@
     box-shadow:0 1px 2px rgba(30,36,32,.04), 0 10px 26px -20px rgba(30,36,32,.5);
   }
 
+  /* Regulagem de plantadeira: mesma divisão em coluna (linha vertical no
+     meio) usada em Identificação/Custo do produtor. O respiro em volta da
+     linha é feito à mão porque o bundle Tailwind pré-compilado só trouxe
+     padding horizontal/topo/base, sem as classes de padding-left e
+     padding-right — lg:pl-6 e lg:pr-6 não existiriam no CSS gerado. */
+  @media (min-width:1024px){
+    .reg-col-left{ padding-right:24px; }
+    .reg-col-right{ padding-left:24px; }
+  }
+
   /* folha de impressão / PDF: só aparece na hora de imprimir */
   #printSheet{display:none;}
   @media print{
