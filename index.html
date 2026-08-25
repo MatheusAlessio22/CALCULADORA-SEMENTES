@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+<meta name="theme-color" content="#5C8A26">
+<meta name="description" content="Ficha de campo para cálculo de sementes e adubação — Coasul. Funciona offline.">
+
+<!-- PWA: instalável no iOS e no Android. manifest.json + service-worker.js
+     cuidam da instalação e do funcionamento 100% offline depois da primeira
+     visita; as tags apple-mobile-web-app-* fazem o "Adicionar à Tela de
+     Início" do iOS abrir em tela cheia, sem a barra do Safari. -->
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Calculadora Coasul">
+<meta name="format-detection" content="telephone=no,date=no,address=no,email=no">
+<title>Calculadora de Sementes e Adubação — Coasul</title>
+<link rel="stylesheet" href="css/styles.css">
+
+
+</head>
+
+<body class="field-pattern bg-canvas text-ink antialiased min-h-screen px-4 pb-16 pt-6 sm:pt-8 lg:pb-4 lg:pt-5">
+<div class="app-shell relative z-[1] mx-auto flex h-full w-full max-w-2xl flex-col lg:max-w-[1300px]">
+
+  <header id="siteHeader" class="mb-6 text-center lg:mb-3 lg:flex lg:items-center lg:gap-4 lg:text-left">
+    <span class="header-topline" aria-hidden="true"></span>
+    <img src="assets/logo.png" alt="Logo Coasul" class="mx-auto mb-3 h-14 w-auto shrink-0 drop-shadow-sm lg:mx-0 lg:mb-0 lg:h-12">
+    <div id="headerText" class="lg:flex-1">
+    <p class="text-[11px] font-bold uppercase tracking-[.16em] text-muted">Coasul Agro · Ficha Técnica</p>
+    <h1 class="header-title mt-1 text-[26px] font-extrabold leading-tight tracking-tight sm:text-3xl lg:text-[23px]">Calculadora de Sementes e Adubação</h1>
+    <p class="mt-1 text-[13px] text-muted lg:text-[12px]">Soja, milho, feijão e trigo · regulagem</p>
+    </div>
+    <div id="headerActions" class="no-print mt-3 flex flex-wrap items-center justify-center gap-2 lg:mt-0 lg:shrink-0 lg:justify-end">
+      <button type="button" id="btnPdf" title="Monta a ficha desta cultura e abre a impressão — escolha &quot;Salvar como PDF&quot;"
+              class="rounded-lg px-3.5 py-2 text-[12px] font-bold text-white transition hover:brightness-110 active:translate-y-px"
+              style="background:var(--accent)">📄 Baixar PDF</button>
+      <button type="button" id="btnPng" title="Baixa a ficha desta cultura como imagem, pronta para enviar ao produtor"
+              class="rounded-lg border-2 bg-white px-3.5 py-2 text-[12px] font-bold transition hover:brightness-105 active:translate-y-px"
+              style="border-color:#D99A1E; color:#1E2420">🖼️ Salvar imagem</button>
+    </div>
+  </header>
+
+  <!-- Alternância de ferramenta -->
+  <div class="no-print mb-4 grid grid-cols-2 gap-2" role="tablist" aria-label="Ferramenta">
+    <button type="button" id="viewBtnCalc" class="view-btn is-active rounded-full border-2 border-line bg-white px-4 py-2.5 text-center text-[13px] font-bold text-ink" role="tab" aria-selected="true">🧮 Sementes &amp; Adubação</button>
+    <button type="button" id="viewBtnReg" class="view-btn rounded-full border-2 border-line bg-white px-4 py-2.5 text-center text-[13px] font-bold text-ink" role="tab" aria-selected="false">📏 Regulagem de Plantadeira</button>
+  </div>
+
+  <div id="viewCalculadora">
+  <!-- Culturas -->
+  <div class="tabs-fade no-print mb-4 -mx-4">
+  <nav class="overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&amp;::-webkit-scrollbar]:hidden">
+    <div class="tabs flex min-w-max gap-2 sm:min-w-0 sm:flex-wrap" role="tablist" aria-label="Culturas">
+      <button type="button" class="tab-btn is-active flex items-center gap-1.5 rounded-full border-2 border-line bg-white px-4 py-2.5 text-[13px] font-bold text-ink"
+              data-crop="soja" role="tab" aria-selected="true" style="--tab:#5C8A26"><span aria-hidden="true">🌱</span>Soja</button>
+      <button type="button" class="tab-btn flex items-center gap-1.5 rounded-full border-2 border-line bg-white px-4 py-2.5 text-[13px] font-bold text-ink"
+              data-crop="milho" role="tab" aria-selected="false" style="--tab:#D99A1E"><span aria-hidden="true">🌽</span>Milho</button>
+      <button type="button" class="tab-btn flex items-center gap-1.5 rounded-full border-2 border-line bg-white px-4 py-2.5 text-[13px] font-bold text-ink"
+              data-crop="feijao" role="tab" aria-selected="false" style="--tab:#C42A2E"><span aria-hidden="true">🫘</span>Feijão</button>
+      <button type="button" class="tab-btn flex items-center gap-1.5 rounded-full border-2 border-line bg-white px-4 py-2.5 text-[13px] font-bold text-ink"
+              data-crop="trigo" role="tab" aria-selected="false" style="--tab:#0678A8"><span aria-hidden="true">🌾</span>Trigo</button>
+      <button type="button" class="tab-btn flex items-center gap-1.5 rounded-full border-2 border-line bg-white px-4 py-2.5 text-[13px] font-bold text-ink"
+              data-crop="adubacao" role="tab" aria-selected="false" style="--tab:#8C6D46"><span aria-hidden="true">🧪</span>Adubação/Ureia</button>
+    </div>
+  </nav>
+  </div>
+
+  <main class="print-plain overflow-hidden rounded-2xl border border-line bg-white shadow-card lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
+    <div class="h-1.5 w-full transition-colors duration-200" style="background:var(--accent)"></div>
+
+    <div class="p-5 sm:p-7 lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:p-0">
+      <div class="lg:flex lg:h-full lg:min-h-0">
+
+      <!-- Coluna 1 (desktop): entradas -->
+      <div class="lg:min-h-0 lg:w-[44%] lg:overflow-y-auto lg:border-r lg:border-line lg:p-6">
+
+      <!-- Variantes de cálculo -->
+      <div id="variantToggle" class="mb-5 hidden gap-1 rounded-xl bg-canvas p-1" role="group" aria-label="Modo de cálculo"></div>
+
+      <!-- Identificação -->
+      <section class="mb-6 lg:mb-4">
+        <h2 class="mb-3 flex items-center gap-2 text-[12px] font-extrabold uppercase tracking-wider text-muted">
+          <span class="h-4 w-1 rounded-full" style="background:var(--accent)"></span>Identificação
+        </h2>
+
+        <div class="fld-grid fld-grid-id">
+          <div class="fld-wide">
+            <label class="lbl" for="cliente">Cliente</label>
+            <input type="text" id="cliente" class="inp" placeholder="Nome do cliente" autocomplete="off">
+          </div>
+          <div>
+            <label class="lbl" for="cultivar" id="cultivarLabel">Cultivar cotada</label>
+            <input type="text" id="cultivar" class="inp" placeholder="Ex.: BRS 404" autocomplete="off">
+          </div>
+          <div>
+            <label class="lbl" for="area">Área (alqueires)</label>
+            <input type="number" id="area" class="inp inp-num" step="0.1" min="0" inputmode="decimal" placeholder="0">
+            <p class="field-note" title="Equivalência automática: 1 alqueire = 2,42 ha">
+              <span class="note-ico" aria-hidden="true">📐</span><span id="areaHaHint">0 ha</span>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Parâmetros da cultura -->
+      <section class="mb-2">
+        <h2 class="mb-3 flex items-center gap-2 text-[12px] font-extrabold uppercase tracking-wider text-muted">
+          <span class="h-4 w-1 rounded-full" style="background:var(--accent)"></span><span id="paramsTitle">Parâmetros do plantio</span>
+        </h2>
+
+        <div id="seedFields" class="hidden">
+          <div class="fld-grid fld-grid-3">
+            <div id="plantasField" class="fld-wide">
+              <label class="lbl" for="plantas" id="plantasLabel">Plantas por metro</label>
+              <input type="number" id="plantas" class="inp inp-num" step="0.1" min="0" inputmode="decimal" placeholder="0">
+            </div>
+            <div>
+              <label class="lbl" for="espacamento">Espaçamento (m)</label>
+              <select id="espacamento" class="inp inp-num"></select>
+            </div>
+            <div>
+              <label class="lbl" for="transpasse">Transpasse (%)</label>
+              <select id="transpasse" class="inp inp-num"></select>
+            </div>
+          </div>
+
+          <div class="readout mt-3">
+            <span class="text-[11px] font-semibold uppercase tracking-wide text-muted">🌱 População final</span>
+            <span class="font-mono text-[13px] font-bold text-ink"><span id="popFinalHa">0</span> plantas/ha · <span id="popFinalAlq">0</span> plantas/alqueire</span>
+          </div>
+        </div>
+
+        <div id="sacasFields" class="hidden">
+          <div class="sm:max-w-[50%]">
+            <label class="lbl" for="sacasAlq" id="sacasAlqLabel">Sacas por alqueire</label>
+            <input type="number" id="sacasAlq" class="inp inp-num" step="0.1" min="0" inputmode="decimal" placeholder="0">
+          </div>
+        </div>
+
+        <div id="doseFields" class="hidden">
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div id="doseHaField" class="hidden">
+              <label class="lbl" for="doseHa" id="doseHaLabel">Dose (kg/ha)</label>
+              <input type="number" id="doseHa" class="inp inp-num" step="0.1" min="0" inputmode="decimal">
+            </div>
+            <div>
+              <label class="lbl" for="doseAlq" id="doseAlqLabel">Dose (kg/alqueire)</label>
+              <input type="number" id="doseAlq" class="inp inp-num" step="0.1" min="0" inputmode="decimal">
+            </div>
+            <div id="sacasAlqAdubField" class="hidden">
+              <label class="lbl" for="sacasAlqAdubo" id="sacasAlqAduboLabel">Sacas por alqueire</label>
+              <input type="number" id="sacasAlqAdubo" class="inp inp-num" step="0.01" min="0" inputmode="decimal">
+              <p class="mt-1.5 text-[11px] leading-snug text-muted lg:hidden" id="sacasAlqAdubHint">Sincronizado com a dose (kg/alqueire), considerando saca de 50 kg. O bag (750 ou 1.000 kg conforme a formulação) aparece no resultado e nos custos.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Calculadora de dose pelo PMS -->
+      <details id="pmsBox" class="mt-5 hidden rounded-xl border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3">
+        <summary class="flex cursor-pointer list-none items-center gap-2 text-[13px] font-extrabold marker:content-none">
+          <span aria-hidden="true">📐</span>Calcular dose pelo PMS
+          <span class="ml-auto text-[11px] font-semibold text-muted">abrir</span>
+        </summary>
+        <div class="mt-3"></div>
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:items-end lg:gap-3">
+          <div>
+            <label class="lbl" for="pms">PMS (g / 1.000 sementes)</label>
+            <input type="number" id="pms" class="inp inp-num" step="0.1" min="0" value="35" inputmode="decimal">
+          </div>
+          <div>
+            <label class="lbl" for="popDesejada">População (sementes/m²)</label>
+            <input type="number" id="popDesejada" class="inp inp-num" step="1" min="0" value="300" inputmode="decimal">
+          </div>
+          <div>
+            <label class="lbl" for="germinacao">Germinação (%)</label>
+            <input type="number" id="germinacao" class="inp inp-num" step="1" min="0" max="100" value="90" inputmode="decimal">
+          </div>
+          <div>
+            <label class="lbl" for="pureza">Pureza (%)</label>
+            <input type="number" id="pureza" class="inp inp-num" step="1" min="0" max="100" value="98" inputmode="decimal">
+          </div>
+        </div>
+        <div class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-dashed border-line pt-3">
+          <p class="text-[13px] text-muted">Dose sugerida: <strong id="pmsDoseResult" class="font-mono text-[17px] text-ink">0</strong> kg/ha</p>
+          <button type="button" id="usarDosePMS"
+                  class="no-print rounded-lg px-4 py-2.5 text-[12px] font-bold text-white transition hover:brightness-110 active:translate-y-px"
+                  style="background:var(--accent)">Usar esta dose</button>
+        </div>
+        <p class="mt-3 text-[11px] leading-snug text-muted lg:hidden">Fórmula: Dose (kg/ha) = (População × PMS × 100) ÷ (Germinação × Pureza)</p>
+      </details>
+
+      <!-- Formulação NPK -->
+      <section id="npkBox" class="mt-5 hidden rounded-xl border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3">
+        <h3 class="mb-1 flex flex-wrap items-center gap-x-2 text-[13px] font-extrabold">
+          <span aria-hidden="true">🧪</span>Formulação do adubo/ureia (NPK)
+          <span id="npkAuto" class="hidden rounded-full bg-brand-money/10 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wide text-brand-money">lido da formulação cotada</span>
+        </h3>
+        <p class="mb-3 text-[11px] leading-snug text-muted lg:hidden">
+          Informe a formulação do produto; os valores abaixo são a
+          <strong class="font-semibold text-ink">quantidade de nutriente que será fornecida ao solo</strong> na área informada.
+        </p>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="lbl" for="npkN">N (%)</label>
+            <input type="number" id="npkN" class="inp inp-num" step="1" min="0" max="100" value="45" inputmode="decimal">
+          </div>
+          <div>
+            <label class="lbl" for="npkP">P₂O₅ (%)</label>
+            <input type="number" id="npkP" class="inp inp-num" step="1" min="0" max="100" value="0" inputmode="decimal">
+          </div>
+          <div>
+            <label class="lbl" for="npkK">K₂O (%)</label>
+            <input type="number" id="npkK" class="inp inp-num" step="1" min="0" max="100" value="0" inputmode="decimal">
+          </div>
+        </div>
+        <p class="mt-2 text-[11px] leading-snug text-muted lg:hidden">Ureia comum: ~45% N. Ajuste conforme o rótulo do produto (ex.: 04-14-08).</p>
+        <div class="mt-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wide text-muted lg:mt-2">
+          <span aria-hidden="true">🌱</span>Nutriente que será fornecido ao solo · total na área
+        </div>
+        <div class="mt-1.5 grid grid-cols-3 gap-2.5 lg:gap-2" id="npkWrap"></div>
+      </section>
+
+      <p class="mt-4 text-[11px] leading-snug text-muted lg:mt-3 lg:text-[10.5px]" id="formulaHint"></p>
+      </div>
+
+      <!-- Coluna 2 (desktop): resultado e custos -->
+      <div class="lg:min-h-0 lg:w-[56%] lg:overflow-y-auto lg:p-6">
+
+      <!-- Resultado -->
+      <section class="result-card relative mt-5 overflow-hidden rounded-2xl px-5 py-4 lg:mt-0">
+        <span class="pointer-events-none absolute inset-x-0 top-0 h-1" style="background:var(--accent)"></span>
+        <h2 class="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[.12em]" style="color:var(--accent)">
+          <span id="cropIcon" aria-hidden="true">🌱</span><span id="cropLabelText">Total — Soja</span>
+        </h2>
+        <p id="clienteEcho" class="mt-1 hidden text-[12.5px] font-semibold text-ink/75"></p>
+        <p class="mt-1 font-mono text-[34px] font-bold leading-none tabular-nums text-ink sm:text-[40px] lg:text-[30px]" aria-live="polite">
+          <span id="totalValue">0</span>
+          <span id="unitLabel" class="text-[14px] font-normal text-muted">sementes</span>
+        </p>
+        <p class="mt-1.5 text-[11px] text-muted lg:hidden" id="totalCaption">necessário para toda a área informada</p>
+        <div class="mt-3 grid grid-cols-2 gap-2.5 border-t border-ink/10 pt-3 sm:grid-cols-3 lg:mt-2 lg:gap-2 lg:pt-2" id="packsWrap"></div>
+        <p id="comboHint" class="mt-2 hidden text-[11px] leading-snug text-muted"></p>
+
+        <details id="memoriaBox" class="mt-3 rounded-xl border border-line bg-white/70 p-3 sm:p-4">
+          <summary class="flex cursor-pointer list-none items-center gap-2 text-[13px] font-extrabold marker:content-none">
+            <span aria-hidden="true">🧮</span>Ver memória de cálculo
+            <span class="ml-auto text-[11px] font-semibold text-muted">abrir</span>
+          </summary>
+          <div class="mt-3 grid grid-cols-2 gap-2.5" id="memoriaStepsWrap"></div>
+          <p class="mt-3 text-[11px] leading-snug text-muted" id="memoriaFormula"></p>
+        </details>
+      </section>
+
+      <!-- Custos da cultura -->
+      <section class="mt-5 rounded-2xl border border-line bg-canvas/60 p-4 sm:p-5 lg:mt-4 lg:p-3">
+        <div class="mb-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          <h2 class="flex flex-wrap items-center gap-x-2 text-[13px] font-extrabold">
+            <span aria-hidden="true">💰</span>Custo do produtor
+            <span id="custosCropNome" class="font-semibold text-muted"></span>
+          </h2>
+          <div class="flex flex-wrap items-center gap-2">
+            <label class="lbl mb-0" for="prazoData">Vencimento</label>
+            <input type="date" id="prazoData" class="inp inp-num inp-sm w-[150px]">
+            <span id="prazoDias" class="whitespace-nowrap text-[11px] font-semibold text-muted"></span>
+          </div>
+        </div>
+        <p class="mb-4 text-[11px] leading-snug text-muted lg:hidden">
+          Digite o preço de cada embalagem. <strong class="font-semibold text-ink">Bag e sacaria são alternativas</strong>:
+          cada linha mostra quanto o produtor gasta se levar tudo naquela embalagem, para a área informada acima.
+        </p>
+        <div id="custosList" class="space-y-3 lg:space-y-1.5"></div>
+      </section>
+
+      </div>
+      </div>
+    </div>
+  </main>
+  </div>
+
+  <!-- Regulagem de plantadeira -->
+  <div id="viewRegulagem" class="hidden">
+    <main class="overflow-hidden rounded-2xl border border-line bg-white shadow-card lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
+      <div class="h-1.5 w-full transition-colors duration-200" style="background:var(--accent)"></div>
+      <div class="p-5 sm:p-7 lg:p-6">
+
+        <!-- Sub-abas: semente ou adubo -->
+        <div class="mb-5 flex gap-1 rounded-xl bg-canvas p-1" role="group" aria-label="Regulagem de">
+          <button type="button" id="regTabSemente" class="variant-btn is-active flex-1 rounded-lg px-3 py-2.5 text-[12.5px] font-bold text-muted" aria-pressed="true">🌱 Semente</button>
+          <button type="button" id="regTabAdubo" class="variant-btn flex-1 rounded-lg px-3 py-2.5 text-[12.5px] font-bold text-muted" aria-pressed="false">🧪 Adubo</button>
+        </div>
+
+        <div id="regSementeBox">
+        <div class="lg:flex lg:items-start">
+        <div class="lg:w-[44%] lg:border-r lg:border-line reg-col-left">
+        <section class="mb-6 lg:mb-0">
+          <h2 class="mb-3 flex items-center gap-2 text-[12px] font-extrabold uppercase tracking-wider text-muted">
+            <span class="h-4 w-1 rounded-full" style="background:var(--accent)"></span>Dados da regulagem
+          </h2>
+          <div class="grid gap-4">
+            <div>
+              <label class="lbl" for="regPopulacao">Stand de plantas (plantas/ha)</label>
+              <input type="number" id="regPopulacao" class="inp inp-num" step="1" min="0" inputmode="decimal" placeholder="Ex.: 350000">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="lbl" for="regEspacamento">Espaçamento (m)</label>
+                <input type="number" id="regEspacamento" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="Ex.: 0,50">
+              </div>
+              <div>
+                <label class="lbl" for="regGerminacao">Germinação (%)</label>
+                <input type="number" id="regGerminacao" class="inp inp-num" step="1" min="0" max="100" inputmode="decimal" placeholder="Ex.: 90">
+              </div>
+            </div>
+          </div>
+        </section>
+        </div>
+
+        <div class="mt-6 lg:mt-0 lg:w-[56%] reg-col-right">
+        <section class="result-card relative overflow-hidden rounded-2xl px-5 py-4">
+          <span class="pointer-events-none absolute inset-x-0 top-0 h-1" style="background:var(--accent)"></span>
+          <h2 class="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[.12em]" style="color:var(--accent)">
+            <span aria-hidden="true">📏</span>Plantas por metro linear
+          </h2>
+          <p class="mt-1 font-mono text-[34px] font-bold leading-none tabular-nums text-ink sm:text-[40px] lg:text-[30px]" aria-live="polite">
+            <span id="regPlantasMetro">0</span>
+            <span class="text-[14px] font-normal text-muted">plantas/m</span>
+          </p>
+          <p class="mt-1.5 text-[11px] text-muted">quantidade que a semeadora deve entregar a cada metro de linha</p>
+        </section>
+
+        <section class="mt-4 rounded-xl border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3.5">
+          <h3 class="mb-3 flex items-center gap-2 text-[13px] font-extrabold">
+            <span aria-hidden="true">🧮</span>Passo a passo do cálculo
+          </h3>
+          <div class="grid grid-cols-2 gap-2.5">
+            <div class="rounded-xl border border-line bg-white px-3 py-2.5">
+              <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">1 · Plantas/ha</div>
+              <div class="mt-1 font-mono text-[16px] font-bold tabular-nums text-ink" id="regPlantasHa">0</div>
+              <div class="mt-0.5 text-[10px] leading-snug text-muted">Stand ÷ % germinação</div>
+            </div>
+            <div class="rounded-xl border border-line bg-white px-3 py-2.5">
+              <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">2 · Metros lin./ha</div>
+              <div class="mt-1 font-mono text-[16px] font-bold tabular-nums text-ink" id="regMetrosLineares">0</div>
+              <div class="mt-0.5 text-[10px] leading-snug text-muted">10.000 m² ÷ espaçamento</div>
+            </div>
+            <div class="col-span-2 rounded-xl border border-line bg-white px-3 py-2.5">
+              <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">3 · Plantas por metro</div>
+              <div class="mt-1 font-mono text-[16px] font-bold tabular-nums text-ink" id="regPlantasMetroStep">0</div>
+              <div class="mt-0.5 text-[10px] leading-snug text-muted">Plantas/ha ÷ metros lineares</div>
+            </div>
+          </div>
+        </section>
+
+        <p class="mt-3 text-[11px] leading-snug text-muted lg:text-[10.5px]">Fórmula: Plantas/ha = Stand de plantas ÷ (% germinação ÷ 100) · Metros lineares em 1 ha = 10.000 m² ÷ espaçamento entre linhas · Plantas por metro = Plantas/ha ÷ metros lineares em 1 ha.</p>
+        </div>
+        </div>
+        </div>
+
+        <div id="regAduboBox" class="hidden">
+        <div class="lg:flex lg:items-start">
+        <div class="lg:w-[44%] lg:border-r lg:border-line reg-col-left">
+        <section class="mb-6 lg:mb-0">
+          <h2 class="mb-3 flex items-center gap-2 text-[12px] font-extrabold uppercase tracking-wider text-muted">
+            <span class="h-4 w-1 rounded-full" style="background:var(--accent)"></span>Dados da regulagem
+          </h2>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="lbl" for="regAduboDose">Adubo (kg/ha)</label>
+              <input type="number" id="regAduboDose" class="inp inp-num" step="1" min="0" inputmode="decimal" placeholder="Ex.: 500">
+            </div>
+            <div>
+              <label class="lbl" for="regAduboEspacamento">Espaçamento (m)</label>
+              <input type="number" id="regAduboEspacamento" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="Ex.: 0,50">
+            </div>
+          </div>
+        </section>
+        </div>
+
+        <div class="mt-6 lg:mt-0 lg:w-[56%] reg-col-right">
+        <section class="result-card relative overflow-hidden rounded-2xl px-5 py-4">
+          <span class="pointer-events-none absolute inset-x-0 top-0 h-1" style="background:var(--accent)"></span>
+          <h2 class="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[.12em]" style="color:var(--accent)">
+            <span aria-hidden="true">🧪</span>Adubo por metro linear
+          </h2>
+          <p class="mt-1 font-mono text-[34px] font-bold leading-none tabular-nums text-ink sm:text-[40px] lg:text-[30px]" aria-live="polite">
+            <span id="regAduboGramas">0</span>
+            <span class="text-[14px] font-normal text-muted">g/m</span>
+          </p>
+          <p class="mt-1.5 text-[11px] text-muted">quantidade de adubo que a semeadora deve entregar a cada metro de linha</p>
+        </section>
+
+        <section class="mt-4 rounded-xl border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3.5">
+          <h3 class="mb-3 flex items-center gap-2 text-[13px] font-extrabold">
+            <span aria-hidden="true">🧮</span>Passo a passo do cálculo
+          </h3>
+          <div class="grid grid-cols-2 gap-2.5">
+            <div class="rounded-xl border border-line bg-white px-3 py-2.5">
+              <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">1 · Metros lin./ha</div>
+              <div class="mt-1 font-mono text-[16px] font-bold tabular-nums text-ink" id="regAduboMetrosLineares">0</div>
+              <div class="mt-0.5 text-[10px] leading-snug text-muted">10.000 m² ÷ espaçamento</div>
+            </div>
+            <div class="rounded-xl border border-line bg-white px-3 py-2.5">
+              <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">2 · Adubo/m (kg)</div>
+              <div class="mt-1 font-mono text-[16px] font-bold tabular-nums text-ink" id="regAduboPorMetroKg">0</div>
+              <div class="mt-0.5 text-[10px] leading-snug text-muted">Adubo/ha ÷ metros lin.</div>
+            </div>
+            <div class="col-span-2 rounded-xl border border-line bg-white px-3 py-2.5">
+              <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">3 · Adubo/m (g)</div>
+              <div class="mt-1 font-mono text-[16px] font-bold tabular-nums text-ink" id="regAduboPorMetroG">0</div>
+              <div class="mt-0.5 text-[10px] leading-snug text-muted">Adubo/m (kg) × 1000</div>
+            </div>
+          </div>
+        </section>
+
+        <p class="mt-3 text-[11px] leading-snug text-muted lg:text-[10.5px]">Fórmula: Metros lineares em 1 ha = 10.000 m² ÷ espaçamento entre linhas · Adubo por metro (kg) = Adubo por ha ÷ metros lineares em 1 ha · Adubo por metro (g) = Adubo por metro (kg) × 1000.</p>
+        </div>
+        </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <footer class="mt-6 shrink-0 text-center text-[11px] text-muted lg:mt-3">
+    Ferramenta de campo · calcula automaticamente conforme você digita
+  </footer>
+</div>
+
+<!-- folha usada ao gerar o PDF (fica fora do app, que some na impressão) -->
+<div id="printSheet"></div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
