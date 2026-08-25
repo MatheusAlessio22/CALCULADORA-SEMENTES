@@ -279,6 +279,20 @@
   #pmsBox[open] > summary > span:last-child{visibility:hidden;}
   #pmsBox > summary::-webkit-details-marker{display:none;}
 
+  /* Alertas de validação: cores semânticas universais (azul/âmbar/vermelho) — deliberadamente
+     fora da paleta de marca (verde/dourado), pra não competir visualmente com os acentos
+     de cultura já usados no resto da ficha. */
+  .alerts-box{ display:flex; flex-direction:column; gap:8px; }
+  .alert-item{
+    display:flex; align-items:flex-start; gap:8px;
+    border-radius:12px; padding:10px 12px;
+    font-size:12.5px; font-weight:600; line-height:1.45;
+  }
+  .alert-icon{ width:18px; height:18px; flex:none; margin-top:1px; }
+  .alert-info{ background:#E7F1FB; color:#1B4E82; }
+  .alert-warn{ background:#FCF3DC; color:#8A5A00; }
+  .alert-error{ background:#FBE8E7; color:#9C2B22; }
+
   /* Memória de cálculo: botão + painel animados (max-height/opacity), timeline
      numerada nos passos e um cartão de destaque (acento dourado) no resultado. */
   .mem-toggle{

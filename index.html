@@ -232,6 +232,11 @@
       <!-- Coluna 2 (desktop): resultado e custos -->
       <div class="lg:min-h-0 lg:w-[56%] lg:overflow-y-auto lg:p-6">
 
+      <!-- Alertas de validação: erro (área zerada), atenção (PMS fora da faixa, preço a
+           prazo faltando, formulação não reconhecida) e informação (formulação reconhecida).
+           Fica oculto por completo quando nenhuma condição está ativa. -->
+      <div id="alertsBox" class="alerts-box hidden mt-5 lg:mt-0"></div>
+
       <!-- Resultado -->
       <section class="result-card relative mt-5 overflow-hidden rounded-2xl px-5 py-4 lg:mt-0">
         <span class="pointer-events-none absolute inset-x-0 top-0 h-1" style="background:var(--accent)"></span>

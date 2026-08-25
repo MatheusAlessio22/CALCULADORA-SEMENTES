@@ -552,6 +552,71 @@ function calc(){
 
   renderCustos(unidades);
   renderMemoria(c, area, total, mem);
+  renderAlerts(area);
+}
+
+// ---------- Alertas de validação da aba Sementes & Adubação ----------
+// Camada só de aviso sobre os dados já digitados/calculados: não bloqueia nem recalcula
+// nada além do que calc() e renderCustos() já fazem. Empilha quantos alertas se apliquem.
+const ALERT_META = {
+  error: { icon:"alert-circle",   paths:'<path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 8v4" /><path d="M12 16h.01" />' },
+  warn:  { icon:"alert-triangle", paths:'<path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 9v4" /><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.871l-8.106 -13.534a1.914 1.914 0 0 0 -3.274 0z" /><path d="M12 16h.01" />' },
+  info:  { icon:"info-circle",    paths:'<path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 9h.01" /><path d="M11 12h1v4h1" />' },
+};
+
+function renderAlerts(area){
+  const alerts = []; // { level: "error"|"warn"|"info", text }
+
+  if(area <= 0){
+    alerts.push({ level:"error", text:"Informe uma área maior que zero para calcular." });
+  }
+
+  if(!$("pmsBox").classList.contains("hidden")){
+    const germinacao = parseFloat($("germinacao").value) || 0;
+    if(germinacao > 0 && germinacao < 80){
+      alerts.push({ level:"warn", text:"A germinação está abaixo de 80%. Confirme o valor do boletim." });
+    }
+    const pureza = parseFloat($("pureza").value) || 0;
+    // TODO: confirmar limiar com o setor agronômico — 90% é um valor sugerido, não oficial
+    if(pureza > 0 && pureza < 90){
+      alerts.push({ level:"warn", text:"A pureza está abaixo de 90%. Confirme o valor do boletim." });
+    }
+  }
+
+  custosUnidades.forEach((u, i) => {
+    if(u.combo) return; // linha combinada usa os preços das outras linhas, não tem campo próprio
+    const vista = $(`precoVista-${i}`);
+    const prazo = $(`precoPrazo-${i}`);
+    if(vista && prazo && vista.value.trim() !== "" && prazo.value.trim() === ""){
+      alerts.push({ level:"warn", text:`O preço a prazo não foi informado para ${u.label}.` });
+    }
+  });
+
+  if(currentCrop === "adubacao"){
+    const cultivarVal = $("cultivar").value.trim();
+    if(cultivarVal){
+      const npk = lerFormulacao(cultivarVal);
+      if(npk){
+        const [n, p, k] = npk;
+        alerts.push({ level:"info", text:`Formulação identificada: ${n}-${p}-${k} (N ${n}% · P ${p}% · K ${k}%)` });
+      } else {
+        alerts.push({ level:"warn", text:"A formulação digitada não foi reconhecida. Confira os valores de N, P e K manualmente." });
+      }
+    }
+  }
+
+  const box = $("alertsBox");
+  box.innerHTML = "";
+  show(box, alerts.length > 0);
+  alerts.forEach(a => {
+    const meta = ALERT_META[a.level];
+    const div = document.createElement("div");
+    div.className = `alert-item alert-${a.level}`;
+    div.innerHTML =
+      `<svg class="ti ti-${meta.icon} alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${meta.paths}</svg>` +
+      `<span class="alert-text">${a.text}</span>`;
+    box.appendChild(div);
+  });
 }
 
 // ---------- Memória de cálculo (passo a passo) da aba Sementes & Adubação ----------
