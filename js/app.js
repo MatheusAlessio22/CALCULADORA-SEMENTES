@@ -1,4 +1,6 @@
 
+const APP_VERSION = "1.0.0";
+
 const CROPS = {
   soja: {
     nome:"Soja", icon:"🌱", accent:"#5C8A26", accentLight:"#9ACD3E",
@@ -10,7 +12,7 @@ const CROPS = {
     defaultVariant:"sacas",
     variants:{
       sacas:   { label:"Sacas por alqueire", tipo:"sacas", sacasAlq:2.5, tamanhoSaco:60000 },
-      semente: { label:"Plantas por metro",  tipo:"semente", plantas:3.3, transpasse:8, embalagens:[["Embalagem 60.000", 60000]] },
+      semente: { label:"Plantas por metro",  tipo:"semente", plantas:3.3, transpasse:8, espacamentos:["0.40","0.42","0.45","0.50","0.80","0.90"], embalagens:[["Embalagem 60.000", 60000]] },
     },
   },
   feijao: {
@@ -1161,7 +1163,9 @@ function montarFolha(r){
     </div>
 
     <div style="margin-top:16px;border-top:1px solid #E2E7DA;padding-top:8px;font-size:9.5px;color:#5B6660;">
-      Documento gerado pela Calculadora de Sementes e Adubação · Coasul — valores sujeitos a conferência pelo técnico.
+      <div>Calculadora Coasul — versão ${APP_VERSION}</div>
+      <div>Documento de uso interno — não substitui recomendação agronômica oficial. Valores sujeitos a conferência pelo técnico responsável.</div>
+      <div>Gerado em ${esc(new Date().toLocaleString("pt-BR", {day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit"}))}</div>
     </div>
   </div>`;
 }
