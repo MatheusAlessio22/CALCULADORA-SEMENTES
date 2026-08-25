@@ -31,6 +31,61 @@
     }
   }
 
+  /* Alterna texto curto (celular) / texto completo (desktop) — usado no
+     título, subtítulo e rótulo dos botões do cabeçalho. Mesmo ponto de
+     corte (1024px) do restante do app, pra não abrir um terceiro tamanho
+     de tela pra manter. */
+  .mobile-only{ display:inline; }
+  .desktop-only{ display:none; }
+  @media (min-width:1024px){
+    .mobile-only{ display:none; }
+    .desktop-only{ display:inline; }
+  }
+
+  /* Cabeçalho compacto no celular: logo+texto à esquerda, PDF/Imagem como
+     ícones no canto superior direito, pra chegar nas abas com bem menos
+     rolagem. Tudo daqui é sobrescrito de volta pelas classes lg: originais
+     a partir de 1024px — a versão desktop não muda. */
+  @media (max-width:1023.98px){
+    #siteHeader{
+      display:flex;
+      align-items:flex-start;
+      gap:10px;
+      text-align:left;
+      margin-bottom:1rem;
+    }
+    #siteHeader img{
+      margin:0;
+      height:2.25rem;
+    }
+    #headerText{
+      flex:1 1 0%;
+      min-width:0;
+    }
+    #headerText > p:first-child{ font-size:9.5px; }
+    #headerText h1{
+      margin-top:2px;
+      font-size:17px;
+      line-height:1.25;
+    }
+    #headerText h1 + p{
+      margin-top:2px;
+      font-size:11px;
+    }
+    #headerActions{
+      margin-top:0;
+      margin-left:auto;
+      flex-wrap:nowrap;
+      justify-content:flex-end;
+      flex-shrink:0;
+    }
+    #headerActions button{
+      min-height:36px;
+      padding:7px 10px;
+      font-size:16px;
+    }
+  }
+
   /* Fundo da marca: lavagem suave nas cores Coasul + o emblema do logo repetido
      em diagonal, bem apagado, para não competir com os números da ficha. */
   body{
