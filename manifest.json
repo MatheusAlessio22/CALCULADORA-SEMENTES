@@ -1,6 +1,6 @@
 {
   "name": "Calculadora de Sementes e Adubação — Coasul",
-  "short_name": "Calc. Coasul",
+  "short_name": "Calculadora Coasul",
   "description": "Ficha de campo para cálculo de sementes e adubação da Coasul — funciona offline.",
   "start_url": "./index.html",
   "scope": "./",

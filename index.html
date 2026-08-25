@@ -16,7 +16,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Calc. Coasul">
+<meta name="apple-mobile-web-app-title" content="Calculadora Coasul">
 <meta name="format-detection" content="telephone=no,date=no,address=no,email=no">
 <title>Calculadora de Sementes e Adubação — Coasul</title>
 <link rel="stylesheet" href="css/styles.css">
@@ -28,25 +28,20 @@
 <div class="app-shell relative z-[1] mx-auto flex h-full w-full max-w-2xl flex-col lg:max-w-[1300px]">
 
   <header id="siteHeader" class="mb-6 text-center lg:mb-3 lg:flex lg:items-center lg:gap-4 lg:text-left">
+    <span class="header-topline" aria-hidden="true"></span>
     <img src="assets/logo.png" alt="Logo Coasul" class="mx-auto mb-3 h-14 w-auto shrink-0 drop-shadow-sm lg:mx-0 lg:mb-0 lg:h-12">
     <div id="headerText" class="lg:flex-1">
-    <p class="text-[11px] font-bold uppercase tracking-[.16em] text-muted">Ficha de campo · Coasul</p>
-    <h1 class="mt-1 text-[26px] font-extrabold leading-tight tracking-tight sm:text-3xl lg:text-[23px]">
-      <span class="desktop-only">Necessidade de Sementes e Adubação</span>
-      <span class="mobile-only">Sementes e Adubação</span>
-    </h1>
-    <p class="mt-1 text-[13px] text-muted lg:text-[12px]">
-      <span class="desktop-only">Soja · Milho · Feijão · Trigo · Adubação — com custo por embalagem</span>
-      <span class="mobile-only">4 culturas · custo por embalagem</span>
-    </p>
+    <p class="text-[11px] font-bold uppercase tracking-[.16em] text-muted">Coasul Agro · Ficha Técnica</p>
+    <h1 class="header-title mt-1 text-[26px] font-extrabold leading-tight tracking-tight sm:text-3xl lg:text-[23px]">Calculadora de Sementes e Adubação</h1>
+    <p class="mt-1 text-[13px] text-muted lg:text-[12px]">Soja, milho, feijão e trigo · regulagem</p>
     </div>
     <div id="headerActions" class="no-print mt-3 flex flex-wrap items-center justify-center gap-2 lg:mt-0 lg:shrink-0 lg:justify-end">
       <button type="button" id="btnPdf" title="Monta a ficha desta cultura e abre a impressão — escolha &quot;Salvar como PDF&quot;"
               class="rounded-lg px-3.5 py-2 text-[12px] font-bold text-white transition hover:brightness-110 active:translate-y-px"
-              style="background:var(--accent)">📄<span class="desktop-only"> PDF</span></button>
+              style="background:var(--accent)">📄 Baixar PDF</button>
       <button type="button" id="btnPng" title="Baixa a ficha desta cultura como imagem, pronta para enviar ao produtor"
               class="rounded-lg border-2 bg-white px-3.5 py-2 text-[12px] font-bold transition hover:brightness-105 active:translate-y-px"
-              style="border-color:var(--accent); color:var(--accent)">🖼️<span class="desktop-only"> Imagem</span></button>
+              style="border-color:#D99A1E; color:#1E2420">🖼️ Salvar imagem</button>
     </div>
   </header>
 
