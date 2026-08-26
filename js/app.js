@@ -1585,10 +1585,52 @@ function nomeArquivoRegulagem(r, ext){
   return partes.join("_") + "." + ext;
 }
 
+// Cache da logo em Base64: convertida uma única vez (assim que a imagem do
+// cabeçalho termina de carregar) pra getLogoSrc() nunca depender de conversão
+// just-in-time no instante da impressão, quando pode não dar tempo.
+let logoDataUrlCache = null;
+function tentarCachearLogo(){
+  const img = document.querySelector("header img");
+  if(!img || !img.naturalWidth) return;
+  try {
+    const cv = document.createElement("canvas");
+    cv.width = img.naturalWidth;
+    cv.height = img.naturalHeight;
+    cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+    logoDataUrlCache = cv.toDataURL("image/png");
+  } catch(e){ /* sem sorte agora; getLogoSrc tenta de novo na hora do PDF */ }
+}
+(() => {
+  const img = document.querySelector("header img");
+  if(!img) return;
+  if(img.complete) tentarCachearLogo();
+  else img.addEventListener("load", tentarCachearLogo, {once: true});
+})();
+
+// Extrai a logo do cabeçalho como DataURL (Base64), pra garantir que ela
+// apareça na folha impressa/PDF mesmo sem acesso à rede.
+function getLogoSrc(){
+  if(logoDataUrlCache) return logoDataUrlCache;
+  const img = document.querySelector("header img");
+  if(!img) return "assets/logo.png";
+  if(img.src.startsWith("data:")) return img.src;
+  try {
+    const cv = document.createElement("canvas");
+    cv.width = img.naturalWidth || img.width || 120;
+    cv.height = img.naturalHeight || img.height || 42;
+    const ctx = cv.getContext("2d");
+    ctx.drawImage(img, 0, 0, cv.width, cv.height);
+    logoDataUrlCache = cv.toDataURL("image/png");
+    return logoDataUrlCache;
+  } catch(e){
+    return img.src;
+  }
+}
+
 // ---- PDF: monta a folha e chama a impressão (o navegador salva como PDF, offline)
 function montarFolha(r){
   const esc = t => String(t == null ? "" : t).replace(/[&<>]/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]));
-  const logo = document.querySelector("header img").src;
+  const logo = getLogoSrc();
   const info = [["Cliente", r.cliente || "—"], [r.rotuloCultivar, r.cultivar || "—"], ["Cultura", r.cultura], ["Área", r.area]];
 
   const linhasHtml = r.linhas.map(l => `
@@ -1610,7 +1652,7 @@ function montarFolha(r){
       <div style="width:1px;align-self:stretch;background:#DCE3D6;"></div>
       <div style="flex:1;">
         <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#4B554F;font-weight:700;">Coasul Agro · Departamento Técnico</div>
-        <div style="font-size:18px;font-weight:700;color:#1E2420;margin-top:2px;">Ficha Técnica de Semeadura &amp; Nutrição</div>
+        <div style="font-size:18px;font-weight:700;color:#1E2420;margin-top:2px;">Calculadora de Sementes e Adubação</div>
       </div>
       <div style="text-align:right;background:#F7FAF5;border:1px solid #DCE3D6;border-radius:8px;padding:8px 12px;font-size:10px;min-width:120px;">
         <div style="color:#4B554F;">${esc(r.data)}</div>
@@ -1681,7 +1723,7 @@ function montarFolha(r){
 // sementes/adubacao.
 function montarFolhaRegulagem(r){
   const esc = t => String(t == null ? "" : t).replace(/[&<>]/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]));
-  const logo = document.querySelector("header img").src;
+  const logo = getLogoSrc();
   const num = (v, suf) => v ? String(v).replace(".", ",") + (suf || "") : "—";
   const bloco = (k, v) => `
     <td style="padding:8px 12px;background:#F7FAF5;border:1px solid #DCE3D6;border-radius:8px;">
@@ -1772,15 +1814,16 @@ function montarFolhaRegulagem(r){
   </div>`;
 }
 
-$("btnPdf").addEventListener("click", () => {
+$("btnPdf").addEventListener("click", async () => {
   if(!$("viewRegulagem").classList.contains("hidden")){
     const r = coletarResumoRegulagem();
     $("printSheet").innerHTML = montarFolhaRegulagem(r);
-    window.print();
-    return;
+  } else {
+    const r = coletarResumo();
+    $("printSheet").innerHTML = montarFolha(r);
   }
-  const r = coletarResumo();
-  $("printSheet").innerHTML = montarFolha(r);
+  const img = $("printSheet").querySelector("img");
+  if(img) await img.decode().catch(() => {});
   window.print();
 });
 
