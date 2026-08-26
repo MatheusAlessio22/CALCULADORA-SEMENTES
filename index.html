@@ -29,50 +29,50 @@
 
   <header id="siteHeader" class="mb-6 text-center lg:mb-3 lg:flex lg:items-center lg:gap-4 lg:text-left">
     <span class="header-topline" aria-hidden="true"></span>
-    <img src="assets/logo.png" alt="Logo Coasul" class="mx-auto mb-3 h-14 w-auto shrink-0 drop-shadow-sm lg:mx-0 lg:mb-0 lg:h-12">
+    <div class="header-logo-box mx-auto mb-3 lg:mx-0 lg:mb-0">
+      <img src="assets/logo.png" alt="Logo Coasul" class="h-14 w-auto drop-shadow-sm lg:h-12">
+    </div>
     <div id="headerText" class="lg:flex-1">
-    <p class="text-[11px] font-bold uppercase tracking-[.16em] text-muted">Coasul Agro · Ficha Técnica</p>
-    <h1 class="header-title mt-1 text-[26px] font-extrabold leading-tight tracking-tight sm:text-3xl lg:text-[23px]">Calculadora de Sementes e Adubação</h1>
-    <p class="mt-1 text-[13px] text-muted lg:text-[12px]">Soja, milho, feijão e trigo · regulagem</p>
+    <p class="text-[10.5px] font-bold uppercase tracking-[.14em] text-muted">COASUL AGRO · DEPARTAMENTO TÉCNICO</p>
+    <h1 class="header-title mt-0.5 text-[22px] font-bold leading-tight tracking-tight sm:text-[25px] lg:text-[22px] text-ink">Ficha Técnica de Semeadura &amp; Nutrição</h1>
+    <p class="mt-0.5 text-[12.5px] text-muted lg:text-[11.5px]">Dimensionamento de insumos, estimativa de custos e calibração de máquinas</p>
     </div>
     <div id="headerActions" class="no-print mt-3 flex flex-wrap items-center justify-center gap-2 lg:mt-0 lg:shrink-0 lg:justify-end">
       <button type="button" id="btnPdf" title="Monta a ficha desta cultura e abre a impressão — escolha &quot;Salvar como PDF&quot;"
               class="rounded-lg px-3.5 py-2 text-[12px] font-bold text-white transition hover:brightness-110 active:translate-y-px"
-              style="background:var(--accent)">📄 Baixar PDF</button>
+              style="background:var(--accent)"><svg class="ti ti-file-text icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /><path d="M9 9l1 0" /><path d="M9 13l6 0" /><path d="M9 17l6 0" /></svg> Baixar PDF</button>
       <button type="button" id="btnPng" title="Baixa a ficha desta cultura como imagem, pronta para enviar ao produtor"
-              class="rounded-lg border-2 bg-white px-3.5 py-2 text-[12px] font-bold transition hover:brightness-105 active:translate-y-px"
-              style="border-color:#D99A1E; color:#1E2420">🖼️ Salvar imagem</button>
+              class="rounded-lg border bg-white px-3.5 py-2 text-[12px] font-bold transition hover:brightness-105 active:translate-y-px"
+              style="border-color:#D99A1E; color:#1E2420"><svg class="ti ti-photo icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 8h.01" /><path d="M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12" /><path d="M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5" /><path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3" /></svg> Salvar imagem</button>
     </div>
   </header>
 
   <!-- Alternância de ferramenta -->
-  <div class="no-print mb-4 grid grid-cols-2 gap-2" role="tablist" aria-label="Ferramenta">
-    <button type="button" id="viewBtnCalc" class="view-btn is-active rounded-full border-2 border-line bg-white px-4 py-2.5 text-center text-[13px] font-bold text-ink" role="tab" aria-selected="true">🧮 Sementes &amp; Adubação</button>
-    <button type="button" id="viewBtnReg" class="view-btn rounded-full border-2 border-line bg-white px-4 py-2.5 text-center text-[13px] font-bold text-ink" role="tab" aria-selected="false">📏 Regulagem de Plantadeira</button>
+  <div class="tool-switcher no-print mb-4 grid grid-cols-2 gap-1 rounded-[10px] bg-[#EAEFE7] p-1 border border-[#D6DFD1]" role="tablist" aria-label="Ferramenta">
+    <button type="button" id="viewBtnCalc" class="view-btn is-active rounded-[7px] px-3 py-2 text-center text-[12.5px] font-semibold text-ink transition-all" role="tab" aria-selected="true"><svg class="ti ti-calculator icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2l0 -14" /><path d="M8 8a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1v1a1 1 0 0 1 -1 1h-6a1 1 0 0 1 -1 -1l0 -1" /><path d="M8 14l0 .01" /><path d="M12 14l0 .01" /><path d="M16 14l0 .01" /><path d="M8 17l0 .01" /><path d="M12 17l0 .01" /><path d="M16 17l0 .01" /></svg> Sementes &amp; Adubação</button>
+    <button type="button" id="viewBtnReg" class="view-btn rounded-[7px] px-3 py-2 text-center text-[12.5px] font-semibold text-ink transition-all" role="tab" aria-selected="false"><svg class="ti ti-ruler icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h14a1 1 0 0 1 1 1v5a1 1 0 0 1 -1 1h-7a1 1 0 0 0 -1 1v7a1 1 0 0 1 -1 1h-5a1 1 0 0 1 -1 -1v-14a1 1 0 0 1 1 -1" /><path d="M4 8l2 0" /><path d="M4 12l3 0" /><path d="M4 16l2 0" /><path d="M8 4l0 2" /><path d="M12 4l0 3" /><path d="M16 4l0 2" /></svg> Regulagem de Plantadeira</button>
   </div>
 
   <div id="viewCalculadora">
   <!-- Culturas -->
   <div class="tabs-fade no-print mb-4 -mx-4">
   <nav class="overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&amp;::-webkit-scrollbar]:hidden">
-    <div class="tabs flex min-w-max gap-2 sm:min-w-0 sm:flex-wrap" role="tablist" aria-label="Culturas">
-      <button type="button" class="tab-btn is-active flex items-center gap-1.5 rounded-full border-2 border-line bg-white px-4 py-2.5 text-[13px] font-bold text-ink"
-              data-crop="soja" role="tab" aria-selected="true" style="--tab:#5C8A26"><span aria-hidden="true">🌱</span>Soja</button>
-      <button type="button" class="tab-btn flex items-center gap-1.5 rounded-full border-2 border-line bg-white px-4 py-2.5 text-[13px] font-bold text-ink"
-              data-crop="milho" role="tab" aria-selected="false" style="--tab:#D99A1E"><span aria-hidden="true">🌽</span>Milho</button>
-      <button type="button" class="tab-btn flex items-center gap-1.5 rounded-full border-2 border-line bg-white px-4 py-2.5 text-[13px] font-bold text-ink"
-              data-crop="feijao" role="tab" aria-selected="false" style="--tab:#C42A2E"><span aria-hidden="true">🫘</span>Feijão</button>
-      <button type="button" class="tab-btn flex items-center gap-1.5 rounded-full border-2 border-line bg-white px-4 py-2.5 text-[13px] font-bold text-ink"
-              data-crop="trigo" role="tab" aria-selected="false" style="--tab:#0678A8"><span aria-hidden="true">🌾</span>Trigo</button>
-      <button type="button" class="tab-btn flex items-center gap-1.5 rounded-full border-2 border-line bg-white px-4 py-2.5 text-[13px] font-bold text-ink"
-              data-crop="adubacao" role="tab" aria-selected="false" style="--tab:#8C6D46"><span aria-hidden="true">🧪</span>Adubação/Ureia</button>
+    <div class="tabs flex min-w-max gap-4 sm:min-w-0 sm:flex-wrap" role="tablist" aria-label="Culturas">
+      <button type="button" class="tab-btn is-active flex items-center gap-2 text-[13px]"
+              data-crop="soja" role="tab" aria-selected="true" style="--tab:#5C8A26"><span aria-hidden="true"><svg class="ti ti-leaf icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21c.5 -4.5 2.5 -8 7 -10" /><path d="M9 18c6.218 0 10.5 -3.288 11 -12v-2h-4.014c-9 0 -11.986 4 -12 9c0 1 0 3 2 5h3l.014 0" /></svg></span>Soja</button>
+      <button type="button" class="tab-btn flex items-center gap-2 text-[13px]"
+              data-crop="milho" role="tab" aria-selected="false" style="--tab:#D99A1E"><span aria-hidden="true"><svg class="ti ti-plant icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 15h10v4a2 2 0 0 1 -2 2h-6a2 2 0 0 1 -2 -2v-4" /><path d="M12 9a6 6 0 0 0 -6 -6h-3v2a6 6 0 0 0 6 6h3" /><path d="M12 11a6 6 0 0 1 6 -6h3v1a6 6 0 0 1 -6 6h-3" /><path d="M12 15l0 -6" /></svg></span>Milho</button>
+      <button type="button" class="tab-btn flex items-center gap-2 text-[13px]"
+              data-crop="feijao" role="tab" aria-selected="false" style="--tab:#C42A2E"><span aria-hidden="true"><svg class="ti ti-plant-2 icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9a10 10 0 1 0 20 0" /><path d="M12 19a10 10 0 0 1 10 -10" /><path d="M2 9a10 10 0 0 1 10 10" /><path d="M12 4a9.7 9.7 0 0 1 2.99 7.5" /><path d="M9.01 11.5a9.7 9.7 0 0 1 2.99 -7.5" /></svg></span>Feijão</button>
+      <button type="button" class="tab-btn flex items-center gap-2 text-[13px]"
+              data-crop="trigo" role="tab" aria-selected="false" style="--tab:#0678A8"><span aria-hidden="true"><svg class="ti ti-wheat icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.014 21.514v-3.75" /><path d="M5.93 9.504l-.43 1.604c-.712 2.659 .866 5.391 3.524 6.105c.997 .268 1.993 .535 2.99 .801v-3.44c-.164 -2.105 -1.637 -3.879 -3.676 -4.426l-2.408 -.644" /><path d="M13.744 11.164c.454 -.454 .815 -.994 1.061 -1.587c.246 -.594 .372 -1.23 .372 -1.873c0 -.643 -.126 -1.279 -.372 -1.872c-.246 -.594 -.606 -1.133 -1.061 -1.588l-1.73 -1.73l-1.73 1.73c-.454 .454 -.815 .994 -1.06 1.588c-.246 .594 -.372 1.23 -.373 1.872c0 .643 .127 1.279 .373 1.873c.246 .594 .606 1.133 1.06 1.587" /><path d="M18.099 9.504l.43 1.604c.712 2.659 -.866 5.391 -3.525 6.105c-.997 .268 -1.994 .535 -2.99 .801v-3.44c.164 -2.105 1.637 -3.879 3.677 -4.426l2.408 -.644" /></svg></span>Trigo</button>
+      <button type="button" class="tab-btn flex items-center gap-2 text-[13px]"
+              data-crop="adubacao" role="tab" aria-selected="false" style="--tab:#8C6D46"><span aria-hidden="true"><svg class="ti ti-flask icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3l6 0" /><path d="M10 9l4 0" /><path d="M10 3v6l-4 11a.7 .7 0 0 0 .5 1h11a.7 .7 0 0 0 .5 -1l-4 -11v-6" /></svg></span>Adubação/Ureia</button>
     </div>
   </nav>
   </div>
 
-  <main class="print-plain overflow-hidden rounded-2xl border border-line bg-white shadow-card lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
-    <div class="h-1.5 w-full transition-colors duration-200" style="background:var(--accent)"></div>
-
+  <main class="print-plain overflow-hidden rounded-lg bg-white shadow-sm lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
     <div class="p-5 sm:p-7 lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:p-0">
       <div class="lg:flex lg:h-full lg:min-h-0">
 
@@ -80,13 +80,13 @@
       <div class="lg:min-h-0 lg:w-[44%] lg:overflow-y-auto lg:border-r lg:border-line lg:p-6">
 
       <!-- Variantes de cálculo -->
-      <div id="variantToggle" class="mb-5 hidden gap-1 rounded-xl bg-canvas p-1" role="group" aria-label="Modo de cálculo"></div>
+      <div id="variantToggle" class="mb-5 hidden gap-1 rounded-lg bg-canvas p-1" role="group" aria-label="Modo de cálculo"></div>
 
       <!-- Identificação -->
-      <section class="mb-6 lg:mb-4">
-        <h2 class="mb-3 flex items-center gap-2 text-[12px] font-extrabold uppercase tracking-wider text-muted">
-          <span class="h-4 w-1 rounded-full" style="background:var(--accent)"></span>Identificação
-        </h2>
+      <section class="crm-card">
+        <div class="crm-card-header">
+          <h2 class="crm-card-title">Identificação do Cooperado</h2>
+        </div>
 
         <div class="fld-grid fld-grid-id">
           <div class="fld-wide">
@@ -95,29 +95,32 @@
           </div>
           <div>
             <label class="lbl" for="cultivar" id="cultivarLabel">Cultivar cotada</label>
-            <input type="text" id="cultivar" class="inp" placeholder="Ex.: BRS 404" autocomplete="off">
+            <input type="text" id="cultivar" class="inp" placeholder="Ex.: BRS 404" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false">
+            <ul id="cultivarSuggestList" class="csel-list hidden" role="listbox"></ul>
+            <p id="cultivarPmsHint" class="mt-1.5 hidden text-[11px] text-muted"></p>
           </div>
           <div>
             <label class="lbl" for="area">Área (alqueires)</label>
             <input type="number" id="area" class="inp inp-num" step="0.1" min="0" inputmode="decimal" placeholder="0">
             <p class="field-note" title="Equivalência automática: 1 alqueire = 2,42 ha">
-              <span class="note-ico" aria-hidden="true">📐</span><span id="areaHaHint">0 ha</span>
+              <span class="note-ico" aria-hidden="true"><svg class="ti ti-ruler-2 icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3l4 4l-14 14l-4 -4l14 -14" /><path d="M16 7l-1.5 -1.5" /><path d="M13 10l-1.5 -1.5" /><path d="M10 13l-1.5 -1.5" /><path d="M7 16l-1.5 -1.5" /></svg></span><span id="areaHaHint">0 ha</span>
             </p>
           </div>
         </div>
       </section>
 
       <!-- Parâmetros da cultura -->
-      <section class="mb-2">
-        <h2 class="mb-3 flex items-center gap-2 text-[12px] font-extrabold uppercase tracking-wider text-muted">
-          <span class="h-4 w-1 rounded-full" style="background:var(--accent)"></span><span id="paramsTitle">Parâmetros do plantio</span>
-        </h2>
+      <section class="crm-card">
+        <div class="crm-card-header">
+          <h2 class="crm-card-title"><span id="paramsTitle">Parâmetros de Semeadura</span></h2>
+        </div>
 
         <div id="seedFields" class="hidden">
           <div class="fld-grid fld-grid-3">
             <div id="plantasField" class="fld-wide">
               <label class="lbl" for="plantas" id="plantasLabel">Plantas por metro</label>
               <input type="number" id="plantas" class="inp inp-num" step="0.1" min="0" inputmode="decimal" placeholder="0">
+              <p class="mt-1.5 text-[11px] text-muted" id="plantasSuggestionHint"></p>
             </div>
             <div>
               <label class="lbl" for="espacamento">Espaçamento (m)</label>
@@ -130,7 +133,7 @@
           </div>
 
           <div class="readout mt-3">
-            <span class="text-[11px] font-semibold uppercase tracking-wide text-muted">🌱 População final</span>
+            <span class="text-[11px] font-semibold uppercase tracking-wide text-muted"><svg class="ti ti-leaf icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21c.5 -4.5 2.5 -8 7 -10" /><path d="M9 18c6.218 0 10.5 -3.288 11 -12v-2h-4.014c-9 0 -11.986 4 -12 9c0 1 0 3 2 5h3l.014 0" /></svg> População final</span>
             <span class="font-mono text-[13px] font-bold text-ink"><span id="popFinalHa">0</span> plantas/ha · <span id="popFinalAlq">0</span> plantas/alqueire</span>
           </div>
         </div>
@@ -162,9 +165,9 @@
       </section>
 
       <!-- Calculadora de dose pelo PMS -->
-      <details id="pmsBox" class="mt-5 hidden rounded-xl border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3">
+      <details id="pmsBox" class="mt-6 hidden rounded-lg border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3">
         <summary class="flex cursor-pointer list-none items-center gap-2 text-[13px] font-extrabold marker:content-none">
-          <span aria-hidden="true">📐</span>Calcular dose pelo PMS
+          <span aria-hidden="true"><svg class="ti ti-ruler-2 icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3l4 4l-14 14l-4 -4l14 -14" /><path d="M16 7l-1.5 -1.5" /><path d="M13 10l-1.5 -1.5" /><path d="M10 13l-1.5 -1.5" /><path d="M7 16l-1.5 -1.5" /></svg></span>Calcular dose pelo PMS
           <span class="ml-auto text-[11px] font-semibold text-muted">abrir</span>
         </summary>
         <div class="mt-3"></div>
@@ -196,9 +199,9 @@
       </details>
 
       <!-- Formulação NPK -->
-      <section id="npkBox" class="mt-5 hidden rounded-xl border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3">
+      <section id="npkBox" class="mt-6 hidden rounded-lg border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3">
         <h3 class="mb-1 flex flex-wrap items-center gap-x-2 text-[13px] font-extrabold">
-          <span aria-hidden="true">🧪</span>Formulação do adubo/ureia (NPK)
+          <span aria-hidden="true"><svg class="ti ti-flask icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3l6 0" /><path d="M10 9l4 0" /><path d="M10 3v6l-4 11a.7 .7 0 0 0 .5 1h11a.7 .7 0 0 0 .5 -1l-4 -11v-6" /></svg></span>Formulação do adubo/ureia (NPK)
           <span id="npkAuto" class="hidden rounded-full bg-brand-money/10 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wide text-brand-money">lido da formulação cotada</span>
         </h3>
         <p class="mb-3 text-[11px] leading-snug text-muted lg:hidden">
@@ -221,38 +224,55 @@
         </div>
         <p class="mt-2 text-[11px] leading-snug text-muted lg:hidden">Ureia comum: ~45% N. Ajuste conforme o rótulo do produto (ex.: 04-14-08).</p>
         <div class="mt-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wide text-muted lg:mt-2">
-          <span aria-hidden="true">🌱</span>Nutriente que será fornecido ao solo · total na área
+          <span aria-hidden="true"><svg class="ti ti-leaf icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21c.5 -4.5 2.5 -8 7 -10" /><path d="M9 18c6.218 0 10.5 -3.288 11 -12v-2h-4.014c-9 0 -11.986 4 -12 9c0 1 0 3 2 5h3l.014 0" /></svg></span>Nutriente que será fornecido ao solo · total na área
         </div>
         <div class="mt-1.5 grid grid-cols-3 gap-2.5 lg:gap-2" id="npkWrap"></div>
       </section>
 
-      <p class="mt-4 text-[11px] leading-snug text-muted lg:mt-3 lg:text-[10.5px]" id="formulaHint"></p>
+      <p class="hidden" id="formulaHint"></p>
       </div>
 
       <!-- Coluna 2 (desktop): resultado e custos -->
       <div class="lg:min-h-0 lg:w-[56%] lg:overflow-y-auto lg:p-6">
 
+      <!-- Alertas de validação: erro (área zerada), atenção (PMS fora da faixa, preço a
+           prazo faltando, formulação não reconhecida) e informação (formulação reconhecida).
+           Fica oculto por completo quando nenhuma condição está ativa. -->
+      <div id="alertsBox" class="alerts-box hidden mt-6 lg:mt-0"></div>
+
       <!-- Resultado -->
-      <section class="result-card relative mt-5 overflow-hidden rounded-2xl px-5 py-4 lg:mt-0">
-        <span class="pointer-events-none absolute inset-x-0 top-0 h-1" style="background:var(--accent)"></span>
-        <h2 class="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[.12em]" style="color:var(--accent)">
-          <span id="cropIcon" aria-hidden="true">🌱</span><span id="cropLabelText">Total — Soja</span>
-        </h2>
+      <section class="crm-card mt-6 lg:mt-0">
+        <div class="crm-card-header">
+          <h2 class="crm-card-title"><span id="cropIcon" aria-hidden="true"></span><span id="cropLabelText">Total Estimado</span></h2>
+        </div>
         <p id="clienteEcho" class="mt-1 hidden text-[12.5px] font-semibold text-ink/75"></p>
-        <p class="mt-1 font-mono text-[34px] font-bold leading-none tabular-nums text-ink sm:text-[40px] lg:text-[30px]" aria-live="polite">
+        <p class="result-total mt-1 font-mono leading-none tabular-nums text-ink" aria-live="polite">
           <span id="totalValue">0</span>
           <span id="unitLabel" class="text-[14px] font-normal text-muted">sementes</span>
         </p>
         <p class="mt-1.5 text-[11px] text-muted lg:hidden" id="totalCaption">necessário para toda a área informada</p>
         <div class="mt-3 grid grid-cols-2 gap-2.5 border-t border-ink/10 pt-3 sm:grid-cols-3 lg:mt-2 lg:gap-2 lg:pt-2" id="packsWrap"></div>
-        <p id="comboHint" class="mt-2 hidden text-[11px] leading-snug text-muted"></p>
+        <div id="comboHint" class="mt-3 hidden"></div>
+
+        <div id="memoriaBox" class="mt-3">
+          <button type="button" id="memoriaToggle" class="mem-toggle flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-[13px] font-extrabold text-ink" aria-expanded="false" aria-controls="memoriaPanel">
+            <span aria-hidden="true"><svg class="ti ti-calculator icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2l0 -14" /><path d="M8 8a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1v1a1 1 0 0 1 -1 1h-6a1 1 0 0 1 -1 -1l0 -1" /><path d="M8 14l0 .01" /><path d="M12 14l0 .01" /><path d="M16 14l0 .01" /><path d="M8 17l0 .01" /><path d="M12 17l0 .01" /><path d="M16 17l0 .01" /></svg></span>Ver memória de cálculo
+            <svg class="mem-chevron ml-auto h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div id="memoriaPanel" class="mem-panel">
+            <div class="mem-panel-inner">
+              <div class="mem-steps" id="memoriaStepsWrap"></div>
+              <div id="memoriaFormula" class="mem-formula"></div>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- Custos da cultura -->
-      <section class="mt-5 rounded-2xl border border-line bg-canvas/60 p-4 sm:p-5 lg:mt-4 lg:p-3">
-        <div class="mb-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+      <section class="crm-card mt-6 lg:mt-5">
+        <div class="crm-card-header flex-wrap gap-x-3 gap-y-2">
           <h2 class="flex flex-wrap items-center gap-x-2 text-[13px] font-extrabold">
-            <span aria-hidden="true">💰</span>Custo do produtor
+            <span aria-hidden="true"><svg class="ti ti-coin icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M14.8 9a2 2 0 0 0 -1.8 -1h-2a2 2 0 1 0 0 4h2a2 2 0 1 1 0 4h-2a2 2 0 0 1 -1.8 -1" /><path d="M12 7v10" /></svg></span>Custo do produtor
             <span id="custosCropNome" class="font-semibold text-muted"></span>
           </h2>
           <div class="flex flex-wrap items-center gap-2">
@@ -268,6 +288,30 @@
         <div id="custosList" class="space-y-3 lg:space-y-1.5"></div>
       </section>
 
+      <!-- Comparador de formulações (só aparece na aba Adubação/Ureia) -->
+      <section id="comparadorSection" class="hidden shadow-soft mt-6 rounded-xl bg-white p-4 sm:p-5 lg:mt-5 lg:p-3">
+        <h2 class="mb-1 flex flex-wrap items-center gap-x-2 text-[13px] font-extrabold">
+          <span aria-hidden="true"><svg class="ti ti-flask icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3l6 0" /><path d="M10 9l4 0" /><path d="M10 3v6l-4 11a.7 .7 0 0 0 .5 1h11a.7 .7 0 0 0 .5 -1l-4 -11v-6" /></svg></span>Comparar formulações
+        </h2>
+        <p class="mb-4 text-[11px] leading-snug text-muted">
+          Ferramenta auxiliar para apoiar a recomendação de venda — compara o custo estimado de diferentes formulações para a área informada acima. Não substitui o cálculo principal desta aba e está sujeita à mesma ressalva técnica do restante da ficha.
+        </p>
+
+        <div id="compModo" class="mb-4 flex gap-1 rounded-lg bg-canvas p-1" role="group" aria-label="Modo de comparação">
+          <button type="button" class="variant-btn flex-1 rounded-lg px-3 py-2.5 text-[12.5px] font-bold text-muted is-active" data-modo="dose" aria-pressed="true">Mesma dose</button>
+          <button type="button" class="variant-btn flex-1 rounded-lg px-3 py-2.5 text-[12.5px] font-bold text-muted" data-modo="npk" aria-pressed="false">Bater necessidade de NPK</button>
+        </div>
+
+        <div class="mb-4 sm:max-w-[50%]">
+          <label class="lbl" for="compDose" id="compDoseLabel">Dose (kg/ha)</label>
+          <input type="number" id="compDose" class="inp inp-num" step="0.1" min="0" inputmode="decimal" placeholder="0">
+        </div>
+
+        <div id="compRows" class="space-y-3"></div>
+
+        <button type="button" id="compAddRow" class="comp-add-row mt-3 block w-full text-center text-[12.5px] font-bold">+ adicionar formulação</button>
+      </section>
+
       </div>
       </div>
     </div>
@@ -276,22 +320,21 @@
 
   <!-- Regulagem de plantadeira -->
   <div id="viewRegulagem" class="hidden">
-    <main class="overflow-hidden rounded-2xl border border-line bg-white shadow-card lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
-      <div class="h-1.5 w-full transition-colors duration-200" style="background:var(--accent)"></div>
+    <main class="overflow-hidden rounded-lg bg-white shadow-sm lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
       <div class="p-5 sm:p-7 lg:p-6">
 
         <!-- Sub-abas: semente ou adubo -->
-        <div class="mb-5 flex gap-1 rounded-xl bg-canvas p-1" role="group" aria-label="Regulagem de">
-          <button type="button" id="regTabSemente" class="variant-btn is-active flex-1 rounded-lg px-3 py-2.5 text-[12.5px] font-bold text-muted" aria-pressed="true">🌱 Semente</button>
-          <button type="button" id="regTabAdubo" class="variant-btn flex-1 rounded-lg px-3 py-2.5 text-[12.5px] font-bold text-muted" aria-pressed="false">🧪 Adubo</button>
+        <div class="mb-5 flex gap-1 rounded-lg bg-canvas p-1" role="group" aria-label="Regulagem de">
+          <button type="button" id="regTabSemente" class="variant-btn is-active flex-1 rounded-lg px-3 py-2.5 text-[12.5px] font-bold text-muted" aria-pressed="true"><svg class="ti ti-leaf icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21c.5 -4.5 2.5 -8 7 -10" /><path d="M9 18c6.218 0 10.5 -3.288 11 -12v-2h-4.014c-9 0 -11.986 4 -12 9c0 1 0 3 2 5h3l.014 0" /></svg> Semente</button>
+          <button type="button" id="regTabAdubo" class="variant-btn flex-1 rounded-lg px-3 py-2.5 text-[12.5px] font-bold text-muted" aria-pressed="false"><svg class="ti ti-flask icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3l6 0" /><path d="M10 9l4 0" /><path d="M10 3v6l-4 11a.7 .7 0 0 0 .5 1h11a.7 .7 0 0 0 .5 -1l-4 -11v-6" /></svg> Adubo</button>
         </div>
 
         <div id="regSementeBox">
         <div class="lg:flex lg:items-start">
         <div class="lg:w-[44%] lg:border-r lg:border-line reg-col-left">
         <section class="mb-6 lg:mb-0">
-          <h2 class="mb-3 flex items-center gap-2 text-[12px] font-extrabold uppercase tracking-wider text-muted">
-            <span class="h-4 w-1 rounded-full" style="background:var(--accent)"></span>Dados da regulagem
+          <h2 class="section-title mb-3 text-[12px] font-semibold uppercase tracking-wider">
+            Dados da regulagem
           </h2>
           <div class="grid gap-4">
             <div>
@@ -313,10 +356,9 @@
         </div>
 
         <div class="mt-6 lg:mt-0 lg:w-[56%] reg-col-right">
-        <section class="result-card relative overflow-hidden rounded-2xl px-5 py-4">
-          <span class="pointer-events-none absolute inset-x-0 top-0 h-1" style="background:var(--accent)"></span>
-          <h2 class="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[.12em]" style="color:var(--accent)">
-            <span aria-hidden="true">📏</span>Plantas por metro linear
+        <section class="result-card relative overflow-hidden rounded-lg px-5 py-4">
+          <h2 class="section-title flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[.12em]">
+            <span aria-hidden="true"><svg class="ti ti-ruler icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h14a1 1 0 0 1 1 1v5a1 1 0 0 1 -1 1h-7a1 1 0 0 0 -1 1v7a1 1 0 0 1 -1 1h-5a1 1 0 0 1 -1 -1v-14a1 1 0 0 1 1 -1" /><path d="M4 8l2 0" /><path d="M4 12l3 0" /><path d="M4 16l2 0" /><path d="M8 4l0 2" /><path d="M12 4l0 3" /><path d="M16 4l0 2" /></svg></span>Plantas por metro linear
           </h2>
           <p class="mt-1 font-mono text-[34px] font-bold leading-none tabular-nums text-ink sm:text-[40px] lg:text-[30px]" aria-live="polite">
             <span id="regPlantasMetro">0</span>
@@ -325,22 +367,22 @@
           <p class="mt-1.5 text-[11px] text-muted">quantidade que a semeadora deve entregar a cada metro de linha</p>
         </section>
 
-        <section class="mt-4 rounded-xl border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3.5">
+        <section class="mt-4 rounded-lg border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3.5">
           <h3 class="mb-3 flex items-center gap-2 text-[13px] font-extrabold">
-            <span aria-hidden="true">🧮</span>Passo a passo do cálculo
+            <span aria-hidden="true"><svg class="ti ti-calculator icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2l0 -14" /><path d="M8 8a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1v1a1 1 0 0 1 -1 1h-6a1 1 0 0 1 -1 -1l0 -1" /><path d="M8 14l0 .01" /><path d="M12 14l0 .01" /><path d="M16 14l0 .01" /><path d="M8 17l0 .01" /><path d="M12 17l0 .01" /><path d="M16 17l0 .01" /></svg></span>Passo a passo do cálculo
           </h3>
           <div class="grid grid-cols-2 gap-2.5">
-            <div class="rounded-xl border border-line bg-white px-3 py-2.5">
+            <div class="rounded-lg border border-line bg-white px-3 py-2.5">
               <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">1 · Plantas/ha</div>
               <div class="mt-1 font-mono text-[16px] font-bold tabular-nums text-ink" id="regPlantasHa">0</div>
               <div class="mt-0.5 text-[10px] leading-snug text-muted">Stand ÷ % germinação</div>
             </div>
-            <div class="rounded-xl border border-line bg-white px-3 py-2.5">
+            <div class="rounded-lg border border-line bg-white px-3 py-2.5">
               <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">2 · Metros lin./ha</div>
               <div class="mt-1 font-mono text-[16px] font-bold tabular-nums text-ink" id="regMetrosLineares">0</div>
               <div class="mt-0.5 text-[10px] leading-snug text-muted">10.000 m² ÷ espaçamento</div>
             </div>
-            <div class="col-span-2 rounded-xl border border-line bg-white px-3 py-2.5">
+            <div class="col-span-2 rounded-lg border border-line bg-white px-3 py-2.5">
               <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">3 · Plantas por metro</div>
               <div class="mt-1 font-mono text-[16px] font-bold tabular-nums text-ink" id="regPlantasMetroStep">0</div>
               <div class="mt-0.5 text-[10px] leading-snug text-muted">Plantas/ha ÷ metros lineares</div>
@@ -351,14 +393,110 @@
         <p class="mt-3 text-[11px] leading-snug text-muted lg:text-[10.5px]">Fórmula: Plantas/ha = Stand de plantas ÷ (% germinação ÷ 100) · Metros lineares em 1 ha = 10.000 m² ÷ espaçamento entre linhas · Plantas por metro = Plantas/ha ÷ metros lineares em 1 ha.</p>
         </div>
         </div>
+
+        <section class="mt-6 border-t border-dashed border-line pt-5 lg:mt-5">
+          <h2 class="section-title mb-3 text-[12px] font-semibold uppercase tracking-wider">
+            Regulagem avançada (opcional)
+          </h2>
+          <div class="grid gap-4 lg:grid-cols-2">
+
+            <!-- 1) Número de linhas + sementes por metro de linha -->
+            <div class="rounded-lg border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3.5">
+              <h3 class="mb-3 flex items-center gap-2 text-[13px] font-extrabold">
+                <span aria-hidden="true"><svg class="ti ti-ruler icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h14a1 1 0 0 1 1 1v5a1 1 0 0 1 -1 1h-7a1 1 0 0 0 -1 1v7a1 1 0 0 1 -1 1h-5a1 1 0 0 1 -1 -1v-14a1 1 0 0 1 1 -1" /><path d="M4 8l2 0" /><path d="M4 12l3 0" /><path d="M4 16l2 0" /><path d="M8 4l0 2" /><path d="M12 4l0 3" /><path d="M16 4l0 2" /></svg></span>Linhas da plantadeira
+              </h3>
+              <div>
+                <label class="lbl" for="regNumLinhas">Nº de linhas</label>
+                <input type="number" id="regNumLinhas" class="inp inp-num" step="1" min="0" inputmode="decimal" placeholder="Ex.: 10">
+              </div>
+              <div class="mt-3 rounded-lg border border-line bg-white px-3 py-2.5">
+                <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">Sementes por metro de linha</div>
+                <div class="mt-1 font-mono text-[16px] font-bold tabular-nums text-ink"><span id="regSementesPorMetroLinha">0</span> <span class="text-[11px] font-normal text-muted">sementes/m</span></div>
+                <div class="mt-0.5 text-[10px] leading-snug text-muted">mesmo valor de "Plantas por metro linear" acima — é a dosagem que a semeadora precisa entregar por linha</div>
+              </div>
+            </div>
+
+            <!-- 2) Teste de campo (50/100 m) -->
+            <div class="rounded-lg border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3.5">
+              <h3 class="mb-3 flex items-center gap-2 text-[13px] font-extrabold">
+                <span aria-hidden="true"><svg class="ti ti-test-pipe icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 8.04l-12.122 12.124a2.857 2.857 0 1 1 -4.041 -4.04l12.122 -12.124" /><path d="M7 13h8" /><path d="M19 15l1.5 1.6a2 2 0 1 1 -3 0l1.5 -1.6" /><path d="M15 3l6 6" /></svg></span>Teste de campo
+              </h3>
+              <div>
+                <label class="lbl" for="regTesteMetros">Comprimento do teste</label>
+                <select id="regTesteMetros" class="inp inp-num">
+                  <option value="50">50 metros</option>
+                  <option value="100">100 metros</option>
+                </select>
+              </div>
+              <div class="mt-3 rounded-lg border border-line bg-white px-3 py-2.5 text-[12.5px] leading-relaxed text-ink">
+                <div>Teste recomendado: <strong class="font-mono tabular-nums" id="regTesteMetrosLabel">50</strong> metros</div>
+                <div>Sementes esperadas por linha: <strong class="font-mono tabular-nums" id="regTesteEsperadoPorLinha">0</strong></div>
+                <div>Sementes esperadas em <strong class="font-mono tabular-nums" id="regTesteNumLinhasLabel">0</strong> linhas: <strong class="font-mono tabular-nums" id="regTesteEsperadoTotal">0</strong></div>
+              </div>
+              <div class="mt-3">
+                <label class="lbl" for="regSementesColetadas">Sementes coletadas no teste (1 linha)</label>
+                <input type="number" id="regSementesColetadas" class="inp inp-num" step="1" min="0" inputmode="decimal" placeholder="Ex.: 495">
+              </div>
+              <div id="regTesteAlertBox" class="alerts-box hidden mt-3"></div>
+            </div>
+
+            <!-- 3) Velocidade de plantio -> área por hora -->
+            <div class="rounded-lg border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3.5">
+              <h3 class="mb-3 flex items-center gap-2 text-[13px] font-extrabold">
+                <span aria-hidden="true"><svg class="ti ti-tractor icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 15a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" /><path d="M7 15l0 .01" /><path d="M17 17a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M10.5 17l6.5 0" /><path d="M20 15.2v-4.2a1 1 0 0 0 -1 -1h-6l-2 -5h-6v6.5" /><path d="M18 5h-1a1 1 0 0 0 -1 1v4" /></svg></span>Velocidade de plantio
+              </h3>
+              <div>
+                <label class="lbl" for="regVelocidade">Velocidade (km/h)</label>
+                <input type="number" id="regVelocidade" class="inp inp-num" step="0.1" min="0" inputmode="decimal" placeholder="Ex.: 6">
+              </div>
+              <div class="mt-3 rounded-lg border border-line bg-white px-3 py-2.5">
+                <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">Área plantada por hora</div>
+                <div class="mt-1 font-mono text-[16px] font-bold tabular-nums text-ink"><span id="regAreaPorHora">0</span> <span class="text-[11px] font-normal text-muted">ha/h</span></div>
+                <div class="mt-0.5 text-[10px] leading-snug text-muted">Espaçamento × nº de linhas × velocidade × 0,1</div>
+              </div>
+            </div>
+
+            <!-- 4) Reservatório de sementes -> abastecimentos -->
+            <div class="rounded-lg border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3.5">
+              <h3 class="mb-3 flex items-center gap-2 text-[13px] font-extrabold">
+                <span aria-hidden="true"><svg class="ti ti-cylinder icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 6a7 3 0 1 0 14 0a7 3 0 1 0 -14 0" /><path d="M5 6v12c0 1.657 3.134 3 7 3s7 -1.343 7 -3v-12" /></svg></span>Reservatório de sementes
+              </h3>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="lbl" for="regCapacidadeReservatorio">Capacidade (sementes)</label>
+                  <input type="number" id="regCapacidadeReservatorio" class="inp inp-num" step="1" min="0" inputmode="decimal" placeholder="Ex.: 50000">
+                </div>
+                <div>
+                  <label class="lbl" for="regAreaTotal">Área total (ha)</label>
+                  <input type="number" id="regAreaTotal" class="inp inp-num" step="0.1" min="0" inputmode="decimal" placeholder="Ex.: 40">
+                </div>
+              </div>
+              <div class="mt-3 rounded-lg border border-line bg-white px-3 py-2.5">
+                <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">Abastecimentos necessários</div>
+                <div class="mt-1 font-mono text-[16px] font-bold tabular-nums text-ink" id="regAbastecimentos">0</div>
+              </div>
+            </div>
+
+            <!-- 5) Engrenagem/disco: só anotação manual, sem cálculo -->
+            <div class="rounded-lg border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3.5 lg:col-span-2">
+              <h3 class="mb-3 flex items-center gap-2 text-[13px] font-extrabold">
+                <span aria-hidden="true"><svg class="ti ti-settings icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065" /><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /></svg></span>Engrenagem/disco
+              </h3>
+              <label class="lbl" for="regEngrenagemRef">Engrenagem/disco (referência do manual do fabricante)</label>
+              <input type="text" id="regEngrenagemRef" class="inp" placeholder="Ex.: Semeato TDA — disco 18 furos, engrenagem 32x14" autocomplete="off">
+              <p class="mt-1.5 text-[11px] leading-snug text-muted">Cada fabricante (Semeato, Jumil, Vence Tudo, Stara etc.) tem sua própria tabela de engrenagens/discos — o app não calcula isso automaticamente, pra não arriscar uma regulagem errada no campo. Anote aqui só o que foi consultado no manual, para ficar registrado na ficha.</p>
+            </div>
+
+          </div>
+        </section>
         </div>
 
         <div id="regAduboBox" class="hidden">
         <div class="lg:flex lg:items-start">
         <div class="lg:w-[44%] lg:border-r lg:border-line reg-col-left">
         <section class="mb-6 lg:mb-0">
-          <h2 class="mb-3 flex items-center gap-2 text-[12px] font-extrabold uppercase tracking-wider text-muted">
-            <span class="h-4 w-1 rounded-full" style="background:var(--accent)"></span>Dados da regulagem
+          <h2 class="section-title mb-3 text-[12px] font-semibold uppercase tracking-wider">
+            Dados da regulagem
           </h2>
           <div class="grid grid-cols-2 gap-4">
             <div>
@@ -374,10 +512,9 @@
         </div>
 
         <div class="mt-6 lg:mt-0 lg:w-[56%] reg-col-right">
-        <section class="result-card relative overflow-hidden rounded-2xl px-5 py-4">
-          <span class="pointer-events-none absolute inset-x-0 top-0 h-1" style="background:var(--accent)"></span>
-          <h2 class="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[.12em]" style="color:var(--accent)">
-            <span aria-hidden="true">🧪</span>Adubo por metro linear
+        <section class="result-card relative overflow-hidden rounded-lg px-5 py-4">
+          <h2 class="section-title flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[.12em]">
+            <span aria-hidden="true"><svg class="ti ti-flask icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3l6 0" /><path d="M10 9l4 0" /><path d="M10 3v6l-4 11a.7 .7 0 0 0 .5 1h11a.7 .7 0 0 0 .5 -1l-4 -11v-6" /></svg></span>Adubo por metro linear
           </h2>
           <p class="mt-1 font-mono text-[34px] font-bold leading-none tabular-nums text-ink sm:text-[40px] lg:text-[30px]" aria-live="polite">
             <span id="regAduboGramas">0</span>
@@ -386,22 +523,22 @@
           <p class="mt-1.5 text-[11px] text-muted">quantidade de adubo que a semeadora deve entregar a cada metro de linha</p>
         </section>
 
-        <section class="mt-4 rounded-xl border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3.5">
+        <section class="mt-4 rounded-lg border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3.5">
           <h3 class="mb-3 flex items-center gap-2 text-[13px] font-extrabold">
-            <span aria-hidden="true">🧮</span>Passo a passo do cálculo
+            <span aria-hidden="true"><svg class="ti ti-calculator icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2l0 -14" /><path d="M8 8a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1v1a1 1 0 0 1 -1 1h-6a1 1 0 0 1 -1 -1l0 -1" /><path d="M8 14l0 .01" /><path d="M12 14l0 .01" /><path d="M16 14l0 .01" /><path d="M8 17l0 .01" /><path d="M12 17l0 .01" /><path d="M16 17l0 .01" /></svg></span>Passo a passo do cálculo
           </h3>
           <div class="grid grid-cols-2 gap-2.5">
-            <div class="rounded-xl border border-line bg-white px-3 py-2.5">
+            <div class="rounded-lg border border-line bg-white px-3 py-2.5">
               <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">1 · Metros lin./ha</div>
               <div class="mt-1 font-mono text-[16px] font-bold tabular-nums text-ink" id="regAduboMetrosLineares">0</div>
               <div class="mt-0.5 text-[10px] leading-snug text-muted">10.000 m² ÷ espaçamento</div>
             </div>
-            <div class="rounded-xl border border-line bg-white px-3 py-2.5">
+            <div class="rounded-lg border border-line bg-white px-3 py-2.5">
               <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">2 · Adubo/m (kg)</div>
               <div class="mt-1 font-mono text-[16px] font-bold tabular-nums text-ink" id="regAduboPorMetroKg">0</div>
               <div class="mt-0.5 text-[10px] leading-snug text-muted">Adubo/ha ÷ metros lin.</div>
             </div>
-            <div class="col-span-2 rounded-xl border border-line bg-white px-3 py-2.5">
+            <div class="col-span-2 rounded-lg border border-line bg-white px-3 py-2.5">
               <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">3 · Adubo/m (g)</div>
               <div class="mt-1 font-mono text-[16px] font-bold tabular-nums text-ink" id="regAduboPorMetroG">0</div>
               <div class="mt-0.5 text-[10px] leading-snug text-muted">Adubo/m (kg) × 1000</div>
@@ -418,14 +555,17 @@
     </main>
   </div>
 
-  <footer class="mt-6 shrink-0 text-center text-[11px] text-muted lg:mt-3">
-    Ferramenta de campo · calcula automaticamente conforme você digita
+  <footer class="mt-6 shrink-0 text-center text-muted lg:mt-3">
+    <p class="text-[11px] font-medium">Calculadora Coasul · Ferramenta técnica de campo · <span id="footerVersion"></span></p>
+    <p class="mt-0.5 text-[10px]">Estimativa técnica, sujeita a conferência</p>
   </footer>
 </div>
 
 <!-- folha usada ao gerar o PDF (fica fora do app, que some na impressão) -->
 <div id="printSheet"></div>
 
+<script src="js/calculos.js"></script>
+<script src="js/cultivares.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
