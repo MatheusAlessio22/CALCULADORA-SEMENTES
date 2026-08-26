@@ -1,5 +1,5 @@
 
-const APP_VERSION = "1.0.0";
+const APP_VERSION = "1.1.0";
 
 const CROPS = {
   soja: {
@@ -2274,6 +2274,8 @@ selectCrop("soja");
 // ficha continua funcionando normalmente, só sem instalação real.
 if("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")){
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+    navigator.serviceWorker.register("./service-worker.js").then((reg) => {
+      reg.update().catch(() => {});
+    }).catch(() => {});
   });
 }
