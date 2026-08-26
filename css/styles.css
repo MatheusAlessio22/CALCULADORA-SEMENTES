@@ -1,5 +1,39 @@
 /* CSS proprio da ficha (layout, cores, componentes). */
 
+  /* Inter self-hosted (assets/fonts/, subset latin — cobre acentuação do
+     português): sem @import nem <link> pra fonts.googleapis.com, pra manter
+     o app funcionando com zero conexão. Peso variável não é usado de
+     propósito — 4 arquivos estáticos (400/500/600/700) mantêm o app leve
+     e evitam depender de font-variation-settings em navegador mais antigo. */
+  @font-face{
+    font-family:"Inter";
+    font-style:normal;
+    font-weight:400;
+    font-display:swap;
+    src:url("../assets/fonts/inter-400.woff2") format("woff2");
+  }
+  @font-face{
+    font-family:"Inter";
+    font-style:normal;
+    font-weight:500;
+    font-display:swap;
+    src:url("../assets/fonts/inter-500.woff2") format("woff2");
+  }
+  @font-face{
+    font-family:"Inter";
+    font-style:normal;
+    font-weight:600;
+    font-display:swap;
+    src:url("../assets/fonts/inter-600.woff2") format("woff2");
+  }
+  @font-face{
+    font-family:"Inter";
+    font-style:normal;
+    font-weight:700;
+    font-display:swap;
+    src:url("../assets/fonts/inter-700.woff2") format("woff2");
+  }
+
   :root{
     /* trocado por JS conforme a cultura ativa */
     --accent: #5C8A26;
@@ -48,7 +82,7 @@
     margin-bottom:14px;
   }
   .header-title{ font-weight:500; }
-  #btnPdf, #btnPng{ border-radius:10px; }
+  #btnPdf, #btnPng{ border-radius:6px; }
 
   /* Cabeçalho compacto no celular: logo ao lado do texto, botões numa
      linha própria abaixo (lado a lado, com o rótulo sempre visível) e
@@ -100,7 +134,7 @@
   /* Fundo da marca: lavagem suave nas cores Coasul + o emblema do logo repetido
      em diagonal, bem apagado, para não competir com os números da ficha. */
   body{
-    background-color:#F4F7F0;
+    background-color:#F7F8F5;
     background-image:
       radial-gradient(900px 520px at 6% -12%, rgba(143,195,59,.13), transparent 62%),
       radial-gradient(760px 480px at 104% -4%, rgba(0,141,208,.07), transparent 58%),
@@ -147,34 +181,48 @@
     position:absolute;
     top:0; right:0; bottom:4px;
     width:40px;
-    background:linear-gradient(to right, rgba(244,247,240,0), #F4F7F0 70%);
+    background:linear-gradient(to right, rgba(247,248,245,0), #F7F8F5 70%);
     pointer-events:none;
   }
   @media (min-width:640px){ .tabs-fade::after{display:none;} }
 
+  /* Abas de cultura: sublinhado (não pílula) — a cor do traço na aba ativa
+     continua vindo de --tab (definida por cultura no HTML), de propósito:
+     ajuda o técnico a reconhecer a cultura à distância, não é só estética. */
+  .tabs{ border-bottom:1px solid #E2E8E4; }
   .tab-btn{
     --tab: var(--accent);
-    transition:background .15s, color .15s, border-color .15s, box-shadow .15s;
+    padding:10px 2px 9px;
+    font-weight:600;
+    color:#5B6660;
+    border-bottom:2px solid transparent;
+    margin-bottom:-1px;
+    transition:color .15s, border-color .15s;
   }
-  .tab-btn:hover{border-color:var(--tab); color:var(--tab);}
+  .tab-btn:hover{ color:#1E2420; }
   .tab-btn.is-active{
-    background:var(--tab);
-    border-color:var(--tab);
-    color:#fff;
-    box-shadow:0 6px 16px -8px var(--tab);
+    color:#1E2420;
+    font-weight:700;
+    border-bottom-color:var(--tab);
   }
-  .tab-btn.is-active:hover{color:#fff;}
   .tab-btn:focus-visible{outline:3px solid #FDBA2D; outline-offset:2px;}
 
   /* alternância entre a calculadora de sementes e a regulagem de plantadeira */
-  .view-btn{transition:background .15s, color .15s, border-color .15s, box-shadow .15s;}
+  .view-btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:7px;
+    transition:background .15s, color .15s, border-color .15s, box-shadow .15s;
+  }
+  .view-btn .icon-inline{ width:17px; height:17px; }
   .view-btn:hover{border-color:#5C8A26; color:#5C8A26;}
   .view-btn.is-active{background:#5C8A26; border-color:#5C8A26; color:#fff; box-shadow:0 6px 16px -8px rgba(92,138,38,.5);}
   .view-btn.is-active:hover{color:#fff;}
   .view-btn:focus-visible{outline:3px solid #FDBA2D; outline-offset:2px;}
 
   /* segmented control das variantes */
-  .variant-btn{transition:background .15s, color .15s, box-shadow .15s;}
+  .variant-btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    transition:background .15s, color .15s, box-shadow .15s;
+  }
   .variant-btn.is-active{
     background:#fff;
     color:var(--accent);
@@ -199,32 +247,34 @@
   .inp{
     width:100%;
     min-height:48px;
-    border:1.5px solid #DFE5D6;
-    border-radius:10px;
-    background:#F8FAF4;
-    padding:12px 14px;
+    border:none;
+    border-bottom:1px solid #5B6660;
+    border-radius:0;
+    background:#fff;
+    padding:12px 4px;
     font-size:16px; /* evita zoom automático no iOS */
     color:#1E2420;
-    transition:border-color .15s, background .15s, box-shadow .15s;
+    transition:border-color .15s, background .15s;
   }
-  .inp:hover{border-color:#C9D2BC;}
+  .inp:hover{border-bottom-color:#1E2420;}
   .inp:focus{
     outline:none;
-    background:#fff;
-    border-color:var(--accent);
-    box-shadow:0 0 0 4px var(--accent-soft);
+    border-bottom-color:var(--accent);
   }
   .inp-num{font-family:Consolas,"SFMono-Regular",Menlo,monospace; font-variant-numeric:tabular-nums;}
   /* valor típico pré-preenchido (ex.: germinação/pureza) que o usuário ainda
-     não confirmou digitando: borda tracejada até o primeiro "input" no campo. */
-  .inp.is-suggested{ border-style:dashed; border-color:#C9D2BC; background:#FBFCF9; }
-  .inp-money{padding-left:40px;} /* espaço para o prefixo R$ */
+     não confirmou digitando: sublinhado tracejado até o primeiro "input" no campo. */
+  .inp.is-suggested{ border-bottom-style:dashed; border-bottom-color:#A8B2AC; background:#FBFCF9; }
+  .inp-money{padding-left:38px;} /* espaço para o prefixo R$ (span em left-3.5) + respiro até o valor digitado */
   /* 16px no celular: abaixo disso o Safari/Chrome mobile dão zoom automático
      ao focar o campo (aqui é a data de vencimento), o que sacode a tela. */
-  .inp-sm{min-height:40px; padding:6px 10px; font-size:16px;}
-  @media (min-width:1024px){ .inp-sm{min-height:34px; padding:4px 9px; font-size:13.5px;} }
+  .inp-sm{min-height:40px; padding:6px 4px; font-size:16px;}
+  @media (min-width:1024px){ .inp-sm{min-height:34px; padding:4px 2px; font-size:13.5px;} }
   @media (min-width:1024px){
-    .inp{min-height:38px; padding:7px 11px; font-size:14.5px;}
+    /* text-sm (14px): só a partir daqui — no celular o campo continua em
+       16px de propósito (ver comentário acima sobre zoom automático do
+       iOS/Android ao focar um campo com fonte menor que essa). */
+    .inp{min-height:38px; padding:7px 4px; font-size:14px;}
     .inp-money{padding-left:34px;}
   }
   select.inp{
@@ -259,14 +309,13 @@
   }
   .csel-trigger .csel-label{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .csel.is-open button.csel-trigger{
-    border-color:var(--accent);
+    border-bottom-color:var(--accent);
     background-color:#fff;
-    box-shadow:0 0 0 4px var(--accent-soft);
   }
   .csel-list{
     position:absolute; z-index:30; left:0; right:0; top:calc(100% + 6px);
     max-height:264px; overflow-y:auto;
-    background:#fff; border:1.5px solid var(--accent); border-radius:10px;
+    background:#fff; border:1.5px solid var(--accent); border-radius:8px;
     box-shadow:0 16px 32px -14px rgba(30,36,32,.35), 0 2px 8px rgba(30,36,32,.10);
     padding:6px; margin:0; list-style:none;
   }
@@ -296,6 +345,12 @@
   .alert-info{ background:#E7F1FB; color:#1B4E82; }
   .alert-warn{ background:#FCF3DC; color:#8A5A00; }
   .alert-error{ background:#FBE8E7; color:#9C2B22; }
+
+  /* Ícones Tabler embutidos como SVG inline (sem webfont/CDN, offline-first):
+     dimensionados em em pra acompanhar o tamanho do texto ao lado em cada contexto.
+     display:inline-block sobrescreve o preflight do Tailwind (svg{display:block}),
+     que faria o ícone quebrar pra fora do fluxo do texto em botões sem flex. */
+  .icon-inline{ display:inline-block; width:1em; height:1em; flex:none; vertical-align:-0.125em; }
 
   /* Memória de cálculo: botão + painel animados (max-height/opacity), timeline
      numerada nos passos e um cartão de destaque (acento dourado) no resultado. */
@@ -355,13 +410,19 @@
 
   .mem-formula{ margin-top:14px; font-size:11px; line-height:1.5; color:#5B6660; }
 
+  /* Títulos de seção (Identificação, Parâmetros do plantio, Total — Soja
+     etc.): cinza-escuro fixo, não a cor da cultura — a identificação por
+     cultura já vem do sublinhado das abas e da faixa de cor nas linhas de
+     custo, então o texto do título fica neutro em vez de colorido. */
+  .section-title{ color:#374151; }
+
   .lbl{
     display:block;
     font-size:11px;
     font-weight:700;
     letter-spacing:.07em;
     text-transform:uppercase;
-    color:#5B6660;
+    color:#374151;
     margin-bottom:6px;
     min-height:17px;      /* todos os rótulos ocupam a mesma altura */
     line-height:1.25;
@@ -425,13 +486,45 @@
   }
   @media (min-width:1024px){ .readout{padding:7px 12px;} }
 
-  /* caixa dos totais: painel escuro, para o resultado saltar da ficha */
+  /* Tabela de custos (#custosList, montada em JS): cabeçalho com leve fundo
+     cinza pra separar do corpo numérico. As linhas em si (sem caixa, sem
+     fundo, só um "border-bottom" fino entre elas) já vêm assim direto da
+     classe que o JS aplica — ver renderCustos() em app.js. A faixa de cor
+     à esquerda (borderLeft, aplicada via JS) continua — é identificação
+     da cultura, não a "caixa" que este ajuste tira. */
+  #custosList > div:first-child{
+    background:#F4F5F1;
+    border-radius:8px;
+    padding-top:8px;
+    padding-bottom:8px;
+  }
+
+  /* pacotes/embalagens (#packsWrap, montado em JS): mesma troca de borda
+     cinza por sombra suave que a tabela de custos, acima. */
+  #packsWrap > div{
+    border:none;
+    background:#fff;
+    box-shadow:0 4px 12px rgba(0,0,0,.05);
+  }
+
+  /* número principal do resultado (#totalValue): maior e mais pesado que o
+     resto do texto do card, pra saltar aos olhos como o dado mais importante
+     da tela — um dashboard de verdade dá esse destaque ao número-chave. */
+  .result-total{ font-size:40px; font-weight:700; }
+  @media (min-width:640px){ .result-total{ font-size:48px; } }
+  @media (min-width:1024px){ .result-total{ font-size:36px; } }
+
+  /* valores das embalagens (#packsWrap, montado em JS): mesmo espírito do
+     número principal acima — bem maior e em negrito, pro visual de painel. */
+  .pack-value{ font-size:24px; font-weight:700; }
+
+  /* Bloco de resultado e "Custos da cultura" (.shadow-soft, também usada
+     direto no HTML): sem borda cinza — cartão branco solto sobre o fundo
+     da página, só uma sombra bem suave separando visualmente. */
+  .shadow-soft{ box-shadow:0 1px 3px rgba(0,0,0,.05); }
   .result-card{
-    background:
-      linear-gradient(158deg, var(--accent-soft) 0%, rgba(255,255,255,.55) 62%),
-      #FFFFFF;
-    border:1px solid var(--accent-line);
-    box-shadow:0 1px 2px rgba(30,36,32,.04), 0 10px 26px -20px rgba(30,36,32,.5);
+    background:#fff;
+    box-shadow:0 1px 3px rgba(0,0,0,.05);
   }
 
   /* Regulagem de plantadeira: mesma divisão em coluna (linha vertical no
@@ -454,6 +547,44 @@
     .lg\:grid-cols-2{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
     .lg\:col-span-2{ grid-column:span 2 / span 2; }
   }
+
+  /* Mesmo motivo dos comentários acima: mb-8 e lg:mb-6 (mais respiro entre
+     Identificação/Parâmetros do plantio) também não vieram no bundle
+     pré-compilado por não terem sido usados em nenhuma outra tela. */
+  .mb-8{ margin-bottom:2rem; }
+  @media (min-width:1024px){ .lg\:mb-6{ margin-bottom:1.5rem; } }
+
+  /* Comparador de formulações (Adubação/Ureia, #compRows montado em JS):
+     um cartão por formulação comparada, com borda mais forte na de menor
+     custo (destaque calculado em updateComparador(), não fixo aqui). */
+  .comp-row{
+    border:1px solid #E2E8E4;
+    border-radius:12px;
+    padding:14px;
+  }
+  .comp-row.is-cheapest{
+    border-color:var(--accent);
+    box-shadow:0 0 0 1px var(--accent);
+  }
+  .comp-result-grid{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:14px;
+    margin-top:12px;
+    padding-top:12px;
+    border-top:1px dashed #E2E8E4;
+  }
+  .comp-result-label{ font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#5B6660; }
+  .comp-result-value{ margin-top:1px; font-family:Consolas,"SFMono-Regular",Menlo,monospace; font-variant-numeric:tabular-nums; font-size:13px; font-weight:700; color:#1E2420; }
+  .comp-remove{
+    font-size:11px;
+    font-weight:700;
+    color:#5B6660;
+    text-decoration:underline;
+    text-underline-offset:2px;
+  }
+  .comp-remove:hover{ color:#1E2420; }
 
   /* folha de impressão / PDF: só aparece na hora de imprimir */
   #printSheet{display:none;}

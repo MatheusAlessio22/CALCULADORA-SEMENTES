@@ -3,12 +3,12 @@ const APP_VERSION = "1.0.0";
 
 const CROPS = {
   soja: {
-    nome:"Soja", icon:"🌱", accent:"#5C8A26", accentLight:"#9ACD3E",
+    nome:"Soja", icon:"soja", accent:"#5C8A26", accentLight:"#9ACD3E",
     tipo:"semente", plantas:10, transpasse:5,
     embalagens:[["Embalagem 125.000", 125000], ["Embalagem 5.000.000", 5000000]],
   },
   milho: {
-    nome:"Milho", icon:"🌽", accent:"#D99A1E", accentLight:"#FDBA2D",
+    nome:"Milho", icon:"milho", accent:"#D99A1E", accentLight:"#FDBA2D",
     defaultVariant:"sacas",
     variants:{
       sacas:   { label:"Sacas por alqueire", tipo:"sacas", sacasAlq:2.5, tamanhoSaco:60000 },
@@ -16,12 +16,12 @@ const CROPS = {
     },
   },
   feijao: {
-    nome:"Feijão", icon:"🫘", accent:"#C42A2E", accentLight:"#FF7276",
+    nome:"Feijão", icon:"feijao", accent:"#C42A2E", accentLight:"#FF7276",
     tipo:"semente", plantas:13, transpasse:8,
     embalagens:[["Embalagem 140.000", 140000]],
   },
   trigo: {
-    nome:"Trigo", icon:"🌾", accent:"#0678A8", accentLight:"#4FB6E8",
+    nome:"Trigo", icon:"trigo", accent:"#0678A8", accentLight:"#4FB6E8",
     defaultVariant:"dose",
     variants:{
       dose:    { label:"Dose (kg/ha)", tipo:"dose", showDoseHa:true, dose:70, embalagens:[["Sacas de 40 kg", 40], ["Bag (TON) 1.000 kg", 1000]] },
@@ -29,7 +29,7 @@ const CROPS = {
     },
   },
   adubacao: {
-    nome:"Adubação/Ureia", icon:"🧪", accent:"#8C6D46", accentLight:"#D2A97A",
+    nome:"Adubação/Ureia", icon:"adubacao", accent:"#8C6D46", accentLight:"#D2A97A",
     tipo:"dose", showDoseHa:false, dose:250,
     embalagens:[["Sacas de 50 kg", 50]],
   },
@@ -37,9 +37,9 @@ const CROPS = {
 
 // TODO: confirmar faixas oficiais com o setor agronômico — abaixo é só um
 // ponto de partida (±20% do valor sugerido em CROPS[cultura].plantas), exceto
-// soja, que já veio validada como exemplo do produto (8 a 12 plantas/m).
+// soja, que já veio validada como exemplo do produto (8 a 16 plantas/m).
 const FAIXA_USUAL_PLANTAS = {
-  soja:   { min: 8,   max: 12 },
+  soja:   { min: 8,   max: 16 },
   feijao: { min: 10,  max: 16 },
   milho:  { min: 2.6, max: 4  }, // variante "semente" (sugerido: 3,3 plantas/m)
   trigo:  { min: 48,  max: 72 }, // variante "semente" (sugerido: 60 plantas/m)
@@ -492,13 +492,14 @@ function selectCrop(crop){
   document.documentElement.style.setProperty("--accent-soft", hexToSoft(c.accent));
   document.documentElement.style.setProperty("--accent-light", c.accentLight || c.accent);
   document.documentElement.style.setProperty("--accent-line", hexToRgba(c.accent, .30));
-  $("cropIcon").textContent = c.icon;
+  $("cropIcon").innerHTML = iconSvg(c.icon, "icon-inline");
   $("cropLabelText").textContent = "Total — " + c.nome;
   $("custosCropNome").textContent = "· " + c.nome;
   $("prazoData").value = custoPrazoData[crop] || "";
   $("cultivar").value = (saved && saved.cultivar) ? saved.cultivar : (mesmaCultura ? cultivarAtual : "");
   $("area").value = (saved && saved.area !== undefined) ? saved.area : "";
   const ehAdubo = crop === "adubacao";
+  show($("comparadorSection"), ehAdubo);
   $("cultivarLabel").textContent = ehAdubo ? "Formulação cotada" : "Cultivar cotada";
   $("cultivar").placeholder = ehAdubo ? "Ex.: 04-14-08 ou Ureia" : "Ex.: BRS 404";
   fecharCultivarList();
@@ -655,7 +656,7 @@ function calc(){
     div.className = "rounded-xl border border-ink/[.08] bg-white/80 px-3 py-2.5 lg:py-2";
     div.innerHTML =
       `<div class="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-muted"><span aria-hidden="true">📦</span>${label}</div>` +
-      `<div class="mt-0.5 font-mono text-[18px] font-bold tabular-nums text-ink">${value}</div>` +
+      `<div class="pack-value mt-0.5 font-mono tabular-nums text-ink">${value}</div>` +
       (roundedNote ? `<div class="mt-0.5 text-[10.5px] text-muted">${roundedNote}</div>` : "");
     wrap.appendChild(div);
   }
@@ -759,6 +760,47 @@ function calc(){
   renderCustos(unidades);
   renderMemoria(c, area, total, mem);
   renderAlerts(area);
+  updateComparador();
+}
+
+// ---------- Ícones da interface (Tabler, embutidos como SVG inline) ----------
+// Mesmo padrão do ALERT_META abaixo: objeto com "icon" (nome do ícone Tabler,
+// só para a classe CSS) + "paths" (o <path> do ícone, direto do tabler-icons).
+// Tudo embutido no JS — sem webfont nem CDN — pra manter o app 100% offline.
+// Só entram aqui os ícones que o JS de fato precisa montar em tempo de
+// execução (o ícone da cultura corrente, reaproveitado no cabeçalho do
+// resultado e na ficha em PDF/PNG); os demais ícones da tela são estáticos
+// no HTML e já foram trocados por SVG inline direto no markup.
+const UI_ICONS = {
+  soja:     { icon:"leaf",    paths:'<path d="M5 21c.5 -4.5 2.5 -8 7 -10" /><path d="M9 18c6.218 0 10.5 -3.288 11 -12v-2h-4.014c-9 0 -11.986 4 -12 9c0 1 0 3 2 5h3l.014 0" />' },
+  milho:    { icon:"plant",   paths:'<path d="M7 15h10v4a2 2 0 0 1 -2 2h-6a2 2 0 0 1 -2 -2v-4" /><path d="M12 9a6 6 0 0 0 -6 -6h-3v2a6 6 0 0 0 6 6h3" /><path d="M12 11a6 6 0 0 1 6 -6h3v1a6 6 0 0 1 -6 6h-3" /><path d="M12 15l0 -6" />' },
+  feijao:   { icon:"plant-2", paths:'<path d="M2 9a10 10 0 1 0 20 0" /><path d="M12 19a10 10 0 0 1 10 -10" /><path d="M2 9a10 10 0 0 1 10 10" /><path d="M12 4a9.7 9.7 0 0 1 2.99 7.5" /><path d="M9.01 11.5a9.7 9.7 0 0 1 2.99 -7.5" />' },
+  trigo:    { icon:"wheat",   paths:'<path d="M12.014 21.514v-3.75" /><path d="M5.93 9.504l-.43 1.604c-.712 2.659 .866 5.391 3.524 6.105c.997 .268 1.993 .535 2.99 .801v-3.44c-.164 -2.105 -1.637 -3.879 -3.676 -4.426l-2.408 -.644" /><path d="M13.744 11.164c.454 -.454 .815 -.994 1.061 -1.587c.246 -.594 .372 -1.23 .372 -1.873c0 -.643 -.126 -1.279 -.372 -1.872c-.246 -.594 -.606 -1.133 -1.061 -1.588l-1.73 -1.73l-1.73 1.73c-.454 .454 -.815 .994 -1.06 1.588c-.246 .594 -.372 1.23 -.373 1.872c0 .643 .127 1.279 .373 1.873c.246 .594 .606 1.133 1.06 1.587" /><path d="M18.099 9.504l.43 1.604c.712 2.659 -.866 5.391 -3.525 6.105c-.997 .268 -1.994 .535 -2.99 .801v-3.44c.164 -2.105 1.637 -3.879 3.677 -4.426l2.408 -.644" />' },
+  adubacao: { icon:"flask",   paths:'<path d="M9 3l6 0" /><path d="M10 9l4 0" /><path d="M10 3v6l-4 11a.7 .7 0 0 0 .5 1h11a.7 .7 0 0 0 .5 -1l-4 -11v-6" />' },
+  regua:    { icon:"ruler",   paths:'<path d="M5 4h14a1 1 0 0 1 1 1v5a1 1 0 0 1 -1 1h-7a1 1 0 0 0 -1 1v7a1 1 0 0 1 -1 1h-5a1 1 0 0 1 -1 -1v-14a1 1 0 0 1 1 -1" /><path d="M4 8l2 0" /><path d="M4 12l3 0" /><path d="M4 16l2 0" /><path d="M8 4l0 2" /><path d="M12 4l0 3" /><path d="M16 4l0 2" />' },
+};
+
+function iconSvg(key, cls){
+  const m = UI_ICONS[key];
+  return `<svg class="ti ti-${m.icon}${cls ? " " + cls : ""}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${m.paths}</svg>`;
+}
+
+// Mesmo ícone, desenhado no <canvas> da ficha em PNG (ctx.fillText não
+// interpreta SVG — os "d" de cada <path> viram Path2D, escalados do
+// viewBox 24x24 pro tamanho pedido).
+function drawIcon(ctx, draw, key, x, y, size, color){
+  if(!draw) return;
+  const m = UI_ICONS[key];
+  if(!m) return;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(size / 24, size / 24);
+  ctx.strokeStyle = color || "#1E2420";
+  ctx.lineWidth = 2;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  [...m.paths.matchAll(/d="([^"]+)"/g)].forEach(mm => ctx.stroke(new Path2D(mm[1])));
+  ctx.restore();
 }
 
 // ---------- Alertas de validação da aba Sementes & Adubação ----------
@@ -770,10 +812,21 @@ const ALERT_META = {
   info:  { icon:"info-circle",    paths:'<path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 9h.01" /><path d="M11 12h1v4h1" />' },
 };
 
+// Evita mostrar o alerta de área zerada já na carga da página, antes de
+// qualquer digitação — assim que o usuário mexe em algum campo do
+// formulário (captura, não bubbling, pra já valer na mesma interação que
+// dispara calc()/renderAlerts()), a validação passa a valer normalmente.
+// Por cultura (não um flag único global): trocar de aba pra uma cultura
+// ainda não tocada não deve "herdar" o toque que já aconteceu em outra.
+const formTouchedByCrop = {};
+const marcarFormTouched = () => { formTouchedByCrop[currentCrop] = true; };
+document.addEventListener("input", marcarFormTouched, true);
+document.addEventListener("change", marcarFormTouched, true);
+
 function renderAlerts(area){
   const alerts = []; // { level: "error"|"warn"|"info", text }
 
-  if(area <= 0){
+  if(area <= 0 && formTouchedByCrop[currentCrop]){
     alerts.push({ level:"error", text:"Informe uma área maior que zero para calcular." });
   }
 
@@ -959,7 +1012,7 @@ function renderCustos(unidades){
       const key = custoKey(currentCrop, u.label);
       const p = custoPrecos[key] || {};
       const item = document.createElement("div");
-      item.className = "rounded-xl border border-line bg-white p-3.5 shadow-sm lg:p-2";
+      item.className = "border-b border-line p-3.5 lg:p-2";
       item.style.borderLeft = "4px solid var(--accent)";
 
       if(u.combo){
@@ -976,12 +1029,12 @@ function renderCustos(unidades){
           <div class="col-span-2 self-center text-[10.5px] leading-snug text-muted lg:col-span-2">
             usa os preços acima
           </div>
-          <div class="rounded-xl bg-canvas px-3 py-2 lg:px-2.5 lg:py-1.5">
+          <div>
             <div class="text-[10px] font-semibold uppercase tracking-wide text-muted lg:hidden">Custo à vista</div>
             <div class="whitespace-nowrap font-mono text-[16px] font-bold tabular-nums lg:text-[14px]" id="custoVista-${i}">R$ 0,00</div>
             <div class="whitespace-nowrap text-[10.5px] text-muted lg:text-[10px]" id="custoVistaAlq-${i}">R$ 0,00 / alqueire</div>
           </div>
-          <div class="rounded-xl bg-canvas px-3 py-2 lg:px-2.5 lg:py-1.5">
+          <div>
             <div class="text-[10px] font-semibold uppercase tracking-wide text-muted lg:hidden" id="custoPrazoRot-${i}">Custo a prazo</div>
             <div class="whitespace-nowrap font-mono text-[16px] font-bold tabular-nums lg:text-[14px]" id="custoPrazo-${i}">R$ 0,00</div>
             <div class="whitespace-nowrap text-[10.5px] text-muted lg:text-[10px]" id="custoPrazoAlq-${i}">R$ 0,00 / alqueire</div>
@@ -1017,12 +1070,12 @@ function renderCustos(unidades){
                      placeholder="0,00" data-custo="${key}" data-tipo="prazo" value="${p.prazo || ""}">
             </div>
           </div>
-          <div class="rounded-xl bg-canvas px-3 py-2 lg:px-2.5 lg:py-1.5">
+          <div>
             <div class="text-[10px] font-semibold uppercase tracking-wide text-muted lg:hidden">Custo à vista</div>
             <div class="whitespace-nowrap font-mono text-[16px] font-bold tabular-nums lg:text-[14px]" id="custoVista-${i}">R$ 0,00</div>
             <div class="whitespace-nowrap text-[10.5px] text-muted lg:text-[10px]" id="custoVistaAlq-${i}">R$ 0,00 / alqueire</div>
           </div>
-          <div class="rounded-xl bg-canvas px-3 py-2 lg:px-2.5 lg:py-1.5">
+          <div>
             <div class="text-[10px] font-semibold uppercase tracking-wide text-muted lg:hidden" id="custoPrazoRot-${i}">Custo a prazo</div>
             <div class="whitespace-nowrap font-mono text-[16px] font-bold tabular-nums lg:text-[14px]" id="custoPrazo-${i}">R$ 0,00</div>
             <div class="whitespace-nowrap text-[10.5px] text-muted lg:text-[10px]" id="custoPrazoAlq-${i}">R$ 0,00 / alqueire</div>
@@ -1123,6 +1176,130 @@ function updateCustos(){
   });
 }
 
+// ---------- Comparador de formulações (Adubação/Ureia) ----------
+// Ferramenta auxiliar de venda dentro da aba Adubação/Ureia: compara o custo
+// de 2 a 4 formulações candidatas, para ajudar a recomendar a mais vantajosa
+// ao produtor. Reaproveita lerFormulacao() (mesma função do campo "Formulação
+// cotada" acima) e a área já informada na Identificação — não duplica nem
+// altera o cálculo principal da aba, é só uma simulação à parte.
+let compModo = "dose"; // "dose": mesma dose (kg/ha) pra todas · "npk": cada uma dosada pra bater a mesma necessidade de NPK
+const compRows = [
+  { texto: "", preco: "" },
+  { texto: "", preco: "" },
+];
+
+function renderComparador(){
+  const rowsBox = $("compRows");
+  rowsBox.innerHTML = "";
+  compRows.forEach((row, i) => {
+    const div = document.createElement("div");
+    div.className = "comp-row";
+    div.id = `compRow-${i}`;
+    div.innerHTML = `
+      <div class="fld-grid">
+        <div>
+          <label class="lbl" for="compFormula-${i}">Formulação</label>
+          <input type="text" id="compFormula-${i}" class="inp" placeholder="Ex.: 04-14-08, MAP, Ureia" autocomplete="off">
+        </div>
+        <div>
+          <label class="lbl" for="compPreco-${i}">Preço por kg</label>
+          <div class="relative">
+            <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[13px] font-semibold text-muted">R$</span>
+            <input type="number" id="compPreco-${i}" class="inp inp-num inp-money" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
+          </div>
+        </div>
+      </div>
+      <div class="comp-result-grid" id="compResult-${i}"></div>
+      ${compRows.length > 2 ? `<button type="button" class="comp-remove mt-2" data-i="${i}">remover formulação</button>` : ""}
+    `;
+    rowsBox.appendChild(div);
+
+    const inpFormula = div.querySelector(`#compFormula-${i}`);
+    const inpPreco = div.querySelector(`#compPreco-${i}`);
+    inpFormula.value = row.texto;
+    inpPreco.value = row.preco;
+    inpFormula.addEventListener("input", e => { row.texto = e.target.value; updateComparador(); });
+    inpPreco.addEventListener("input", e => { row.preco = e.target.value; updateComparador(); });
+
+    const rm = div.querySelector(".comp-remove");
+    if(rm) rm.addEventListener("click", () => { compRows.splice(i, 1); renderComparador(); });
+  });
+
+  $("compAddRow").classList.toggle("hidden", compRows.length >= 4);
+  updateComparador();
+}
+
+function updateComparador(){
+  if(currentCrop !== "adubacao") return;
+  const area = parseFloat($("area").value) || 0; // alqueires — mesmo campo da Identificação, não duplicado aqui
+  const areaHa = area * ALQ_HA;
+  const necessidade = parseFloat($("compDose").value) || 0; // kg/ha: dose (modo "dose") ou necessidade de NPK (modo "npk")
+
+  const validas = [];
+
+  compRows.forEach((row, i) => {
+    const box = $(`compResult-${i}`);
+    if(!box) return;
+    const texto = row.texto.trim();
+    const preco = parseFloat(row.preco) || 0;
+
+    if(!texto){
+      box.innerHTML = `<span class="text-[11px] text-muted">Informe a formulação para comparar.</span>`;
+      return;
+    }
+
+    const npk = lerFormulacao(texto);
+    if(!npk){
+      box.innerHTML =
+        `<div class="alert-item alert-warn" style="padding:6px 10px;">` +
+        `<svg class="ti ti-${ALERT_META.warn.icon} alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ALERT_META.warn.paths}</svg>` +
+        `<span class="alert-text">Formulação não reconhecida — confira o texto digitado.</span></div>`;
+      return;
+    }
+
+    const [n, p, k] = npk;
+    const somaNpk = n + p + k;
+    // modo "dose": todas recebem a mesma dose informada · modo "npk": cada uma usa a dose
+    // que entrega, sozinha, a necessidade total de nutrientes informada (kg/ha ÷ % NPK da formulação)
+    const dose = compModo === "dose" ? necessidade : (somaNpk > 0 ? necessidade / (somaNpk / 100) : 0);
+    const custoTotal = dose * preco * areaHa;
+
+    box.innerHTML = `
+      <div><div class="comp-result-label">NPK identificado</div><div class="comp-result-value">${n}-${p}-${k}</div></div>
+      <div><div class="comp-result-label">Dose calculada</div><div class="comp-result-value">${fmtDec(dose)} kg/ha</div></div>
+      <div><div class="comp-result-label">Custo total</div><div class="comp-result-value" style="font-size:15px;">${fmtMoeda(custoTotal)}</div></div>
+    `;
+
+    if(preco > 0 && dose > 0) validas.push({ i, custoTotal });
+  });
+
+  const menor = validas.length > 1 ? validas.reduce((a, b) => a.custoTotal < b.custoTotal ? a : b) : null;
+  compRows.forEach((_row, i) => {
+    const div = $(`compRow-${i}`);
+    if(div) div.classList.toggle("is-cheapest", !!menor && i === menor.i);
+  });
+}
+
+$("compModo").querySelectorAll("button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    compModo = btn.dataset.modo;
+    $("compModo").querySelectorAll("button").forEach(b => {
+      b.classList.toggle("is-active", b === btn);
+      b.setAttribute("aria-pressed", b === btn ? "true" : "false");
+    });
+    $("compDoseLabel").textContent = compModo === "dose" ? "Dose (kg/ha)" : "Necessidade de NPK (kg/ha)";
+    updateComparador();
+  });
+});
+$("compDose").addEventListener("input", updateComparador);
+$("compAddRow").addEventListener("click", () => {
+  if(compRows.length >= 4) return;
+  compRows.push({ texto: "", preco: "" });
+  renderComparador();
+});
+
+renderComparador();
+
 // ---------- Eventos ----------
 tabs.forEach(tab => {
   tab.addEventListener("click", () => selectCrop(tab.dataset.crop));
@@ -1198,7 +1375,16 @@ function dataHoje(){
   return new Date().toLocaleDateString("pt-BR");
 }
 
+// Código de referência rápido pra localizar qual ficha é qual numa conversa
+// com o cliente/consultor — não é sequencial nem garante unicidade, é só a
+// data/hora local do momento em que o documento foi gerado (AAAAMMDD-HHMM).
+function gerarCodigoRef(d){
+  const p2 = n => String(n).padStart(2, "0");
+  return `${d.getFullYear()}${p2(d.getMonth() + 1)}${p2(d.getDate())}-${p2(d.getHours())}${p2(d.getMinutes())}`;
+}
+
 function coletarResumo(){
+  const agora = new Date();
   const c = getConfig(currentCrop);
   const area = parseFloat($("area").value) || 0;
   const cliente = $("cliente").value.trim();
@@ -1265,7 +1451,9 @@ function coletarResumo(){
     combo: $("comboHint").classList.contains("hidden") ? "" : ($("comboHint").dataset.plain || ""),
     linhas, nutrientes,
     vencimento: venc, vencimentoDias: $("prazoDias").textContent,
-    data: dataHoje(),
+    data: agora.toLocaleDateString("pt-BR"),
+    ref: gerarCodigoRef(agora),
+    horaGeracao: agora.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"}),
   };
 }
 
@@ -1347,9 +1535,18 @@ function montarFolha(r){
       <img src="${logo}" alt="Coasul" style="height:42px;">
       <div style="flex:1;">
         <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#5B6660;font-weight:700;">Coasul Agro · Ficha de Cotação</div>
-        <div style="font-size:19px;font-weight:600;">${esc(r.icone)} ${esc(r.cultura)}${r.cultivar ? " · " + esc(r.cultivar) : ""}</div>
+        <div style="font-size:19px;font-weight:600;display:flex;align-items:center;gap:6px;"><span style="color:${r.accent};display:inline-flex;">${iconSvg(r.icone, "icon-inline")}</span>${esc(r.cultura)}${r.cultivar ? " · " + esc(r.cultivar) : ""}</div>
       </div>
       <div style="text-align:right;font-size:10.5px;color:#5B6660;">${esc(r.data)}</div>
+    </div>
+
+    <div style="background:#F4F7F0;border-radius:10px;padding:8px 12px;margin-top:10px;font-size:10.5px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:8.5px;color:#5B6660;">Ref</span>
+        <span style="font-family:monospace;font-weight:700;">${esc(r.ref)}</span>
+      </div>
+      <div style="margin-top:2px;color:#5B6660;">Gerado em ${esc(r.data)} às ${esc(r.horaGeracao)}</div>
+      <div style="margin-top:2px;font-weight:700;color:#854F0B;">Preço válido apenas no momento da geração — pode haver alteração.</div>
     </div>
 
     <table style="width:100%;margin-top:12px;border-collapse:collapse;">
@@ -1485,7 +1682,7 @@ function montarFolhaRegulagem(r){
       <img src="${logo}" alt="Coasul" style="height:42px;">
       <div style="flex:1;">
         <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#5B6660;font-weight:700;">Coasul Agro · Ficha de Regulagem</div>
-        <div style="font-size:19px;font-weight:600;">📏 Regulagem de Plantadeira · ${r.variante === "semente" ? "Semente" : "Adubo"}</div>
+        <div style="font-size:19px;font-weight:600;display:flex;align-items:center;gap:6px;"><span style="color:${r.accent};display:inline-flex;">${iconSvg("regua", "icon-inline")}</span>Regulagem de Plantadeira · ${r.variante === "semente" ? "Semente" : "Adubo"}</div>
       </div>
       <div style="text-align:right;font-size:10.5px;color:#5B6660;">${esc(r.data)}</div>
     </div>
@@ -1572,12 +1769,24 @@ function layoutFicha(ctx, draw, r, logo){
   if(draw && logo) ctx.drawImage(logo, P, y, logoW, logoH);
   const xt = P + logoW + 16;
   texto(ctx, draw, "COASUL AGRO · FICHA DE COTAÇÃO", xt, y + 14, {font:"bold 10px " + FONTE, cor:"#5B6660", espaco:"1.6px"});
-  texto(ctx, draw, `${r.icone} ${r.cultura}${r.cultivar ? " · " + r.cultivar : ""}`, xt, y + 36, {font:"600 21px " + FONTE, maxW:dir - xt - 110});
+  const iconSize = 19;
+  drawIcon(ctx, draw, r.icone, xt, y + 36 - iconSize + 3, iconSize, r.accent);
+  texto(ctx, draw, `${r.cultura}${r.cultivar ? " · " + r.cultivar : ""}`, xt + iconSize + 7, y + 36, {font:"600 21px " + FONTE, maxW:dir - xt - iconSize - 7 - 110});
   texto(ctx, draw, r.data, dir, y + 14, {font:"11px " + FONTE, cor:"#5B6660", align:"right"});
   y += logoH + 12;
   risco(ctx, draw, P, y, dir, r.accent);
   if(draw){ ctx.fillStyle = r.accent; ctx.fillRect(P, y, dir - P, 2.5); }
   y += 20;
+
+  // referência rápida da ficha: código não sequencial (derivado da data/hora
+  // da geração), horário completo e aviso de que o preço vale só na hora
+  const refH = 56;
+  caixa(ctx, draw, P, y, dir - P, refH, 10, "#F4F7F0");
+  texto(ctx, draw, "REF", P + 12, y + 16, {font:"bold 8px " + FONTE, cor:"#5B6660", espaco:"0.8px"});
+  texto(ctx, draw, r.ref, dir - 12, y + 16, {font:"bold 11px " + MONO, align:"right"});
+  texto(ctx, draw, `Gerado em ${r.data} às ${r.horaGeracao}`, P + 12, y + 31, {font:"10px " + FONTE, cor:"#5B6660"});
+  texto(ctx, draw, "Preço válido apenas no momento da geração — pode haver alteração.", P + 12, y + 46, {font:"bold 10px " + FONTE, cor:"#854F0B", maxW:dir - P - 24});
+  y += refH + 12;
 
   // cliente / cultivar / cultura / área
   const info = [["Cliente", r.cliente || "—"], [r.rotuloCultivar, r.cultivar || "—"], ["Cultura", r.cultura], ["Área", r.area]];
@@ -1714,7 +1923,9 @@ function layoutFichaRegulagem(ctx, draw, r, logo){
   if(draw && logo) ctx.drawImage(logo, P, y, logoW, logoH);
   const xt = P + logoW + 16;
   texto(ctx, draw, "COASUL AGRO · FICHA DE REGULAGEM", xt, y + 14, {font:"bold 10px " + FONTE, cor:"#5B6660", espaco:"1.6px"});
-  texto(ctx, draw, `📏 Regulagem de Plantadeira · ${r.variante === "semente" ? "Semente" : "Adubo"}`, xt, y + 36, {font:"600 20px " + FONTE, maxW:dir - xt - 110});
+  const iconSize = 18;
+  drawIcon(ctx, draw, "regua", xt, y + 36 - iconSize + 3, iconSize, r.accent);
+  texto(ctx, draw, `Regulagem de Plantadeira · ${r.variante === "semente" ? "Semente" : "Adubo"}`, xt + iconSize + 7, y + 36, {font:"600 20px " + FONTE, maxW:dir - xt - iconSize - 7 - 110});
   texto(ctx, draw, r.data, dir, y + 14, {font:"11px " + FONTE, cor:"#5B6660", align:"right"});
   y += logoH + 12;
   risco(ctx, draw, P, y, dir, r.accent);
