@@ -8,13 +8,14 @@
 // Pra publicar uma atualização: mude CACHE_VERSION (ex.: v1 -> v2). Isso cria
 // um cache novo, o "activate" apaga o antigo, e os clientes pegam a versão
 // nova na próxima abertura.
-const CACHE_VERSION = "coasul-calc-v1";
+const CACHE_VERSION = "coasul-calc-v2";
 
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.json",
   "./css/styles.css",
+  "./js/calculos.js",
   "./js/app.js",
   "./assets/logo.png",
   "./assets/mark.png",
