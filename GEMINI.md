@@ -16,8 +16,13 @@ Ficha de campo para cálculo de sementes, adubação, custo por embalagem e regu
 - Garantir que a precisão dos cálculos agrícolas de dosagem, população de plantas e regulagem de engrenagens esteja alinhada com as recomendações agronômicas.
 
 ## Estrutura do Repositório
-- `js/`: Lógica das calculadoras e manipuladores de interface.
+- `js/`: Lógica das calculadoras (`calculos.js`, `cultivares.js`, `app.js`).
 - `css/`: Estilos da aplicação e responsividade.
-- `tests/`: Testes unitários com Vitest.
-- `service-worker.js`: Gerenciamento de cache offline.
-- `manifest.json`: Configurações de PWA.
+- `tests/`: Testes unitários com Vitest (`calculos.test.js`).
+- `standalone/`: Versão autocontida da ficha em arquivo único (`CALCULADORA COASUL.html`).
+- `service-worker.js`: Gerenciamento de cache offline (atualizar `CACHE_VERSION` ao alterar arquivos estáticos).
+- `manifest.json`: Configurações de PWA para instalação no celular.
+
+## Sincronização entre Versões
+- Ao alterar regras de cálculo ou elementos de interface, manter sincronizadas a versão principal PWA (`index.html` + `js/` + `css/`) e a versão de arquivo único (`standalone/CALCULADORA COASUL.html`).
+
