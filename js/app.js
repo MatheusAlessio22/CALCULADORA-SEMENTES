@@ -1593,83 +1593,81 @@ function montarFolha(r){
 
   const linhasHtml = r.linhas.map(l => `
     <tr>
-      <td style="padding:7px 8px;border-bottom:1px solid #E2E7DA;">
-        <strong>${esc(l.nome)}</strong>${l.menor ? ' <span style="font-size:9px;font-weight:700;color:#2E6B5E;">MENOR CUSTO</span>' : ""}
-        <div style="color:#5B6660;font-size:10px;font-family:monospace;">${esc(l.qtd)}</div>
+      <td style="padding:10px 8px;border-bottom:1px solid #EEF2EB;">
+        <strong>${esc(l.nome)}</strong>${l.menor ? ' <span style="display:inline-block;background:rgba(35,107,86,0.10);color:#236B56;font-size:9px;font-weight:700;padding:2px 8px;border-radius:999px;margin-left:4px;">MENOR CUSTO</span>' : ""}
+        <div style="color:#4B554F;font-size:10px;font-family:monospace;margin-top:2px;">${esc(l.qtd)}</div>
       </td>
-      <td style="padding:7px 8px;border-bottom:1px solid #E2E7DA;text-align:right;font-family:monospace;white-space:nowrap;">${esc(l.precoVista)}</td>
-      <td style="padding:7px 8px;border-bottom:1px solid #E2E7DA;text-align:right;font-family:monospace;white-space:nowrap;">${esc(l.precoPrazo)}</td>
-      <td style="padding:7px 8px;border-bottom:1px solid #E2E7DA;text-align:right;font-family:monospace;font-weight:700;white-space:nowrap;">${esc(l.vista)}<div style="font-weight:400;font-size:9.5px;color:#5B6660;">${esc(l.vistaAlq)}</div></td>
-      <td style="padding:7px 8px;border-bottom:1px solid #E2E7DA;text-align:right;font-family:monospace;font-weight:700;white-space:nowrap;">${esc(l.prazo)}<div style="font-weight:400;font-size:9.5px;color:#5B6660;">${esc(l.prazoAlq)}</div></td>
+      <td style="padding:10px 8px;border-bottom:1px solid #EEF2EB;text-align:right;font-family:monospace;white-space:nowrap;">${esc(l.precoVista)}</td>
+      <td style="padding:10px 8px;border-bottom:1px solid #EEF2EB;text-align:right;font-family:monospace;white-space:nowrap;">${esc(l.precoPrazo)}</td>
+      <td style="padding:10px 8px;border-bottom:1px solid #EEF2EB;text-align:right;font-family:monospace;font-weight:700;white-space:nowrap;">${esc(l.vista)}<div style="font-weight:400;font-size:9.5px;color:#4B554F;">${esc(l.vistaAlq)}</div></td>
+      <td style="padding:10px 8px;border-bottom:1px solid #EEF2EB;text-align:right;font-family:monospace;font-weight:700;white-space:nowrap;">${esc(l.prazo)}<div style="font-weight:400;font-size:9.5px;color:#4B554F;">${esc(l.prazoAlq)}</div></td>
     </tr>`).join("");
 
   return `
   <div style="font-family:'Segoe UI',Arial,sans-serif;color:#1E2420;font-size:12px;">
-    <div style="height:3px;border-radius:999px;background:#D99A1E;margin-bottom:12px;"></div>
-    <div style="display:flex;align-items:center;gap:12px;border-bottom:3px solid ${r.accent};padding-bottom:10px;">
+    <div style="display:flex;align-items:center;gap:16px;padding-bottom:12px;border-bottom:1px solid #DCE3D6;">
       <img src="${logo}" alt="Coasul" style="height:42px;">
+      <div style="width:1px;align-self:stretch;background:#DCE3D6;"></div>
       <div style="flex:1;">
-        <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#5B6660;font-weight:700;">Coasul Agro · Ficha de Cotação</div>
-        <div style="font-size:19px;font-weight:600;display:flex;align-items:center;gap:6px;"><span style="color:${r.accent};display:inline-flex;">${iconSvg(r.icone, "icon-inline")}</span>${esc(r.cultura)}${r.cultivar ? " · " + esc(r.cultivar) : ""}</div>
+        <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#4B554F;font-weight:700;">Coasul Agro · Departamento Técnico</div>
+        <div style="font-size:18px;font-weight:700;color:#1E2420;margin-top:2px;">Ficha Técnica de Semeadura &amp; Nutrição</div>
       </div>
-      <div style="text-align:right;font-size:10.5px;color:#5B6660;">${esc(r.data)}</div>
+      <div style="text-align:right;background:#F7FAF5;border:1px solid #DCE3D6;border-radius:8px;padding:8px 12px;font-size:10px;min-width:120px;">
+        <div style="color:#4B554F;">${esc(r.data)}</div>
+        <div style="font-family:monospace;font-weight:700;color:#1E2420;margin-top:2px;">${esc(r.ref)}</div>
+      </div>
     </div>
 
-    <div style="background:#F4F7F0;border-radius:10px;padding:8px 12px;margin-top:10px;font-size:10.5px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <span style="font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:8.5px;color:#5B6660;">Ref</span>
-        <span style="font-family:monospace;font-weight:700;">${esc(r.ref)}</span>
-      </div>
-      <div style="margin-top:2px;color:#5B6660;">Gerado em ${esc(r.data)} às ${esc(r.horaGeracao)}</div>
+    <div style="background:#F7FAF5;border:1px solid #DCE3D6;border-radius:8px;padding:8px 12px;margin-top:10px;font-size:10.5px;">
+      <div style="color:#4B554F;">Gerado em ${esc(r.data)} às ${esc(r.horaGeracao)}</div>
       <div style="margin-top:2px;font-weight:700;color:#854F0B;">Preço válido apenas no momento da geração — pode haver alteração.</div>
     </div>
 
-    <table style="width:100%;margin-top:12px;border-collapse:collapse;">
-      <tr>${info.map(([k, v]) => `
-        <td style="padding:6px 8px;background:#F4F7F0;border:1px solid #E2E7DA;width:25%;">
-          <div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:#5B6660;font-weight:700;">${esc(k)}</div>
-          <div style="font-size:13px;font-weight:700;">${esc(v)}</div>
-        </td>`).join("")}
-      </tr>
-    </table>
+    <div style="display:flex;gap:10px;margin-top:12px;">
+      ${info.map(([k, v]) => `
+        <div style="flex:1;background:#F7FAF5;border:1px solid #DCE3D6;border-radius:8px;padding:8px 12px;">
+          <div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:#4B554F;font-weight:700;">${esc(k)}</div>
+          <div style="font-size:13px;font-weight:700;margin-top:2px;">${esc(v)}</div>
+        </div>`).join("")}
+    </div>
 
-    <div style="margin-top:6px;font-size:11px;color:#5B6660;">
+    <div style="margin-top:6px;font-size:11px;color:#4B554F;">
       ${r.params.map(([k, v]) => `${esc(k)}: <strong style="color:#1E2420;">${esc(v)}</strong>`).join(" &nbsp;·&nbsp; ")}
     </div>
 
-    <div style="margin-top:14px;border:1.5px solid ${r.accent};border-radius:8px;padding:12px 14px;">
-      <div style="font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:${r.accent};">Necessidade total</div>
-      <div style="font-family:monospace;font-size:28px;font-weight:700;margin-top:2px;">${esc(r.total)} <span style="font-size:13px;font-weight:400;color:#5B6660;">${esc(r.unidade)}</span></div>
-      ${r.combo ? `<div style="margin-top:6px;font-size:10.5px;color:#5B6660;">${esc(r.combo)}</div>` : ""}
+    <div style="margin-top:14px;background:#FFFFFF;border:1px solid #DCE3D6;border-radius:10px;padding:14px 16px;">
+      <div style="font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#4B554F;">Necessidade total</div>
+      <div style="font-family:monospace;font-size:28px;font-weight:700;margin-top:2px;">${esc(r.total)} <span style="font-size:13px;font-weight:400;color:#4B554F;">${esc(r.unidade)}</span></div>
+      ${r.combo ? `<div style="margin-top:6px;font-size:10.5px;color:#4B554F;">${esc(r.combo)}</div>` : ""}
     </div>
 
     ${r.nutrientes.length ? `
     <div style="margin-top:12px;font-size:11px;">
-      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#5B6660;margin-bottom:4px;">Nutriente que será fornecido ao solo · total na área</div>
-      ${r.nutrientes.map(n => `<span style="display:inline-block;border:1px solid #E2E7DA;border-radius:6px;padding:5px 9px;margin-right:6px;">${esc(n.nome)}: <strong>${esc(n.valor)}</strong> <span style="color:#5B6660;">(${esc(n.porAlq)})</span></span>`).join("")}
+      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#4B554F;margin-bottom:4px;">Nutriente que será fornecido ao solo · total na área</div>
+      ${r.nutrientes.map(n => `<span style="display:inline-block;background:#F7FAF5;border:1px solid #DCE3D6;border-radius:6px;padding:5px 9px;margin-right:6px;">${esc(n.nome)}: <strong>${esc(n.valor)}</strong> <span style="color:#4B554F;">(${esc(n.porAlq)})</span></span>`).join("")}
     </div>` : ""}
 
     <div style="margin-top:14px;">
       <div style="display:flex;justify-content:space-between;align-items:baseline;">
-        <div style="font-size:12px;font-weight:800;">Custo por embalagem</div>
-        <div style="font-size:10.5px;color:#5B6660;">${r.vencimento ? "Vencimento do prazo: <strong style='color:#1E2420;'>" + esc(r.vencimento) + "</strong> " + esc(r.vencimentoDias) : "Prazo sem data informada"}</div>
+        <div style="font-size:12px;font-weight:800;color:#4B554F;">Custo por embalagem</div>
+        <div style="font-size:10.5px;color:#4B554F;">${r.vencimento ? "Vencimento do prazo: <strong style='color:#1E2420;'>" + esc(r.vencimento) + "</strong> " + esc(r.vencimentoDias) : "Prazo sem data informada"}</div>
       </div>
-      <table style="width:100%;border-collapse:collapse;margin-top:6px;font-size:11px;">
+      <table style="width:100%;border-collapse:separate;border-spacing:0;margin-top:8px;font-size:11px;">
         <thead>
-          <tr style="text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:#5B6660;">
-            <th style="padding:4px 8px;">Embalagem</th>
-            <th style="padding:4px 8px;text-align:right;">Preço à vista</th>
-            <th style="padding:4px 8px;text-align:right;">Preço a prazo</th>
-            <th style="padding:4px 8px;text-align:right;">Custo à vista</th>
-            <th style="padding:4px 8px;text-align:right;">Custo a prazo</th>
+          <tr style="text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:#4B554F;background:#F1F5ED;">
+            <th style="padding:7px 8px;border-radius:6px 0 0 6px;">Embalagem</th>
+            <th style="padding:7px 8px;text-align:right;">Preço à vista</th>
+            <th style="padding:7px 8px;text-align:right;">Preço a prazo</th>
+            <th style="padding:7px 8px;text-align:right;">Custo à vista</th>
+            <th style="padding:7px 8px;text-align:right;border-radius:0 6px 6px 0;">Custo a prazo</th>
           </tr>
         </thead>
         <tbody>${linhasHtml}</tbody>
       </table>
-      <div style="margin-top:6px;font-size:10px;color:#5B6660;">Bag e sacaria são alternativas de compra — os custos das linhas não se somam. Quantidades arredondadas para embalagem fechada.</div>
+      <div style="margin-top:6px;font-size:10px;color:#4B554F;">Bag e sacaria são alternativas de compra — os custos das linhas não se somam. Quantidades arredondadas para embalagem fechada.</div>
     </div>
 
-    <div style="margin-top:16px;border-top:1px solid #E2E7DA;padding-top:8px;font-size:9.5px;color:#5B6660;">
+    <div style="margin-top:16px;border-top:1px solid #DCE3D6;padding-top:8px;font-size:9.5px;color:#4B554F;">
       <div>Calculadora Coasul — versão ${APP_VERSION}</div>
       <div>Documento de uso interno — não substitui recomendação agronômica oficial. Valores sujeitos a conferência pelo técnico responsável.</div>
       <div>Gerado em ${esc(new Date().toLocaleString("pt-BR", {day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit"}))}</div>
@@ -1686,31 +1684,31 @@ function montarFolhaRegulagem(r){
   const logo = document.querySelector("header img").src;
   const num = (v, suf) => v ? String(v).replace(".", ",") + (suf || "") : "—";
   const bloco = (k, v) => `
-    <td style="padding:6px 8px;background:#F4F7F0;border:1px solid #E2E7DA;">
-      <div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:#5B6660;font-weight:700;">${esc(k)}</div>
-      <div style="font-size:13px;font-weight:700;">${esc(v)}</div>
+    <td style="padding:8px 12px;background:#F7FAF5;border:1px solid #DCE3D6;border-radius:8px;">
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:#4B554F;font-weight:700;">${esc(k)}</div>
+      <div style="font-size:13px;font-weight:700;margin-top:2px;">${esc(v)}</div>
     </td>`;
 
   const corpo = r.variante === "semente" ? `
-    <table style="width:100%;margin-top:12px;border-collapse:collapse;">
+    <table style="width:100%;margin-top:12px;border-collapse:separate;border-spacing:10px 0;">
       <tr>${bloco("Stand de plantas", num(r.populacao, " plantas/ha"))}${bloco("Espaçamento", num(r.espacamento, " m"))}${bloco("Germinação", num(r.germinacao, "%"))}</tr>
     </table>
 
-    <div style="margin-top:14px;border:1.5px solid ${r.accent};border-radius:8px;padding:12px 14px;">
-      <div style="font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:${r.accent};">Plantas por metro linear</div>
-      <div style="font-family:monospace;font-size:28px;font-weight:700;margin-top:2px;">${esc(r.plantasMetro)} <span style="font-size:13px;font-weight:400;color:#5B6660;">plantas/m</span></div>
-      <div style="margin-top:6px;font-size:10.5px;color:#5B6660;">Plantas/ha: <strong style="color:#1E2420;">${esc(r.plantasHa)}</strong> &nbsp;·&nbsp; Metros lineares/ha: <strong style="color:#1E2420;">${esc(r.metrosLineares)}</strong></div>
+    <div style="margin-top:14px;background:#FFFFFF;border:1px solid #DCE3D6;border-radius:10px;padding:14px 16px;">
+      <div style="font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#4B554F;">Plantas por metro linear</div>
+      <div style="font-family:monospace;font-size:28px;font-weight:700;margin-top:2px;">${esc(r.plantasMetro)} <span style="font-size:13px;font-weight:400;color:#4B554F;">plantas/m</span></div>
+      <div style="margin-top:6px;font-size:10.5px;color:#4B554F;">Plantas/ha: <strong style="color:#1E2420;">${esc(r.plantasHa)}</strong> &nbsp;·&nbsp; Metros lineares/ha: <strong style="color:#1E2420;">${esc(r.metrosLineares)}</strong></div>
     </div>
 
-    <div style="margin-top:18px;font-size:12px;font-weight:800;">Regulagem avançada</div>
-    <table style="width:100%;margin-top:6px;border-collapse:collapse;font-size:11px;">
+    <div style="margin-top:18px;font-size:12px;font-weight:800;color:#4B554F;">Regulagem avançada</div>
+    <table style="width:100%;margin-top:8px;border-collapse:separate;border-spacing:10px;font-size:11px;">
       <tr>
-        <td style="padding:10px;border:1px solid #E2E7DA;vertical-align:top;width:50%;">
+        <td style="padding:12px;background:#F7FAF5;border:1px solid #DCE3D6;border-radius:8px;vertical-align:top;width:50%;">
           <div style="font-weight:700;">Linhas da plantadeira</div>
           <div style="margin-top:4px;">Nº de linhas: <strong style="font-family:monospace;">${esc(r.numLinhas || "—")}</strong></div>
           <div>Sementes por metro de linha: <strong style="font-family:monospace;">${esc(r.plantasMetro)}</strong></div>
         </td>
-        <td style="padding:10px;border:1px solid #E2E7DA;vertical-align:top;width:50%;">
+        <td style="padding:12px;background:#F7FAF5;border:1px solid #DCE3D6;border-radius:8px;vertical-align:top;width:50%;">
           <div style="font-weight:700;">Teste de campo (${esc(r.testeMetros)} metros)</div>
           <div style="margin-top:4px;">Esperadas por linha: <strong style="font-family:monospace;">${esc(r.esperadoPorLinha)}</strong></div>
           <div>Esperadas em ${esc(r.numLinhas || "0")} linhas: <strong style="font-family:monospace;">${esc(r.esperadoTotal)}</strong></div>
@@ -1719,12 +1717,12 @@ function montarFolhaRegulagem(r){
         </td>
       </tr>
       <tr>
-        <td style="padding:10px;border:1px solid #E2E7DA;vertical-align:top;">
+        <td style="padding:12px;background:#F7FAF5;border:1px solid #DCE3D6;border-radius:8px;vertical-align:top;">
           <div style="font-weight:700;">Velocidade de plantio</div>
           <div style="margin-top:4px;">Velocidade: <strong>${esc(num(r.velocidade, " km/h"))}</strong></div>
           <div>Área plantada por hora: <strong style="font-family:monospace;">${esc(r.areaPorHora)} ha/h</strong></div>
         </td>
-        <td style="padding:10px;border:1px solid #E2E7DA;vertical-align:top;">
+        <td style="padding:12px;background:#F7FAF5;border:1px solid #DCE3D6;border-radius:8px;vertical-align:top;">
           <div style="font-weight:700;">Reservatório de sementes</div>
           <div style="margin-top:4px;">Capacidade: <strong>${esc(r.capacidadeReservatorio || "—")}</strong> sementes &nbsp;·&nbsp; Área total: <strong>${esc(num(r.areaTotal, " ha"))}</strong></div>
           <div>Abastecimentos necessários: <strong style="font-family:monospace;">${esc(r.abastecimentos)}</strong></div>
@@ -1732,39 +1730,41 @@ function montarFolhaRegulagem(r){
       </tr>
       ${r.engrenagemRef ? `
       <tr>
-        <td colspan="2" style="padding:10px;border:1px solid #E2E7DA;">
+        <td colspan="2" style="padding:12px;background:#F7FAF5;border:1px solid #DCE3D6;border-radius:8px;">
           <div style="font-weight:700;">Engrenagem/disco (referência do manual do fabricante)</div>
           <div style="margin-top:4px;">${esc(r.engrenagemRef)}</div>
         </td>
       </tr>` : ""}
     </table>
   ` : `
-    <table style="width:100%;margin-top:12px;border-collapse:collapse;">
+    <table style="width:100%;margin-top:12px;border-collapse:separate;border-spacing:10px 0;">
       <tr>${bloco("Adubo", num(r.dose, " kg/ha"))}${bloco("Espaçamento", num(r.espacamento, " m"))}</tr>
     </table>
 
-    <div style="margin-top:14px;border:1.5px solid ${r.accent};border-radius:8px;padding:12px 14px;">
-      <div style="font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:${r.accent};">Adubo por metro linear</div>
-      <div style="font-family:monospace;font-size:28px;font-weight:700;margin-top:2px;">${esc(r.aduboG)} <span style="font-size:13px;font-weight:400;color:#5B6660;">g/m</span></div>
-      <div style="margin-top:6px;font-size:10.5px;color:#5B6660;">Metros lineares/ha: <strong style="color:#1E2420;">${esc(r.metrosLineares)}</strong> &nbsp;·&nbsp; Adubo/m: <strong style="color:#1E2420;">${esc(r.aduboKg)} kg</strong></div>
+    <div style="margin-top:14px;background:#FFFFFF;border:1px solid #DCE3D6;border-radius:10px;padding:14px 16px;">
+      <div style="font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#4B554F;">Adubo por metro linear</div>
+      <div style="font-family:monospace;font-size:28px;font-weight:700;margin-top:2px;">${esc(r.aduboG)} <span style="font-size:13px;font-weight:400;color:#4B554F;">g/m</span></div>
+      <div style="margin-top:6px;font-size:10.5px;color:#4B554F;">Metros lineares/ha: <strong style="color:#1E2420;">${esc(r.metrosLineares)}</strong> &nbsp;·&nbsp; Adubo/m: <strong style="color:#1E2420;">${esc(r.aduboKg)} kg</strong></div>
     </div>
   `;
 
   return `
   <div style="font-family:'Segoe UI',Arial,sans-serif;color:#1E2420;font-size:12px;">
-    <div style="height:3px;border-radius:999px;background:#D99A1E;margin-bottom:12px;"></div>
-    <div style="display:flex;align-items:center;gap:12px;border-bottom:3px solid ${r.accent};padding-bottom:10px;">
+    <div style="display:flex;align-items:center;gap:16px;padding-bottom:12px;border-bottom:1px solid #DCE3D6;">
       <img src="${logo}" alt="Coasul" style="height:42px;">
+      <div style="width:1px;align-self:stretch;background:#DCE3D6;"></div>
       <div style="flex:1;">
-        <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#5B6660;font-weight:700;">Coasul Agro · Ficha de Regulagem</div>
-        <div style="font-size:19px;font-weight:600;display:flex;align-items:center;gap:6px;"><span style="color:${r.accent};display:inline-flex;">${iconSvg("regua", "icon-inline")}</span>Regulagem de Plantadeira · ${r.variante === "semente" ? "Semente" : "Adubo"}</div>
+        <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#4B554F;font-weight:700;">Coasul Agro · Departamento Técnico</div>
+        <div style="font-size:18px;font-weight:700;color:#1E2420;margin-top:2px;">Regulagem de Plantadeira · ${r.variante === "semente" ? "Semente" : "Adubo"}</div>
       </div>
-      <div style="text-align:right;font-size:10.5px;color:#5B6660;">${esc(r.data)}</div>
+      <div style="text-align:right;background:#F7FAF5;border:1px solid #DCE3D6;border-radius:8px;padding:8px 12px;font-size:10px;min-width:100px;">
+        <div style="color:#4B554F;">${esc(r.data)}</div>
+      </div>
     </div>
 
     ${corpo}
 
-    <div style="margin-top:16px;border-top:1px solid #E2E7DA;padding-top:8px;font-size:9.5px;color:#5B6660;">
+    <div style="margin-top:16px;border-top:1px solid #DCE3D6;padding-top:8px;font-size:9.5px;color:#4B554F;">
       <div>Calculadora Coasul — versão ${APP_VERSION}</div>
       <div>Documento de uso interno — não substitui recomendação agronômica oficial. Valores sujeitos a conferência pelo técnico responsável.</div>
       <div>Gerado em ${esc(new Date().toLocaleString("pt-BR", {day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit"}))}</div>
@@ -1827,7 +1827,7 @@ function caixa(ctx, draw, x, y, w, h, raio, fundo, borda){
 }
 function risco(ctx, draw, x1, y, x2, cor){
   if(!draw) return;
-  ctx.strokeStyle = cor || "#E2E7DA"; ctx.lineWidth = 1;
+  ctx.strokeStyle = cor || "#DCE3D6"; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(x1, y + .5); ctx.lineTo(x2, y + .5); ctx.stroke();
 }
 
@@ -1835,19 +1835,15 @@ function layoutFicha(ctx, draw, r, logo){
   const W = 1000, P = 40, dir = W - P;
   let y = P;
 
-  // linha dourada no topo, igual ao cabeçalho da ficha na tela
-  if(draw){ ctx.fillStyle = "#D99A1E"; ctx.fillRect(P, y, dir - P, 3); }
-  y += 3 + 16;
-
   // cabeçalho com o logo
   const logoH = 44, logoW = logo && logo.naturalWidth ? logoH * logo.naturalWidth / logo.naturalHeight : 60;
   if(draw && logo) ctx.drawImage(logo, P, y, logoW, logoH);
   const xt = P + logoW + 16;
-  texto(ctx, draw, "COASUL AGRO · FICHA DE COTAÇÃO", xt, y + 14, {font:"bold 10px " + FONTE, cor:"#5B6660", espaco:"1.6px"});
+  texto(ctx, draw, "COASUL AGRO · FICHA DE COTAÇÃO", xt, y + 14, {font:"bold 10px " + FONTE, cor:"#4B554F", espaco:"1.6px"});
   const iconSize = 19;
   drawIcon(ctx, draw, r.icone, xt, y + 36 - iconSize + 3, iconSize, r.accent);
   texto(ctx, draw, `${r.cultura}${r.cultivar ? " · " + r.cultivar : ""}`, xt + iconSize + 7, y + 36, {font:"600 21px " + FONTE, maxW:dir - xt - iconSize - 7 - 110});
-  texto(ctx, draw, r.data, dir, y + 14, {font:"11px " + FONTE, cor:"#5B6660", align:"right"});
+  texto(ctx, draw, r.data, dir, y + 14, {font:"11px " + FONTE, cor:"#4B554F", align:"right"});
   y += logoH + 12;
   risco(ctx, draw, P, y, dir, r.accent);
   if(draw){ ctx.fillStyle = r.accent; ctx.fillRect(P, y, dir - P, 2.5); }
@@ -1856,10 +1852,10 @@ function layoutFicha(ctx, draw, r, logo){
   // referência rápida da ficha: código não sequencial (derivado da data/hora
   // da geração), horário completo e aviso de que o preço vale só na hora
   const refH = 56;
-  caixa(ctx, draw, P, y, dir - P, refH, 10, "#F4F7F0");
-  texto(ctx, draw, "REF", P + 12, y + 16, {font:"bold 8px " + FONTE, cor:"#5B6660", espaco:"0.8px"});
+  caixa(ctx, draw, P, y, dir - P, refH, 10, "#F7FAF5");
+  texto(ctx, draw, "REF", P + 12, y + 16, {font:"bold 8px " + FONTE, cor:"#4B554F", espaco:"0.8px"});
   texto(ctx, draw, r.ref, dir - 12, y + 16, {font:"bold 11px " + MONO, align:"right"});
-  texto(ctx, draw, `Gerado em ${r.data} às ${r.horaGeracao}`, P + 12, y + 31, {font:"10px " + FONTE, cor:"#5B6660"});
+  texto(ctx, draw, `Gerado em ${r.data} às ${r.horaGeracao}`, P + 12, y + 31, {font:"10px " + FONTE, cor:"#4B554F"});
   texto(ctx, draw, "Preço válido apenas no momento da geração — pode haver alteração.", P + 12, y + 46, {font:"bold 10px " + FONTE, cor:"#854F0B", maxW:dir - P - 24});
   y += refH + 12;
 
@@ -1868,8 +1864,8 @@ function layoutFicha(ctx, draw, r, logo){
   const gap = 10, bw = (dir - P - gap * 3) / 4, bh = 48;
   info.forEach(([k, v], i) => {
     const x = P + i * (bw + gap);
-    caixa(ctx, draw, x, y, bw, bh, 8, "#F6F8F2", "#E2E7DA");
-    texto(ctx, draw, k.toUpperCase(), x + 10, y + 17, {font:"bold 9px " + FONTE, cor:"#5B6660", espaco:"0.6px", maxW:bw - 20});
+    caixa(ctx, draw, x, y, bw, bh, 8, "#F7FAF5", "#DCE3D6");
+    texto(ctx, draw, k.toUpperCase(), x + 10, y + 17, {font:"bold 9px " + FONTE, cor:"#4B554F", espaco:"0.6px", maxW:bw - 20});
     texto(ctx, draw, v, x + 10, y + 36, {font:"bold 14px " + FONTE, maxW:bw - 20});
   });
   y += bh + 14;
@@ -1879,7 +1875,7 @@ function layoutFicha(ctx, draw, r, logo){
     const linha = r.params.map(([k, v]) => `${k}: ${v}`).join("   ·   ");
     ctx.font = "11.5px " + FONTE;
     quebraTexto(ctx, linha, dir - P).forEach(l => {
-      texto(ctx, draw, l, P, y + 10, {font:"11.5px " + FONTE, cor:"#5B6660"});
+      texto(ctx, draw, l, P, y + 10, {font:"11.5px " + FONTE, cor:"#4B554F"});
       y += 16;
     });
     y += 6;
@@ -1889,47 +1885,46 @@ function layoutFicha(ctx, draw, r, logo){
   ctx.font = "10.5px " + FONTE;
   const comboLinhas = r.combo ? quebraTexto(ctx, r.combo, dir - P - 28) : [];
   const alturaTotal = 78 + (comboLinhas.length ? comboLinhas.length * 14 + 6 : 0);
-  caixa(ctx, draw, P, y, dir - P, alturaTotal, 10, "#FFFFFF", r.accent);
-  texto(ctx, draw, "NECESSIDADE TOTAL", P + 14, y + 22, {font:"bold 10px " + FONTE, cor:r.accent, espaco:"1.2px"});
+  caixa(ctx, draw, P, y, dir - P, alturaTotal, 10, "#FFFFFF", "#DCE3D6");
+  texto(ctx, draw, "NECESSIDADE TOTAL", P + 14, y + 22, {font:"bold 10px " + FONTE, cor:"#4B554F", espaco:"1.2px"});
   texto(ctx, draw, r.total, P + 14, y + 58, {font:"bold 30px " + MONO});
   if(draw){
     ctx.font = "bold 30px " + MONO;
     const w = ctx.measureText(r.total).width;
-    texto(ctx, draw, r.unidade, P + 22 + w, y + 58, {font:"13px " + FONTE, cor:"#5B6660"});
+    texto(ctx, draw, r.unidade, P + 22 + w, y + 58, {font:"13px " + FONTE, cor:"#4B554F"});
   }
-  comboLinhas.forEach((l, i) => texto(ctx, draw, l, P + 14, y + 78 + i * 14, {font:"10.5px " + FONTE, cor:"#5B6660"}));
+  comboLinhas.forEach((l, i) => texto(ctx, draw, l, P + 14, y + 78 + i * 14, {font:"10.5px " + FONTE, cor:"#4B554F"}));
   y += alturaTotal + 18;
 
   // nutrientes (adubação)
   if(r.nutrientes.length){
-    texto(ctx, draw, "NUTRIENTE QUE SERÁ FORNECIDO AO SOLO · TOTAL NA ÁREA", P, y + 10, {font:"bold 9.5px " + FONTE, cor:"#5B6660", espaco:"0.6px"});
+    texto(ctx, draw, "NUTRIENTE QUE SERÁ FORNECIDO AO SOLO · TOTAL NA ÁREA", P, y + 10, {font:"bold 9.5px " + FONTE, cor:"#4B554F", espaco:"0.6px"});
     y += 20;
     const nw = (dir - P - 20) / 3, nh = 44;
     r.nutrientes.forEach((n, i) => {
       const x = P + i * (nw + 10);
-      caixa(ctx, draw, x, y, nw, nh, 8, "#FFFFFF", "#E2E7DA");
-      texto(ctx, draw, n.nome, x + 10, y + 16, {font:"bold 9.5px " + FONTE, cor:"#5B6660", maxW:nw - 20});
+      caixa(ctx, draw, x, y, nw, nh, 8, "#F7FAF5", "#DCE3D6");
+      texto(ctx, draw, n.nome, x + 10, y + 16, {font:"bold 9.5px " + FONTE, cor:"#4B554F", maxW:nw - 20});
       texto(ctx, draw, n.valor, x + 10, y + 33, {font:"bold 14px " + MONO, maxW:nw - 20});
-      texto(ctx, draw, n.porAlq, x + nw - 10, y + 33, {font:"9.5px " + FONTE, cor:"#5B6660", align:"right"});
+      texto(ctx, draw, n.porAlq, x + nw - 10, y + 33, {font:"9.5px " + FONTE, cor:"#4B554F", align:"right"});
     });
     y += nh + 18;
   }
 
   // tabela de custos
-  texto(ctx, draw, "Custo por embalagem", P, y + 12, {font:"bold 13px " + FONTE});
+  texto(ctx, draw, "Custo por embalagem", P, y + 12, {font:"bold 13px " + FONTE, cor:"#4B554F"});
   texto(ctx, draw, r.vencimento ? `Vencimento do prazo: ${r.vencimento} ${r.vencimentoDias}` : "Prazo sem data informada",
-        dir, y + 12, {font:"10.5px " + FONTE, cor:"#5B6660", align:"right"});
+        dir, y + 12, {font:"10.5px " + FONTE, cor:"#4B554F", align:"right"});
   y += 24;
 
   const colMoeda = 152;
   const x4 = dir, x3 = dir - colMoeda, x2 = dir - colMoeda * 2, x1 = dir - colMoeda * 3;
   const larguraNome = x1 - colMoeda - P + colMoeda - 12;
-  texto(ctx, draw, "EMBALAGEM", P, y + 10, {font:"bold 9px " + FONTE, cor:"#5B6660", espaco:"0.5px"});
-  [["PREÇO À VISTA", x1], ["PREÇO A PRAZO", x2], ["CUSTO À VISTA", x3], ["CUSTO A PRAZO", x4]]
-    .forEach(([t, x]) => texto(ctx, draw, t, x, y + 10, {font:"bold 9px " + FONTE, cor:"#5B6660", align:"right", espaco:"0.5px"}));
-  y += 16;
-  risco(ctx, draw, P, y, dir);
-  y += 4;
+  caixa(ctx, draw, P, y, dir - P, 22, 6, "#F1F5ED");
+  texto(ctx, draw, "EMBALAGEM", P + 8, y + 14, {font:"bold 9px " + FONTE, cor:"#4B554F", espaco:"0.5px"});
+  [["PREÇO À VISTA", x1], ["PREÇO A PRAZO", x2], ["CUSTO À VISTA", x3], ["CUSTO A PRAZO", x4 - 8]]
+    .forEach(([t, x]) => texto(ctx, draw, t, x, y + 14, {font:"bold 9px " + FONTE, cor:"#4B554F", align:"right", espaco:"0.5px"}));
+  y += 30;
 
   r.linhas.forEach(l => {
     const alt = 44;
@@ -1937,28 +1932,28 @@ function layoutFicha(ctx, draw, r, logo){
     if(l.menor){
       ctx.font = "bold 12.5px " + FONTE;
       const wn = Math.min(ctx.measureText(l.nome).width, larguraNome - 92);
-      caixa(ctx, draw, P + wn + 8, y + 5, 84, 16, 8, "rgba(46,107,94,.12)", null);
-      texto(ctx, draw, "MENOR CUSTO", P + wn + 14, y + 16, {font:"bold 8.5px " + FONTE, cor:"#2E6B5E"});
+      caixa(ctx, draw, P + wn + 8, y + 5, 84, 16, 8, "rgba(35,107,86,0.12)", null);
+      texto(ctx, draw, "MENOR CUSTO", P + wn + 14, y + 16, {font:"bold 8.5px " + FONTE, cor:"#236B56"});
     }
-    texto(ctx, draw, l.qtd, P, y + 33, {font:"10.5px " + MONO, cor:"#5B6660", maxW:larguraNome});
-    texto(ctx, draw, l.precoVista, x1, y + 20, {font:"11.5px " + MONO, cor:"#5B6660", align:"right", maxW:colMoeda - 10});
-    texto(ctx, draw, l.precoPrazo, x2, y + 20, {font:"11.5px " + MONO, cor:"#5B6660", align:"right", maxW:colMoeda - 10});
+    texto(ctx, draw, l.qtd, P, y + 33, {font:"10.5px " + MONO, cor:"#4B554F", maxW:larguraNome});
+    texto(ctx, draw, l.precoVista, x1, y + 20, {font:"11.5px " + MONO, cor:"#4B554F", align:"right", maxW:colMoeda - 10});
+    texto(ctx, draw, l.precoPrazo, x2, y + 20, {font:"11.5px " + MONO, cor:"#4B554F", align:"right", maxW:colMoeda - 10});
     texto(ctx, draw, l.vista, x3, y + 18, {font:"bold 13px " + MONO, align:"right"});
-    texto(ctx, draw, l.vistaAlq, x3, y + 32, {font:"9.5px " + FONTE, cor:"#5B6660", align:"right"});
+    texto(ctx, draw, l.vistaAlq, x3, y + 32, {font:"9.5px " + FONTE, cor:"#4B554F", align:"right"});
     texto(ctx, draw, l.prazo, x4, y + 18, {font:"bold 13px " + MONO, align:"right"});
-    texto(ctx, draw, l.prazoAlq, x4, y + 32, {font:"9.5px " + FONTE, cor:"#5B6660", align:"right"});
+    texto(ctx, draw, l.prazoAlq, x4, y + 32, {font:"9.5px " + FONTE, cor:"#4B554F", align:"right"});
     y += alt;
-    risco(ctx, draw, P, y, dir, "#EDF1E6");
+    risco(ctx, draw, P, y, dir, "#EEF2EB");
     y += 4;
   });
 
   y += 6;
   texto(ctx, draw, "Bag e sacaria são alternativas de compra — os custos das linhas não se somam. Quantidades arredondadas para embalagem fechada.",
-        P, y + 10, {font:"10px " + FONTE, cor:"#5B6660", maxW:dir - P});
+        P, y + 10, {font:"10px " + FONTE, cor:"#4B554F", maxW:dir - P});
   y += 24;
   risco(ctx, draw, P, y, dir);
   texto(ctx, draw, "Gerado pela Calculadora de Sementes e Adubação · Coasul — valores sujeitos a conferência pelo técnico.",
-        P, y + 18, {font:"9.5px " + FONTE, cor:"#5B6660"});
+        P, y + 18, {font:"9.5px " + FONTE, cor:"#4B554F"});
   y += 30;
 
   return { largura:W, altura:y + P - 20 };
@@ -1991,17 +1986,14 @@ function layoutFichaRegulagem(ctx, draw, r, logo){
   let y = P;
   const num = (v, suf) => v ? String(v).replace(".", ",") + (suf || "") : "—";
 
-  if(draw){ ctx.fillStyle = "#D99A1E"; ctx.fillRect(P, y, dir - P, 3); }
-  y += 3 + 16;
-
   const logoH = 44, logoW = logo && logo.naturalWidth ? logoH * logo.naturalWidth / logo.naturalHeight : 60;
   if(draw && logo) ctx.drawImage(logo, P, y, logoW, logoH);
   const xt = P + logoW + 16;
-  texto(ctx, draw, "COASUL AGRO · FICHA DE REGULAGEM", xt, y + 14, {font:"bold 10px " + FONTE, cor:"#5B6660", espaco:"1.6px"});
+  texto(ctx, draw, "COASUL AGRO · FICHA DE REGULAGEM", xt, y + 14, {font:"bold 10px " + FONTE, cor:"#4B554F", espaco:"1.6px"});
   const iconSize = 18;
   drawIcon(ctx, draw, "regua", xt, y + 36 - iconSize + 3, iconSize, r.accent);
   texto(ctx, draw, `Regulagem de Plantadeira · ${r.variante === "semente" ? "Semente" : "Adubo"}`, xt + iconSize + 7, y + 36, {font:"600 20px " + FONTE, maxW:dir - xt - iconSize - 7 - 110});
-  texto(ctx, draw, r.data, dir, y + 14, {font:"11px " + FONTE, cor:"#5B6660", align:"right"});
+  texto(ctx, draw, r.data, dir, y + 14, {font:"11px " + FONTE, cor:"#4B554F", align:"right"});
   y += logoH + 12;
   risco(ctx, draw, P, y, dir, r.accent);
   if(draw){ ctx.fillStyle = r.accent; ctx.fillRect(P, y, dir - P, 2.5); }
@@ -2011,8 +2003,8 @@ function layoutFichaRegulagem(ctx, draw, r, logo){
     ctx.font = "10.5px " + FONTE;
     const alturaLinhas = linhas.reduce((h, l) => h + quebraTexto(ctx, l, largura - 24).length * 15, 0);
     const altura = 36 + alturaLinhas + 10;
-    caixa(ctx, draw, x, yy, largura, altura, 8, "#F8FAF4", "#E2E7DA");
-    texto(ctx, draw, titulo, x + 12, yy + 18, {font:"bold 11px " + FONTE, maxW:largura - 24});
+    caixa(ctx, draw, x, yy, largura, altura, 8, "#F7FAF5", "#DCE3D6");
+    texto(ctx, draw, titulo, x + 12, yy + 18, {font:"bold 11px " + FONTE, cor:"#4B554F", maxW:largura - 24});
     let ly = yy + 36;
     linhas.forEach(l => {
       quebraTexto(ctx, l, largura - 24).forEach(parte => {
@@ -2028,25 +2020,25 @@ function layoutFichaRegulagem(ctx, draw, r, logo){
     const gap = 10, bw = (dir - P - gap * 2) / 3, bh = 48;
     info.forEach(([k, v], i) => {
       const x = P + i * (bw + gap);
-      caixa(ctx, draw, x, y, bw, bh, 8, "#F6F8F2", "#E2E7DA");
-      texto(ctx, draw, k.toUpperCase(), x + 10, y + 17, {font:"bold 9px " + FONTE, cor:"#5B6660", espaco:"0.6px", maxW:bw - 20});
+      caixa(ctx, draw, x, y, bw, bh, 8, "#F7FAF5", "#DCE3D6");
+      texto(ctx, draw, k.toUpperCase(), x + 10, y + 17, {font:"bold 9px " + FONTE, cor:"#4B554F", espaco:"0.6px", maxW:bw - 20});
       texto(ctx, draw, v, x + 10, y + 36, {font:"bold 14px " + FONTE, maxW:bw - 20});
     });
     y += bh + 18;
 
-    caixa(ctx, draw, P, y, dir - P, 78, 10, "#FFFFFF", r.accent);
-    texto(ctx, draw, "PLANTAS POR METRO LINEAR", P + 14, y + 22, {font:"bold 10px " + FONTE, cor:r.accent, espaco:"1.2px"});
+    caixa(ctx, draw, P, y, dir - P, 78, 10, "#FFFFFF", "#DCE3D6");
+    texto(ctx, draw, "PLANTAS POR METRO LINEAR", P + 14, y + 22, {font:"bold 10px " + FONTE, cor:"#4B554F", espaco:"1.2px"});
     texto(ctx, draw, r.plantasMetro, P + 14, y + 58, {font:"bold 30px " + MONO});
     if(draw){
       ctx.font = "bold 30px " + MONO;
       const w = ctx.measureText(r.plantasMetro).width;
-      texto(ctx, draw, "plantas/m", P + 22 + w, y + 58, {font:"13px " + FONTE, cor:"#5B6660"});
+      texto(ctx, draw, "plantas/m", P + 22 + w, y + 58, {font:"13px " + FONTE, cor:"#4B554F"});
     }
     y += 78 + 10;
-    texto(ctx, draw, `Plantas/ha: ${r.plantasHa}   ·   Metros lineares/ha: ${r.metrosLineares}`, P, y, {font:"10.5px " + FONTE, cor:"#5B6660"});
+    texto(ctx, draw, `Plantas/ha: ${r.plantasHa}   ·   Metros lineares/ha: ${r.metrosLineares}`, P, y, {font:"10.5px " + FONTE, cor:"#4B554F"});
     y += 26;
 
-    texto(ctx, draw, "Regulagem avançada", P, y + 4, {font:"bold 13px " + FONTE});
+    texto(ctx, draw, "Regulagem avançada", P, y + 4, {font:"bold 13px " + FONTE, cor:"#4B554F"});
     y += 22;
 
     const cw = (dir - P - 12) / 2;
@@ -2077,28 +2069,28 @@ function layoutFichaRegulagem(ctx, draw, r, logo){
     const gap = 10, bw = (dir - P - gap) / 2, bh = 48;
     info.forEach(([k, v], i) => {
       const x = P + i * (bw + gap);
-      caixa(ctx, draw, x, y, bw, bh, 8, "#F6F8F2", "#E2E7DA");
-      texto(ctx, draw, k.toUpperCase(), x + 10, y + 17, {font:"bold 9px " + FONTE, cor:"#5B6660", espaco:"0.6px", maxW:bw - 20});
+      caixa(ctx, draw, x, y, bw, bh, 8, "#F7FAF5", "#DCE3D6");
+      texto(ctx, draw, k.toUpperCase(), x + 10, y + 17, {font:"bold 9px " + FONTE, cor:"#4B554F", espaco:"0.6px", maxW:bw - 20});
       texto(ctx, draw, v, x + 10, y + 36, {font:"bold 14px " + FONTE, maxW:bw - 20});
     });
     y += bh + 18;
 
-    caixa(ctx, draw, P, y, dir - P, 78, 10, "#FFFFFF", r.accent);
-    texto(ctx, draw, "ADUBO POR METRO LINEAR", P + 14, y + 22, {font:"bold 10px " + FONTE, cor:r.accent, espaco:"1.2px"});
+    caixa(ctx, draw, P, y, dir - P, 78, 10, "#FFFFFF", "#DCE3D6");
+    texto(ctx, draw, "ADUBO POR METRO LINEAR", P + 14, y + 22, {font:"bold 10px " + FONTE, cor:"#4B554F", espaco:"1.2px"});
     texto(ctx, draw, r.aduboG, P + 14, y + 58, {font:"bold 30px " + MONO});
     if(draw){
       ctx.font = "bold 30px " + MONO;
       const w = ctx.measureText(r.aduboG).width;
-      texto(ctx, draw, "g/m", P + 22 + w, y + 58, {font:"13px " + FONTE, cor:"#5B6660"});
+      texto(ctx, draw, "g/m", P + 22 + w, y + 58, {font:"13px " + FONTE, cor:"#4B554F"});
     }
     y += 78 + 10;
-    texto(ctx, draw, `Metros lineares/ha: ${r.metrosLineares}   ·   Adubo/m: ${r.aduboKg} kg`, P, y, {font:"10.5px " + FONTE, cor:"#5B6660"});
+    texto(ctx, draw, `Metros lineares/ha: ${r.metrosLineares}   ·   Adubo/m: ${r.aduboKg} kg`, P, y, {font:"10.5px " + FONTE, cor:"#4B554F"});
     y += 26;
   }
 
   risco(ctx, draw, P, y, dir);
   texto(ctx, draw, "Gerado pela ficha de Regulagem de Plantadeira · Coasul — valores sujeitos a conferência pelo técnico.",
-        P, y + 18, {font:"9.5px " + FONTE, cor:"#5B6660"});
+        P, y + 18, {font:"9.5px " + FONTE, cor:"#4B554F"});
   y += 30;
 
   return { largura:W, altura:y + P - 20 };
