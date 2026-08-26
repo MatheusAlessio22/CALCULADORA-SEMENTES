@@ -734,18 +734,18 @@ function calc(){
     // (r.combo em montarReportData()), que precisa de uma frase corrida, não do HTML da dica.
     hint.dataset.plain = `Sobra fracionada: dá para levar ${k.nBags} × ${k.bag.label} + ${k.nSacas} × ${k.saca.label} (em vez de arredondar a embalagem maior para cima).`;
     hint.innerHTML = `
-      <div style="background:#E6F1FB;border-radius:14px;padding:14px 16px;">
+      <div style="background:#EFF6FC;border:1px solid #CBE0F5;border-radius:14px;padding:14px 16px;">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0C447C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1.1 2h5c.1-.8.5-1.5 1.1-2A6 6 0 0 0 12 3z"/><line x1="9.5" y1="19" x2="14.5" y2="19"/><line x1="10" y1="21.5" x2="14" y2="21.5"/></svg>
           <span style="font-size:12px;font-weight:500;color:#0C447C;">Combinação sugerida — evita arredondar para cima</span>
         </div>
         <div style="display:flex;align-items:center;gap:10px;">
-          <div style="flex:1;background:#FFFFFF;border:1px solid #B5D4F4;border-radius:12px;padding:10px 12px;text-align:center;">
+          <div style="flex:1;background:#FFFFFF;border:1px solid #CBE0F5;border-radius:12px;padding:10px 12px;text-align:center;">
             <div style="font-family:monospace;font-size:22px;font-weight:700;color:#0C447C;">${k.nBags}×</div>
             <div style="font-size:11px;color:#185FA5;margin-top:2px;">${k.bag.label}</div>
           </div>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          <div style="flex:1;background:#FFFFFF;border:1px solid #B5D4F4;border-radius:12px;padding:10px 12px;text-align:center;">
+          <div style="flex:1;background:#FFFFFF;border:1px solid #CBE0F5;border-radius:12px;padding:10px 12px;text-align:center;">
             <div style="font-family:monospace;font-size:22px;font-weight:700;color:#0C447C;">${k.nSacas}×</div>
             <div style="font-size:11px;color:#185FA5;margin-top:2px;">${k.saca.label}</div>
           </div>
@@ -1003,7 +1003,7 @@ function renderCustos(unidades){
 
     // no desktop a lista vira tabela: um cabeçalho e uma linha por embalagem
     const head = document.createElement("div");
-    head.className = "hidden lg:grid-cols-[1.45fr_.9fr_.9fr_1.02fr_1.02fr] lg:grid lg:gap-2 lg:px-3.5 lg:pb-0.5";
+    head.className = "custos-head";
     head.innerHTML = ["Embalagem","Preço à vista","Preço a prazo","Custo à vista","Custo a prazo"]
       .map(t => `<span class="whitespace-nowrap text-[10px] font-bold uppercase tracking-wide text-muted">${t}</span>`).join("");
     list.appendChild(head);
@@ -1012,32 +1012,31 @@ function renderCustos(unidades){
       const key = custoKey(currentCrop, u.label);
       const p = custoPrecos[key] || {};
       const item = document.createElement("div");
-      item.className = "border-b border-line p-3.5 lg:p-2";
-      item.style.borderLeft = "4px solid var(--accent)";
+      item.className = "custo-card-item";
 
       if(u.combo){
-        item.className += " border-dashed";
+        item.className = "custo-card-item is-combo";
         item.innerHTML = `
-        <div class="grid grid-cols-2 gap-3 lg:grid-cols-[1.45fr_.9fr_.9fr_1.02fr_1.02fr] lg:items-center lg:gap-2">
+        <div class="custos-grid">
           <div class="col-span-2 mb-1 lg:col-span-1 lg:mb-0">
-            <span class="text-[13.5px] font-extrabold lg:text-[12.5px] lg:leading-tight">${u.label}</span>
-            <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
-              <span class="font-mono text-[11.5px] text-muted lg:text-[10.5px]" id="custoQtd-${i}">—</span>
-              <span id="custoBadge-${i}" class="hidden whitespace-nowrap rounded-full bg-brand-money/10 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wide text-brand-money"><span class="lg:hidden">menor custo</span><span class="hidden lg:inline">menor</span></span>
-            </span>
+            <span class="text-[13px] font-extrabold text-ink lg:leading-tight">${u.label}</span>
+            <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
+              <span class="font-mono text-[11px] text-muted" id="custoQtd-${i}">—</span>
+              <span id="custoBadge-${i}" class="hidden whitespace-nowrap rounded-full bg-brand-money/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-brand-money"><span class="lg:hidden">menor custo</span><span class="hidden lg:inline">menor</span></span>
+            </div>
           </div>
           <div class="col-span-2 self-center text-[10.5px] leading-snug text-muted lg:col-span-2">
             usa os preços acima
           </div>
           <div>
             <div class="text-[10px] font-semibold uppercase tracking-wide text-muted lg:hidden">Custo à vista</div>
-            <div class="whitespace-nowrap font-mono text-[16px] font-bold tabular-nums lg:text-[14px]" id="custoVista-${i}">R$ 0,00</div>
-            <div class="whitespace-nowrap text-[10.5px] text-muted lg:text-[10px]" id="custoVistaAlq-${i}">R$ 0,00 / alqueire</div>
+            <div class="whitespace-nowrap font-mono text-[14px] font-bold tabular-nums text-ink" id="custoVista-${i}">R$ 0,00</div>
+            <div class="whitespace-nowrap text-[10.5px] text-muted" id="custoVistaAlq-${i}">R$ 0,00 / alqueire</div>
           </div>
           <div>
             <div class="text-[10px] font-semibold uppercase tracking-wide text-muted lg:hidden" id="custoPrazoRot-${i}">Custo a prazo</div>
-            <div class="whitespace-nowrap font-mono text-[16px] font-bold tabular-nums lg:text-[14px]" id="custoPrazo-${i}">R$ 0,00</div>
-            <div class="whitespace-nowrap text-[10.5px] text-muted lg:text-[10px]" id="custoPrazoAlq-${i}">R$ 0,00 / alqueire</div>
+            <div class="whitespace-nowrap font-mono text-[14px] font-bold tabular-nums text-ink" id="custoPrazo-${i}">R$ 0,00</div>
+            <div class="whitespace-nowrap text-[10.5px] text-muted" id="custoPrazoAlq-${i}">R$ 0,00 / alqueire</div>
           </div>
         </div>`;
         list.appendChild(item);
@@ -1045,13 +1044,13 @@ function renderCustos(unidades){
       }
 
       item.innerHTML = `
-        <div class="grid grid-cols-2 gap-3 lg:grid-cols-[1.45fr_.9fr_.9fr_1.02fr_1.02fr] lg:items-center lg:gap-2">
+        <div class="custos-grid">
           <div class="col-span-2 mb-1 flex flex-wrap items-baseline justify-between gap-x-2 lg:col-span-1 lg:mb-0 lg:block">
-            <span class="text-[13.5px] font-extrabold lg:text-[12.5px] lg:leading-tight">${u.label}</span>
-            <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
-              <span class="whitespace-nowrap font-mono text-[11.5px] text-muted lg:text-[10.5px]" id="custoQtd-${i}">—</span>
-              <span id="custoBadge-${i}" class="hidden whitespace-nowrap rounded-full bg-brand-money/10 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wide text-brand-money"><span class="lg:hidden">menor custo</span><span class="hidden lg:inline">menor</span></span>
-            </span>
+            <span class="text-[13px] font-extrabold text-ink lg:leading-tight">${u.label}</span>
+            <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
+              <span class="whitespace-nowrap font-mono text-[11px] text-muted" id="custoQtd-${i}">—</span>
+              <span id="custoBadge-${i}" class="hidden whitespace-nowrap rounded-full bg-brand-money/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-brand-money"><span class="lg:hidden">menor custo</span><span class="hidden lg:inline">menor</span></span>
+            </div>
           </div>
 
           <div>
@@ -1072,13 +1071,13 @@ function renderCustos(unidades){
           </div>
           <div>
             <div class="text-[10px] font-semibold uppercase tracking-wide text-muted lg:hidden">Custo à vista</div>
-            <div class="whitespace-nowrap font-mono text-[16px] font-bold tabular-nums lg:text-[14px]" id="custoVista-${i}">R$ 0,00</div>
-            <div class="whitespace-nowrap text-[10.5px] text-muted lg:text-[10px]" id="custoVistaAlq-${i}">R$ 0,00 / alqueire</div>
+            <div class="whitespace-nowrap font-mono text-[14px] font-bold tabular-nums text-ink" id="custoVista-${i}">R$ 0,00</div>
+            <div class="whitespace-nowrap text-[10.5px] text-muted" id="custoVistaAlq-${i}">R$ 0,00 / alqueire</div>
           </div>
           <div>
             <div class="text-[10px] font-semibold uppercase tracking-wide text-muted lg:hidden" id="custoPrazoRot-${i}">Custo a prazo</div>
-            <div class="whitespace-nowrap font-mono text-[16px] font-bold tabular-nums lg:text-[14px]" id="custoPrazo-${i}">R$ 0,00</div>
-            <div class="whitespace-nowrap text-[10.5px] text-muted lg:text-[10px]" id="custoPrazoAlq-${i}">R$ 0,00 / alqueire</div>
+            <div class="whitespace-nowrap font-mono text-[14px] font-bold tabular-nums text-ink" id="custoPrazo-${i}">R$ 0,00</div>
+            <div class="whitespace-nowrap text-[10.5px] text-muted" id="custoPrazoAlq-${i}">R$ 0,00 / alqueire</div>
           </div>
         </div>
       `;
@@ -1188,6 +1187,19 @@ const compRows = [
   { texto: "", preco: "" },
 ];
 
+// chips de preenchimento rápido: MAP/Ureia/KCl entram já com o NPK padrão de
+// mercado embutido no texto (ex.: "MAP 11-52-00"), pra lerFormulacao() (a
+// mesma função do campo "Formulação cotada" acima) reconhecer pelo número,
+// sem precisar de mais um nome na lista FORMULACOES_NOMEADAS.
+const COMP_CHIPS = [
+  { label: "04-14-08", formula: "04-14-08" },
+  { label: "10-15-15", formula: "10-15-15" },
+  { label: "02-20-20", formula: "02-20-20" },
+  { label: "MAP", formula: "MAP 11-52-00" },
+  { label: "Ureia", formula: "Ureia 45-00-00" },
+  { label: "KCl", formula: "KCl 00-00-60" },
+];
+
 function renderComparador(){
   const rowsBox = $("compRows");
   rowsBox.innerHTML = "";
@@ -1200,6 +1212,9 @@ function renderComparador(){
         <div>
           <label class="lbl" for="compFormula-${i}">Formulação</label>
           <input type="text" id="compFormula-${i}" class="inp" placeholder="Ex.: 04-14-08, MAP, Ureia" autocomplete="off">
+          <div class="comp-chip-row">
+            ${COMP_CHIPS.map(c => `<button type="button" class="comp-chip" data-formula="${c.formula}">${c.label}</button>`).join("")}
+          </div>
         </div>
         <div>
           <label class="lbl" for="compPreco-${i}">Preço por kg</label>
@@ -1209,7 +1224,7 @@ function renderComparador(){
           </div>
         </div>
       </div>
-      <div class="comp-result-grid" id="compResult-${i}"></div>
+      <div class="comp-card-body" id="compResult-${i}"></div>
       ${compRows.length > 2 ? `<button type="button" class="comp-remove mt-2" data-i="${i}">remover formulação</button>` : ""}
     `;
     rowsBox.appendChild(div);
@@ -1220,6 +1235,14 @@ function renderComparador(){
     inpPreco.value = row.preco;
     inpFormula.addEventListener("input", e => { row.texto = e.target.value; updateComparador(); });
     inpPreco.addEventListener("input", e => { row.preco = e.target.value; updateComparador(); });
+
+    div.querySelectorAll(".comp-chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        inpFormula.value = chip.dataset.formula;
+        row.texto = chip.dataset.formula;
+        updateComparador();
+      });
+    });
 
     const rm = div.querySelector(".comp-remove");
     if(rm) rm.addEventListener("click", () => { compRows.splice(i, 1); renderComparador(); });
@@ -1235,7 +1258,10 @@ function updateComparador(){
   const areaHa = area * ALQ_HA;
   const necessidade = parseFloat($("compDose").value) || 0; // kg/ha: dose (modo "dose") ou necessidade de NPK (modo "npk")
 
-  const validas = [];
+  // 1ª passada: calcula cada linha reconhecida e guarda o resultado — precisa
+  // terminar todas antes de saber qual é a mais barata (2ª passada, abaixo),
+  // pra montar o badge "menor custo" e a linha de diferença percentual.
+  const resultados = [];
 
   compRows.forEach((row, i) => {
     const box = $(`compResult-${i}`);
@@ -1262,18 +1288,67 @@ function updateComparador(){
     // modo "dose": todas recebem a mesma dose informada · modo "npk": cada uma usa a dose
     // que entrega, sozinha, a necessidade total de nutrientes informada (kg/ha ÷ % NPK da formulação)
     const dose = compModo === "dose" ? necessidade : (somaNpk > 0 ? necessidade / (somaNpk / 100) : 0);
-    const custoTotal = dose * preco * areaHa;
+    const doseAlq = dose * ALQ_HA;
+    const totalKg = dose * areaHa;
+    const bagTamanho = bagSizeFromNpk(n, p, k); // 750 kg só pra ureia específica; demais em bag de 1.000 kg
+    const bags = bagTamanho > 0 ? totalKg / bagTamanho : 0;
+    const sacas = totalKg / getSacaAduboSize(); // sempre 50 kg, mesma saca da aba principal
+    const custoHa = dose * preco;
+    const custoAlq = custoHa * ALQ_HA;
+    const custoTotal = custoHa * areaHa; // mesma fórmula de sempre (dose × preço × área em ha)
 
-    box.innerHTML = `
-      <div><div class="comp-result-label">NPK identificado</div><div class="comp-result-value">${n}-${p}-${k}</div></div>
-      <div><div class="comp-result-label">Dose calculada</div><div class="comp-result-value">${fmtDec(dose)} kg/ha</div></div>
-      <div><div class="comp-result-label">Custo total</div><div class="comp-result-value" style="font-size:15px;">${fmtMoeda(custoTotal)}</div></div>
-    `;
-
-    if(preco > 0 && dose > 0) validas.push({ i, custoTotal });
+    resultados.push({
+      i, box, n, p, k, somaNpk, dose, doseAlq, bagTamanho, bags, sacas,
+      custoHa, custoAlq, custoTotal, temPreco: preco > 0 && dose > 0,
+    });
   });
 
-  const menor = validas.length > 1 ? validas.reduce((a, b) => a.custoTotal < b.custoTotal ? a : b) : null;
+  const validos = resultados.filter(r => r.temPreco);
+  const menor = validos.length > 1 ? validos.reduce((a, b) => a.custoTotal < b.custoTotal ? a : b) : null;
+
+  // 2ª passada: agora que sabemos qual é a mais barata, desenha o cartão de
+  // cada linha reconhecida (badge de NPK, grade de 4 métricas e, quando
+  // aplicável, o badge "menor custo" ou a diferença em R$/% pra ela).
+  resultados.forEach(r => {
+    const isCheapest = !!menor && r.i === menor.i;
+    const bagLabel = r.bagTamanho === 750 ? "bags 750kg" : "bags 1.000kg";
+    let deltaHtml = "";
+    if(menor && !isCheapest && r.temPreco){
+      const diff = r.custoTotal - menor.custoTotal;
+      const pct = menor.custoTotal > 0 ? (diff / menor.custoTotal) * 100 : 0;
+      deltaHtml = `<div class="comp-delta">+ ${fmtMoeda(diff)} (+${fmtDec(pct)}%) em relação à melhor opção</div>`;
+    }
+    r.box.innerHTML = `
+      <div class="comp-npk-row">
+        <span class="comp-npk-badge">${r.n}-${r.p}-${r.k} <span class="comp-npk-total">· ${fmtInt(r.somaNpk)}% ativos</span></span>
+        ${isCheapest ? `<span class="comp-cheapest-badge">★ Menor Custo</span>` : ""}
+      </div>
+      <div class="comp-metric-grid">
+        <div class="comp-metric-box">
+          <div class="comp-metric-label">Dose calculada</div>
+          <div class="comp-metric-value">${fmtDec(r.dose)} kg/ha</div>
+          <div class="comp-metric-sub">${fmtDec(r.doseAlq)} kg/alq</div>
+        </div>
+        <div class="comp-metric-box">
+          <div class="comp-metric-label">Volume estimado</div>
+          <div class="comp-metric-value">${fmtDec(r.bags)} ${bagLabel}</div>
+          <div class="comp-metric-sub">${fmtDec(r.sacas)} sacas 50kg</div>
+        </div>
+        <div class="comp-metric-box">
+          <div class="comp-metric-label">Custo por área</div>
+          <div class="comp-metric-value">${fmtMoeda(r.custoHa)}/ha</div>
+          <div class="comp-metric-sub">${fmtMoeda(r.custoAlq)}/alq</div>
+        </div>
+        <div class="comp-metric-box is-total">
+          <div class="comp-metric-label">Custo total</div>
+          <div class="comp-metric-value">${fmtMoeda(r.custoTotal)}</div>
+          <div class="comp-metric-sub">${area > 0 ? "na área informada" : "informe a área acima"}</div>
+        </div>
+      </div>
+      ${deltaHtml}
+    `;
+  });
+
   compRows.forEach((_row, i) => {
     const div = $(`compRow-${i}`);
     if(div) div.classList.toggle("is-cheapest", !!menor && i === menor.i);
