@@ -35,10 +35,26 @@ const CROPS = {
   },
 };
 
-// Formulações de ureia/adubo que só existem em bag de 750 kg — todas as demais são 1.000 kg
-const FORMULACOES_750KG = [[33,0,0],[40,0,0],[30,0,20]];
+// TODO: confirmar faixas oficiais com o setor agronômico — abaixo é só um
+// ponto de partida (±20% do valor sugerido em CROPS[cultura].plantas), exceto
+// soja, que já veio validada como exemplo do produto (8 a 12 plantas/m).
+const FAIXA_USUAL_PLANTAS = {
+  soja:   { min: 8,   max: 12 },
+  feijao: { min: 10,  max: 16 },
+  milho:  { min: 2.6, max: 4  }, // variante "semente" (sugerido: 3,3 plantas/m)
+  trigo:  { min: 48,  max: 72 }, // variante "semente" (sugerido: 60 plantas/m)
+};
+
+// fórmulas puras (sem DOM) moram em calculos.js, carregado antes deste arquivo — ver ali
+// para as implementações e o motivo da separação (testes automatizados com Vitest)
+const {
+  ALQ_HA, calcularSementes, calcularSacas, calcularDose, calcularDosePMS,
+  montarCombo, bagSizeFromNpk, calcularCusto, formatarPrecoResumo, precisaAlertarPrazoAusente,
+} = Calculos;
 
 const $ = id => document.getElementById(id);
+
+$("footerVersion").textContent = "v" + APP_VERSION;
 
 // nomes comerciais comuns que não trazem o NPK escrito no rótulo, mas têm formulação padrão conhecida
 const FORMULACOES_NOMEADAS = [
@@ -62,9 +78,19 @@ function lerFormulacao(texto){
 // preenche os campos N, P e K a partir da formulação digitada (só na adubação/ureia)
 function aplicarFormulacao(){
   if(currentCrop !== "adubacao") return false;
+  const eraAutoDetectada = !$("npkAuto").classList.contains("hidden");
   const npk = lerFormulacao($("cultivar").value);
   $("npkAuto").classList.toggle("hidden", !npk);
-  if(!npk) return false;
+  if(!npk){
+    // a formulação que tinha preenchido o NPK foi apagada/mudou: zera em vez de deixar o valor antigo
+    // (se o NPK nunca veio de uma formulação lida — ex.: valor padrão do ureia — não mexe)
+    if(!eraAutoDetectada) return false;
+    const mudou = $("npkN").value != 0 || $("npkP").value != 0 || $("npkK").value != 0;
+    $("npkN").value = 0;
+    $("npkP").value = 0;
+    $("npkK").value = 0;
+    return mudou;
+  }
   const [n, p, k] = npk;
   const mudou = $("npkN").value != n || $("npkP").value != p || $("npkK").value != k;
   $("npkN").value = n;
@@ -83,14 +109,11 @@ function getBagSize(){
   const npkN = parseFloat($("npkN").value) || 0;
   const npkP = parseFloat($("npkP").value) || 0;
   const npkK = parseFloat($("npkK").value) || 0;
-  const eh750 = FORMULACOES_750KG.some(([n,p,k]) => n===Math.round(npkN) && p===Math.round(npkP) && k===Math.round(npkK));
-  return eh750 ? 750 : 1000;
+  return bagSizeFromNpk(npkN, npkP, npkK);
 }
 
 let currentCrop = "soja";
 const cropVariant = {}; // guarda a variante escolhida por cultura (ex.: milho -> 'sacas')
-
-const ALQ_HA = 2.42; // 1 alqueire (padrão paulista) = 2,42 hectares
 
 const tabs = document.querySelectorAll(".tab-btn");
 
@@ -155,20 +178,48 @@ function enhanceSelect(selectEl){
     const activeLi = list.children[activeIndex];
     if(activeLi) activeLi.scrollIntoView({ block: "nearest" });
   }
+  // A lista abre "flutuando" fixa na tela (portada pro <body>) em vez de
+  // ficar posicionada dentro da coluna rolável: um elemento absoluto que
+  // ultrapassa a borda inferior de um ancestral com overflow-y:auto conta
+  // no scrollHeight dele mesmo sem ser cortado — isso fazia a barra de
+  // rolagem da coluna aparecer só de abrir o seletor (ex.: Espaçamento no
+  // Milho). Fixando fora da coluna, a lista nunca mexe no scroll dela.
+  function positionList(){
+    const rect = btn.getBoundingClientRect();
+    list.style.left = rect.left + "px";
+    list.style.width = rect.width + "px";
+    const espacoAbaixo = window.innerHeight - rect.bottom;
+    const abrePraCima = espacoAbaixo < list.offsetHeight + 6 && rect.top > list.offsetHeight + 6;
+    list.style.top = abrePraCima ? (rect.top - list.offsetHeight - 6) + "px" : (rect.bottom + 6) + "px";
+  }
   function open(){
+    document.body.appendChild(list);
+    list.style.position = "fixed";
+    list.style.right = "auto";
     list.classList.remove("hidden");
+    positionList();
     btn.setAttribute("aria-expanded", "true");
     wrap.classList.add("is-open");
     const selecionada = list.querySelector(".is-selected");
     activeIndex = selecionada ? Array.from(list.children).indexOf(selecionada) : 0;
     updateActive();
     document.addEventListener("click", onOutsideClick);
+    window.addEventListener("scroll", positionList, true);
+    window.addEventListener("resize", positionList);
   }
   function close(){
     list.classList.add("hidden");
     btn.setAttribute("aria-expanded", "false");
     wrap.classList.remove("is-open");
     document.removeEventListener("click", onOutsideClick);
+    window.removeEventListener("scroll", positionList, true);
+    window.removeEventListener("resize", positionList);
+    wrap.appendChild(list);
+    list.style.position = "";
+    list.style.left = "";
+    list.style.top = "";
+    list.style.width = "";
+    list.style.right = "";
   }
   function onOutsideClick(e){
     if(!wrap.contains(e.target)) close();
@@ -216,6 +267,109 @@ for(let t=5;t<=10;t++){
 enhanceSelect(transSel);
 enhanceSelect($("espacamento"));
 
+// ---------- Busca/sugestão de cultivar (soja, milho, feijão, trigo) ----------
+// Catálogo em js/cultivares.js — ainda vazio, então a lista nunca aparece
+// hoje; o campo continua um texto livre normal, pronto pra quando os dados
+// forem cadastrados. Não se aplica à adubação: lá o campo é a formulação NPK
+// (aplicarFormulacao() já cuida disso, sem nenhuma relação com este código).
+// A lista de sugestões abre "flutuando" fixa na tela (portada pro <body>),
+// mesmo esquema do seletor de espaçamento/transpasse — assim não vira scroll
+// da coluna quando abre perto da borda inferior.
+const cultivarInput = $("cultivar");
+const cultivarList = $("cultivarSuggestList");
+const cultivarPmsHint = $("cultivarPmsHint");
+const cultivarWrapOriginal = cultivarList.parentNode;
+let cultivarActiveIndex = -1;
+
+function cultivarCatalogo(){
+  return currentCrop !== "adubacao" ? (CULTIVARES[currentCrop] || []) : [];
+}
+
+function posicionarCultivarList(){
+  const rect = cultivarInput.getBoundingClientRect();
+  cultivarList.style.left = rect.left + "px";
+  cultivarList.style.width = rect.width + "px";
+  cultivarList.style.top = (rect.bottom + 6) + "px";
+}
+
+function fecharCultivarList(){
+  cultivarList.classList.add("hidden");
+  cultivarActiveIndex = -1;
+  cultivarInput.setAttribute("aria-expanded", "false");
+  cultivarWrapOriginal.appendChild(cultivarList);
+  cultivarList.style.position = "";
+  cultivarList.style.left = "";
+  cultivarList.style.top = "";
+  cultivarList.style.width = "";
+  window.removeEventListener("scroll", posicionarCultivarList, true);
+  window.removeEventListener("resize", posicionarCultivarList);
+  document.removeEventListener("click", onCultivarOutsideClick);
+}
+function onCultivarOutsideClick(e){
+  if(!cultivarInput.contains(e.target) && !cultivarList.contains(e.target)) fecharCultivarList();
+}
+function atualizarCultivarAtivo(opts){
+  opts.forEach((li, i) => li.classList.toggle("is-active", i === cultivarActiveIndex));
+  const ativo = opts[cultivarActiveIndex];
+  if(ativo) ativo.scrollIntoView({ block: "nearest" });
+}
+function selecionarCultivar(item){
+  cultivarInput.value = item.nome;
+  fecharCultivarList();
+  mostrarPmsCultivar(item);
+  calc();
+}
+// PMS/PMG só aparece quando o texto digitado bate exatamente com um item do
+// catálogo que tenha esse dado — não é obrigatório escolher da lista.
+function mostrarPmsCultivar(item){
+  if(item && item.pms){
+    cultivarPmsHint.textContent = `PMS/PMG: ${fmtLivre(item.pms)} g (preenchido automaticamente)`;
+    show(cultivarPmsHint, true);
+  } else {
+    show(cultivarPmsHint, false);
+  }
+}
+function renderCultivarSugestoes(){
+  const termo = cultivarInput.value.trim().toLowerCase();
+  const catalogo = cultivarCatalogo();
+  const bateram = termo ? catalogo.filter(item => item.nome.toLowerCase().includes(termo)) : [];
+  if(bateram.length === 0){ fecharCultivarList(); return; }
+
+  cultivarList.innerHTML = "";
+  bateram.forEach((item, i) => {
+    const li = document.createElement("li");
+    li.className = "csel-option" + (i === cultivarActiveIndex ? " is-active" : "");
+    li.textContent = item.nome;
+    li.setAttribute("role", "option");
+    li.addEventListener("click", () => selecionarCultivar(item));
+    cultivarList.appendChild(li);
+  });
+
+  document.body.appendChild(cultivarList);
+  cultivarList.style.position = "fixed";
+  cultivarList.classList.remove("hidden");
+  cultivarInput.setAttribute("aria-expanded", "true");
+  posicionarCultivarList();
+  window.addEventListener("scroll", posicionarCultivarList, true);
+  window.addEventListener("resize", posicionarCultivarList);
+  document.addEventListener("click", onCultivarOutsideClick);
+}
+cultivarInput.addEventListener("input", () => {
+  if(currentCrop === "adubacao") return; // aqui o campo é a formulação NPK, sem busca
+  cultivarActiveIndex = -1;
+  renderCultivarSugestoes();
+  const exato = cultivarCatalogo().find(i => i.nome.toLowerCase() === cultivarInput.value.trim().toLowerCase());
+  mostrarPmsCultivar(exato);
+});
+cultivarInput.addEventListener("keydown", (e) => {
+  if(cultivarList.classList.contains("hidden")) return;
+  const opts = Array.from(cultivarList.children);
+  if(e.key === "ArrowDown"){ e.preventDefault(); cultivarActiveIndex = Math.min(cultivarActiveIndex + 1, opts.length - 1); atualizarCultivarAtivo(opts); }
+  else if(e.key === "ArrowUp"){ e.preventDefault(); cultivarActiveIndex = Math.max(cultivarActiveIndex - 1, 0); atualizarCultivarAtivo(opts); }
+  else if(e.key === "Enter"){ if(cultivarActiveIndex >= 0){ e.preventDefault(); opts[cultivarActiveIndex].click(); } }
+  else if(e.key === "Escape"){ fecharCultivarList(); }
+});
+
 // espaçamentos padrão; cada cultura pode ter a própria lista (ex.: trigo só 0,17)
 const ESPACAMENTOS_PADRAO = ["0.40","0.42","0.45","0.50"];
 function preencherEspacamentos(lista){
@@ -241,6 +395,11 @@ function fmtMoeda(n){
   if(!isFinite(n)) n = 0;
   return "R$ " + n.toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2});
 }
+// número "solto" (sem casas fixas) pra faixas e sugestões: 8 -> "8", 2.6 -> "2,6"
+function fmtLivre(n){
+  if(!isFinite(n)) return "0";
+  return n.toLocaleString("pt-BR", {maximumFractionDigits:1});
+}
 const show = (el, on) => el.classList.toggle("hidden", !on);
 
 function getConfig(crop){
@@ -258,6 +417,24 @@ function usual(valor){
 }
 function setRotulo(id, texto, valor){
   $(id).innerHTML = texto + usual(valor);
+}
+
+// Germinação/pureza chegam pré-preenchidas com o valor típico (90/98): o campo
+// fica com aparência de "sugestão, ainda não confirmada" (borda tracejada) até
+// o usuário digitar algo nele — a partir daí some, mesmo que troque de cultura
+// e volte. Guardado por "cultura:campo" porque os dois inputs são reaproveitados
+// entre as culturas (cada uma pode ter ou não seu próprio valor já confirmado).
+const CAMPOS_COM_SUGESTAO = ["germinacao", "pureza"];
+const touchedFields = new Set();
+function fieldTouchKey(crop, id){ return crop + ":" + id; }
+CAMPOS_COM_SUGESTAO.forEach(id => {
+  $(id).addEventListener("input", () => {
+    touchedFields.add(fieldTouchKey(currentCrop, id));
+    $(id).classList.remove("is-suggested");
+  });
+});
+function marcarSugestao(id, crop){
+  $(id).classList.toggle("is-suggested", !touchedFields.has(fieldTouchKey(crop, id)));
 }
 
 function renderVariantToggle(crop){
@@ -324,6 +501,8 @@ function selectCrop(crop){
   const ehAdubo = crop === "adubacao";
   $("cultivarLabel").textContent = ehAdubo ? "Formulação cotada" : "Cultivar cotada";
   $("cultivar").placeholder = ehAdubo ? "Ex.: 04-14-08 ou Ureia" : "Ex.: BRS 404";
+  fecharCultivarList();
+  mostrarPmsCultivar(ehAdubo ? null : cultivarCatalogo().find(i => i.nome.toLowerCase() === $("cultivar").value.trim().toLowerCase()));
   renderVariantToggle(crop);
 
   const val = (id, fallback) => (saved && saved[id] !== undefined && saved[id] !== "") ? saved[id] : fallback;
@@ -343,6 +522,8 @@ function selectCrop(crop){
     $("plantas").value = val("plantas", "");
     $("plantas").placeholder = "0";
     setRotulo("plantasLabel", "Plantas por metro"); // sem sugestão: o rótulo quebrava linha na coluna estreita
+    // sugestão só de apoio visual, embaixo do campo — não preenche nada sozinha
+    $("plantasSuggestionHint").textContent = `Sugerido para ${c.nome}: ${fmtLivre(c.plantas)} plantas/m`;
     const espacamentos = c.espacamentos || ESPACAMENTOS_PADRAO;
     preencherEspacamentos(espacamentos);
     const espSalvado = val("espacamento", "");
@@ -355,6 +536,8 @@ function selectCrop(crop){
     $("popDesejada").value = val("popDesejada", "300");
     $("germinacao").value = val("germinacao", "90");
     $("pureza").value = val("pureza", "98");
+    marcarSugestao("germinacao", crop);
+    marcarSugestao("pureza", crop);
     $("unitLabel").textContent = "sementes";
     $("totalCaption").textContent = "necessário para toda a área informada";
     $("formulaHint").textContent = "1 alqueire = 24.200 m² (padrão paulista) · fórmula: (24.200 × área ÷ espaçamento) × plantas/m ÷ ((100 − transpasse) ÷ 100)";
@@ -388,6 +571,8 @@ function selectCrop(crop){
       $("popDesejada").value = val("popDesejada", "300");
       $("germinacao").value = val("germinacao", "90");
       $("pureza").value = val("pureza", "98");
+      marcarSugestao("germinacao", crop);
+      marcarSugestao("pureza", crop);
       if(crop === "trigo") show($("pmsBox"), true);
     } else {
       $("npkN").value = val("npkN", "45");
@@ -435,9 +620,7 @@ function calc(){
     const plantas = parseFloat($("plantas").value) || 0;
     const espacamento = parseFloat($("espacamento").value) || 0.45;
     const transpasse = parseFloat(transSel.value) || 0;
-    if(espacamento > 0 && transpasse < 100){
-      total = ((24200 * area / espacamento) * plantas) / ((100 - transpasse) / 100);
-    }
+    total = calcularSementes({ area, plantas, espacamento, transpasse });
     mem.plantas = plantas; mem.espacamento = espacamento; mem.transpasse = transpasse;
     // população final (stand): não leva o transpasse em conta, pois ele é perda de semente
     // na sobreposição das passadas, não altera quantas plantas de fato nascem por área
@@ -447,11 +630,11 @@ function calc(){
     $("popFinalAlq").textContent = fmtInt(popFinalAlq);
   } else if(c.tipo === "sacas"){
     const sacasAlq = parseFloat($("sacasAlq").value) || 0;
-    total = area * sacasAlq;
+    total = calcularSacas({ area, sacasAlq });
     mem.sacasAlq = sacasAlq;
   } else {
     const doseAlq = parseFloat($("doseAlq").value) || 0;
-    total = area * doseAlq;
+    total = calcularDose({ area, doseAlq });
     mem.doseAlq = doseAlq;
   }
 
@@ -546,7 +729,28 @@ function calc(){
   const hint = $("comboHint");
   if(combo){
     const k = combo.combo;
-    hint.textContent = `Sobra fracionada: dá para levar ${k.nBags} × ${k.bag.label} + ${k.nSacas} × ${k.saca.label} (em vez de arredondar a embalagem maior para cima).`;
+    // textContent puro fica guardado à parte pra reaproveitar no PDF/imagem
+    // (r.combo em montarReportData()), que precisa de uma frase corrida, não do HTML da dica.
+    hint.dataset.plain = `Sobra fracionada: dá para levar ${k.nBags} × ${k.bag.label} + ${k.nSacas} × ${k.saca.label} (em vez de arredondar a embalagem maior para cima).`;
+    hint.innerHTML = `
+      <div style="background:#E6F1FB;border-radius:14px;padding:14px 16px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0C447C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1.1 2h5c.1-.8.5-1.5 1.1-2A6 6 0 0 0 12 3z"/><line x1="9.5" y1="19" x2="14.5" y2="19"/><line x1="10" y1="21.5" x2="14" y2="21.5"/></svg>
+          <span style="font-size:12px;font-weight:500;color:#0C447C;">Combinação sugerida — evita arredondar para cima</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="flex:1;background:#FFFFFF;border:1px solid #B5D4F4;border-radius:12px;padding:10px 12px;text-align:center;">
+            <div style="font-family:monospace;font-size:22px;font-weight:700;color:#0C447C;">${k.nBags}×</div>
+            <div style="font-size:11px;color:#185FA5;margin-top:2px;">${k.bag.label}</div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <div style="flex:1;background:#FFFFFF;border:1px solid #B5D4F4;border-radius:12px;padding:10px 12px;text-align:center;">
+            <div style="font-family:monospace;font-size:22px;font-weight:700;color:#0C447C;">${k.nSacas}×</div>
+            <div style="font-size:11px;color:#185FA5;margin-top:2px;">${k.saca.label}</div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:#185FA5;margin-top:10px;line-height:1.4;">Em vez de fechar em ${k.nBags + 1} embalagens de ${k.bag.label}, essa combinação encaixa a sobra com precisão.</div>
+      </div>`;
     hint.classList.remove("hidden");
   } else {
     hint.classList.add("hidden");
@@ -585,11 +789,19 @@ function renderAlerts(area){
     }
   }
 
+  if(!$("plantasField").classList.contains("hidden")){
+    const faixa = FAIXA_USUAL_PLANTAS[currentCrop];
+    const plantas = parseFloat($("plantas").value) || 0;
+    if(plantas > 0 && faixa && (plantas < faixa.min || plantas > faixa.max)){
+      alerts.push({ level:"warn", text:`O valor de plantas/m está fora da faixa usual (${fmtLivre(faixa.min)} a ${fmtLivre(faixa.max)}). Confirme antes de prosseguir.` });
+    }
+  }
+
   custosUnidades.forEach((u, i) => {
     if(u.combo) return; // linha combinada usa os preços das outras linhas, não tem campo próprio
     const vista = $(`precoVista-${i}`);
     const prazo = $(`precoPrazo-${i}`);
-    if(vista && prazo && vista.value.trim() !== "" && prazo.value.trim() === ""){
+    if(vista && prazo && precisaAlertarPrazoAusente(vista.value, prazo.value)){
       alerts.push({ level:"warn", text:`O preço a prazo não foi informado para ${u.label}.` });
     }
   });
@@ -702,34 +914,12 @@ memoriaToggle.addEventListener("click", () => {
   }
 });
 
-// Quando a conta cai no meio de uma embalagem grande (ex.: 1,90 bag), o produtor pode levar
-// os bags inteiros e completar o resto em sacaria, em vez de arredondar o bag para cima.
-function montarCombo(unidades, baseTotal){
-  const comTamanho = unidades.filter(u => u.size > 1);
-  if(comTamanho.length < 2 || !isFinite(baseTotal) || baseTotal <= 0) return null;
-
-  const ordenadas = [...comTamanho].sort((a, b) => b.size - a.size);
-  const bag = ordenadas[0];      // maior embalagem
-  const saca = ordenadas[1];     // sacaria imediatamente menor
-  const nBags = Math.floor(baseTotal / bag.size);
-  if(nBags < 1) return null;
-
-  const resto = baseTotal - nBags * bag.size;
-  if(resto <= bag.size * 0.0001) return null; // fechou redondo, não há sobra
-
-  const nSacas = Math.ceil(resto / saca.size);
-  return { label: "Combinado", combo: { bag, saca, nBags, nSacas } };
-}
-
 function calcPMS(){
   const pms = parseFloat($("pms").value) || 0;
   const pop = parseFloat($("popDesejada").value) || 0;
   const germ = parseFloat($("germinacao").value) || 0;
   const pureza = parseFloat($("pureza").value) || 0;
-  let dose = 0;
-  if(germ > 0 && pureza > 0){
-    dose = (pop * pms * 100) / (germ * pureza);
-  }
+  const dose = calcularDosePMS({ populacao: pop, pms, germinacao: germ, pureza });
   $("pmsDoseResult").textContent = fmtDec(dose);
   return dose;
 }
@@ -901,12 +1091,10 @@ function updateCustos(){
     }
 
     const p = custoPrecos[custoKey(currentCrop, u.label)] || {};
-    const precoVista = parseFloat(p.vista) || 0;
-    const precoPrazo = parseFloat(p.prazo) || 0;
     const qtdArred = Math.max(0, Math.ceil(u.qty || 0));
 
-    const custoVista = qtdArred * precoVista;
-    const custoPrazo = qtdArred * precoPrazo;
+    const custoVista = calcularCusto(qtdArred, p.vista);
+    const custoPrazo = calcularCusto(qtdArred, p.prazo);
 
     $(`custoQtd-${i}`).textContent = `${qtdArred.toLocaleString("pt-BR")} un. (exato: ${fmtDec(u.qty || 0)})`;
     $(`custoVista-${i}`).textContent = fmtMoeda(custoVista);
@@ -1053,8 +1241,8 @@ function coletarResumo(){
     return {...base,
       nome: u.label,
       qtd: `${Math.max(0, Math.ceil(u.qty || 0)).toLocaleString("pt-BR")} un.  (exato ${fmtDec(u.qty || 0)})`,
-      precoVista: p.vista ? fmtMoeda(parseFloat(p.vista)) : "—",
-      precoPrazo: p.prazo ? fmtMoeda(parseFloat(p.prazo)) : "—",
+      precoVista: formatarPrecoResumo(p.vista, fmtMoeda),
+      precoPrazo: formatarPrecoResumo(p.prazo, fmtMoeda),
     };
   });
 
@@ -1074,7 +1262,7 @@ function coletarResumo(){
     params,
     total: $("totalValue").textContent,
     unidade: $("unitLabel").textContent,
-    combo: $("comboHint").classList.contains("hidden") ? "" : $("comboHint").textContent,
+    combo: $("comboHint").classList.contains("hidden") ? "" : ($("comboHint").dataset.plain || ""),
     linhas, nutrientes,
     vencimento: venc, vencimentoDias: $("prazoDias").textContent,
     data: dataHoje(),
@@ -1084,6 +1272,53 @@ function coletarResumo(){
 function nomeArquivo(r, ext){
   const limpa = t => (t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "").toLowerCase();
   const partes = ["cotacao", limpa(r.cultura), limpa(r.cliente), r.data.replace(/\//g, "-")].filter(Boolean);
+  return partes.join("_") + "." + ext;
+}
+
+// ---- Regulagem de Plantadeira: dados para exportacao (PDF/PNG) -- le os
+// mesmos campos e resultados que calcRegulagem()/calcRegulagemAvancada()/
+// calcRegulagemAdubo() ja preenchem na tela, sem recalcular nada com regra
+// propria. Cobre a sub-aba (Semente ou Adubo) que estiver ativa no momento.
+function coletarResumoRegulagem(){
+  const semente = $("regTabSemente").classList.contains("is-active");
+  const accent = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#5C8A26";
+
+  if(semente){
+    const alertaTeste = $("regTesteAlertBox").classList.contains("hidden") ? "" : $("regTesteAlertBox").textContent.trim();
+    return {
+      variante: "semente", accent, data: dataHoje(),
+      populacao: $("regPopulacao").value.trim(),
+      espacamento: $("regEspacamento").value.trim(),
+      germinacao: $("regGerminacao").value.trim(),
+      plantasHa: $("regPlantasHa").textContent,
+      metrosLineares: $("regMetrosLineares").textContent,
+      plantasMetro: $("regPlantasMetro").textContent,
+      numLinhas: $("regNumLinhas").value.trim(),
+      testeMetros: $("regTesteMetrosLabel").textContent,
+      esperadoPorLinha: $("regTesteEsperadoPorLinha").textContent,
+      esperadoTotal: $("regTesteEsperadoTotal").textContent,
+      coletadas: $("regSementesColetadas").value.trim(),
+      alertaTeste,
+      velocidade: $("regVelocidade").value.trim(),
+      areaPorHora: $("regAreaPorHora").textContent,
+      capacidadeReservatorio: $("regCapacidadeReservatorio").value.trim(),
+      areaTotal: $("regAreaTotal").value.trim(),
+      abastecimentos: $("regAbastecimentos").textContent,
+      engrenagemRef: $("regEngrenagemRef").value.trim(),
+    };
+  }
+
+  return {
+    variante: "adubo", accent, data: dataHoje(),
+    dose: $("regAduboDose").value.trim(),
+    espacamento: $("regAduboEspacamento").value.trim(),
+    metrosLineares: $("regAduboMetrosLineares").textContent,
+    aduboKg: $("regAduboPorMetroKg").textContent,
+    aduboG: $("regAduboPorMetroG").textContent,
+  };
+}
+function nomeArquivoRegulagem(r, ext){
+  const partes = ["regulagem", r.variante, r.data.replace(/\//g, "-")];
   return partes.join("_") + "." + ext;
 }
 
@@ -1170,7 +1405,108 @@ function montarFolha(r){
   </div>`;
 }
 
+// PDF da Regulagem de Plantadeira: mesma tecnica (HTML jogado em #printSheet,
+// impressao do navegador salva como PDF), so que com o layout dos campos de
+// regulagem (semente ou adubo, conforme a sub-aba ativa) em vez da ficha de
+// sementes/adubacao.
+function montarFolhaRegulagem(r){
+  const esc = t => String(t == null ? "" : t).replace(/[&<>]/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]));
+  const logo = document.querySelector("header img").src;
+  const num = (v, suf) => v ? String(v).replace(".", ",") + (suf || "") : "—";
+  const bloco = (k, v) => `
+    <td style="padding:6px 8px;background:#F4F7F0;border:1px solid #E2E7DA;">
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:#5B6660;font-weight:700;">${esc(k)}</div>
+      <div style="font-size:13px;font-weight:700;">${esc(v)}</div>
+    </td>`;
+
+  const corpo = r.variante === "semente" ? `
+    <table style="width:100%;margin-top:12px;border-collapse:collapse;">
+      <tr>${bloco("Stand de plantas", num(r.populacao, " plantas/ha"))}${bloco("Espaçamento", num(r.espacamento, " m"))}${bloco("Germinação", num(r.germinacao, "%"))}</tr>
+    </table>
+
+    <div style="margin-top:14px;border:1.5px solid ${r.accent};border-radius:8px;padding:12px 14px;">
+      <div style="font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:${r.accent};">Plantas por metro linear</div>
+      <div style="font-family:monospace;font-size:28px;font-weight:700;margin-top:2px;">${esc(r.plantasMetro)} <span style="font-size:13px;font-weight:400;color:#5B6660;">plantas/m</span></div>
+      <div style="margin-top:6px;font-size:10.5px;color:#5B6660;">Plantas/ha: <strong style="color:#1E2420;">${esc(r.plantasHa)}</strong> &nbsp;·&nbsp; Metros lineares/ha: <strong style="color:#1E2420;">${esc(r.metrosLineares)}</strong></div>
+    </div>
+
+    <div style="margin-top:18px;font-size:12px;font-weight:800;">Regulagem avançada</div>
+    <table style="width:100%;margin-top:6px;border-collapse:collapse;font-size:11px;">
+      <tr>
+        <td style="padding:10px;border:1px solid #E2E7DA;vertical-align:top;width:50%;">
+          <div style="font-weight:700;">Linhas da plantadeira</div>
+          <div style="margin-top:4px;">Nº de linhas: <strong style="font-family:monospace;">${esc(r.numLinhas || "—")}</strong></div>
+          <div>Sementes por metro de linha: <strong style="font-family:monospace;">${esc(r.plantasMetro)}</strong></div>
+        </td>
+        <td style="padding:10px;border:1px solid #E2E7DA;vertical-align:top;width:50%;">
+          <div style="font-weight:700;">Teste de campo (${esc(r.testeMetros)} metros)</div>
+          <div style="margin-top:4px;">Esperadas por linha: <strong style="font-family:monospace;">${esc(r.esperadoPorLinha)}</strong></div>
+          <div>Esperadas em ${esc(r.numLinhas || "0")} linhas: <strong style="font-family:monospace;">${esc(r.esperadoTotal)}</strong></div>
+          ${r.coletadas ? `<div>Coletadas no teste: <strong style="font-family:monospace;">${esc(r.coletadas)}</strong></div>` : ""}
+          ${r.alertaTeste ? `<div style="margin-top:4px;color:#8A5A00;font-weight:700;">⚠ ${esc(r.alertaTeste)}</div>` : ""}
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:10px;border:1px solid #E2E7DA;vertical-align:top;">
+          <div style="font-weight:700;">Velocidade de plantio</div>
+          <div style="margin-top:4px;">Velocidade: <strong>${esc(num(r.velocidade, " km/h"))}</strong></div>
+          <div>Área plantada por hora: <strong style="font-family:monospace;">${esc(r.areaPorHora)} ha/h</strong></div>
+        </td>
+        <td style="padding:10px;border:1px solid #E2E7DA;vertical-align:top;">
+          <div style="font-weight:700;">Reservatório de sementes</div>
+          <div style="margin-top:4px;">Capacidade: <strong>${esc(r.capacidadeReservatorio || "—")}</strong> sementes &nbsp;·&nbsp; Área total: <strong>${esc(num(r.areaTotal, " ha"))}</strong></div>
+          <div>Abastecimentos necessários: <strong style="font-family:monospace;">${esc(r.abastecimentos)}</strong></div>
+        </td>
+      </tr>
+      ${r.engrenagemRef ? `
+      <tr>
+        <td colspan="2" style="padding:10px;border:1px solid #E2E7DA;">
+          <div style="font-weight:700;">Engrenagem/disco (referência do manual do fabricante)</div>
+          <div style="margin-top:4px;">${esc(r.engrenagemRef)}</div>
+        </td>
+      </tr>` : ""}
+    </table>
+  ` : `
+    <table style="width:100%;margin-top:12px;border-collapse:collapse;">
+      <tr>${bloco("Adubo", num(r.dose, " kg/ha"))}${bloco("Espaçamento", num(r.espacamento, " m"))}</tr>
+    </table>
+
+    <div style="margin-top:14px;border:1.5px solid ${r.accent};border-radius:8px;padding:12px 14px;">
+      <div style="font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:${r.accent};">Adubo por metro linear</div>
+      <div style="font-family:monospace;font-size:28px;font-weight:700;margin-top:2px;">${esc(r.aduboG)} <span style="font-size:13px;font-weight:400;color:#5B6660;">g/m</span></div>
+      <div style="margin-top:6px;font-size:10.5px;color:#5B6660;">Metros lineares/ha: <strong style="color:#1E2420;">${esc(r.metrosLineares)}</strong> &nbsp;·&nbsp; Adubo/m: <strong style="color:#1E2420;">${esc(r.aduboKg)} kg</strong></div>
+    </div>
+  `;
+
+  return `
+  <div style="font-family:'Segoe UI',Arial,sans-serif;color:#1E2420;font-size:12px;">
+    <div style="height:3px;border-radius:999px;background:#D99A1E;margin-bottom:12px;"></div>
+    <div style="display:flex;align-items:center;gap:12px;border-bottom:3px solid ${r.accent};padding-bottom:10px;">
+      <img src="${logo}" alt="Coasul" style="height:42px;">
+      <div style="flex:1;">
+        <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#5B6660;font-weight:700;">Coasul Agro · Ficha de Regulagem</div>
+        <div style="font-size:19px;font-weight:600;">📏 Regulagem de Plantadeira · ${r.variante === "semente" ? "Semente" : "Adubo"}</div>
+      </div>
+      <div style="text-align:right;font-size:10.5px;color:#5B6660;">${esc(r.data)}</div>
+    </div>
+
+    ${corpo}
+
+    <div style="margin-top:16px;border-top:1px solid #E2E7DA;padding-top:8px;font-size:9.5px;color:#5B6660;">
+      <div>Calculadora Coasul — versão ${APP_VERSION}</div>
+      <div>Documento de uso interno — não substitui recomendação agronômica oficial. Valores sujeitos a conferência pelo técnico responsável.</div>
+      <div>Gerado em ${esc(new Date().toLocaleString("pt-BR", {day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit"}))}</div>
+    </div>
+  </div>`;
+}
+
 $("btnPdf").addEventListener("click", () => {
+  if(!$("viewRegulagem").classList.contains("hidden")){
+    const r = coletarResumoRegulagem();
+    $("printSheet").innerHTML = montarFolhaRegulagem(r);
+    window.print();
+    return;
+  }
   const r = coletarResumo();
   $("printSheet").innerHTML = montarFolha(r);
   window.print();
@@ -1362,6 +1698,143 @@ function desenharFicha(r){
   return cv;
 }
 
+// Imagem (PNG) da Regulagem de Plantadeira: mesma tecnica de duas passadas
+// (medir sem desenhar, depois desenhar) do layoutFicha() das sementes/adubacao,
+// reaproveitando os mesmos helpers (texto/caixa/risco/quebraTexto) -- so que
+// com o layout dos campos de regulagem em vez da ficha de cotacao.
+function layoutFichaRegulagem(ctx, draw, r, logo){
+  const W = 1000, P = 40, dir = W - P;
+  let y = P;
+  const num = (v, suf) => v ? String(v).replace(".", ",") + (suf || "") : "—";
+
+  if(draw){ ctx.fillStyle = "#D99A1E"; ctx.fillRect(P, y, dir - P, 3); }
+  y += 3 + 16;
+
+  const logoH = 44, logoW = logo && logo.naturalWidth ? logoH * logo.naturalWidth / logo.naturalHeight : 60;
+  if(draw && logo) ctx.drawImage(logo, P, y, logoW, logoH);
+  const xt = P + logoW + 16;
+  texto(ctx, draw, "COASUL AGRO · FICHA DE REGULAGEM", xt, y + 14, {font:"bold 10px " + FONTE, cor:"#5B6660", espaco:"1.6px"});
+  texto(ctx, draw, `📏 Regulagem de Plantadeira · ${r.variante === "semente" ? "Semente" : "Adubo"}`, xt, y + 36, {font:"600 20px " + FONTE, maxW:dir - xt - 110});
+  texto(ctx, draw, r.data, dir, y + 14, {font:"11px " + FONTE, cor:"#5B6660", align:"right"});
+  y += logoH + 12;
+  risco(ctx, draw, P, y, dir, r.accent);
+  if(draw){ ctx.fillStyle = r.accent; ctx.fillRect(P, y, dir - P, 2.5); }
+  y += 20;
+
+  function cartao(titulo, linhas, x, yy, largura){
+    ctx.font = "10.5px " + FONTE;
+    const alturaLinhas = linhas.reduce((h, l) => h + quebraTexto(ctx, l, largura - 24).length * 15, 0);
+    const altura = 36 + alturaLinhas + 10;
+    caixa(ctx, draw, x, yy, largura, altura, 8, "#F8FAF4", "#E2E7DA");
+    texto(ctx, draw, titulo, x + 12, yy + 18, {font:"bold 11px " + FONTE, maxW:largura - 24});
+    let ly = yy + 36;
+    linhas.forEach(l => {
+      quebraTexto(ctx, l, largura - 24).forEach(parte => {
+        texto(ctx, draw, parte, x + 12, ly, {font:"10.5px " + FONTE, cor:"#3A423C"});
+        ly += 15;
+      });
+    });
+    return altura;
+  }
+
+  if(r.variante === "semente"){
+    const info = [["Stand de plantas", num(r.populacao, " plantas/ha")], ["Espaçamento", num(r.espacamento, " m")], ["Germinação", num(r.germinacao, "%")]];
+    const gap = 10, bw = (dir - P - gap * 2) / 3, bh = 48;
+    info.forEach(([k, v], i) => {
+      const x = P + i * (bw + gap);
+      caixa(ctx, draw, x, y, bw, bh, 8, "#F6F8F2", "#E2E7DA");
+      texto(ctx, draw, k.toUpperCase(), x + 10, y + 17, {font:"bold 9px " + FONTE, cor:"#5B6660", espaco:"0.6px", maxW:bw - 20});
+      texto(ctx, draw, v, x + 10, y + 36, {font:"bold 14px " + FONTE, maxW:bw - 20});
+    });
+    y += bh + 18;
+
+    caixa(ctx, draw, P, y, dir - P, 78, 10, "#FFFFFF", r.accent);
+    texto(ctx, draw, "PLANTAS POR METRO LINEAR", P + 14, y + 22, {font:"bold 10px " + FONTE, cor:r.accent, espaco:"1.2px"});
+    texto(ctx, draw, r.plantasMetro, P + 14, y + 58, {font:"bold 30px " + MONO});
+    if(draw){
+      ctx.font = "bold 30px " + MONO;
+      const w = ctx.measureText(r.plantasMetro).width;
+      texto(ctx, draw, "plantas/m", P + 22 + w, y + 58, {font:"13px " + FONTE, cor:"#5B6660"});
+    }
+    y += 78 + 10;
+    texto(ctx, draw, `Plantas/ha: ${r.plantasHa}   ·   Metros lineares/ha: ${r.metrosLineares}`, P, y, {font:"10.5px " + FONTE, cor:"#5B6660"});
+    y += 26;
+
+    texto(ctx, draw, "Regulagem avançada", P, y + 4, {font:"bold 13px " + FONTE});
+    y += 22;
+
+    const cw = (dir - P - 12) / 2;
+    const linhasTeste = [
+      `Teste recomendado: ${r.testeMetros} metros`,
+      `Sementes esperadas por linha: ${r.esperadoPorLinha}`,
+      `Sementes esperadas em ${r.numLinhas || "0"} linhas: ${r.esperadoTotal}`,
+    ];
+    if(r.coletadas) linhasTeste.push(`Sementes coletadas: ${r.coletadas}`);
+    if(r.alertaTeste) linhasTeste.push(`⚠ ${r.alertaTeste}`);
+
+    const h1a = cartao(`Nº de linhas: ${r.numLinhas || "—"}`, [`Sementes por metro de linha: ${r.plantasMetro}`], P, y, cw);
+    const h1b = cartao("Teste de campo", linhasTeste, P + cw + 12, y, cw);
+    y += Math.max(h1a, h1b) + 12;
+
+    const linhasVeloc = [`Velocidade: ${num(r.velocidade, " km/h")}`, `Área plantada por hora: ${r.areaPorHora} ha/h`];
+    const linhasReserv = [`Capacidade: ${r.capacidadeReservatorio || "—"} sementes`, `Área total: ${num(r.areaTotal, " ha")}`, `Abastecimentos necessários: ${r.abastecimentos}`];
+    const h2a = cartao("Velocidade de plantio", linhasVeloc, P, y, cw);
+    const h2b = cartao("Reservatório de sementes", linhasReserv, P + cw + 12, y, cw);
+    y += Math.max(h2a, h2b) + 12;
+
+    if(r.engrenagemRef){
+      const h3 = cartao("Engrenagem/disco (referência do manual do fabricante)", [r.engrenagemRef], P, y, dir - P);
+      y += h3 + 12;
+    }
+  } else {
+    const info = [["Adubo", num(r.dose, " kg/ha")], ["Espaçamento", num(r.espacamento, " m")]];
+    const gap = 10, bw = (dir - P - gap) / 2, bh = 48;
+    info.forEach(([k, v], i) => {
+      const x = P + i * (bw + gap);
+      caixa(ctx, draw, x, y, bw, bh, 8, "#F6F8F2", "#E2E7DA");
+      texto(ctx, draw, k.toUpperCase(), x + 10, y + 17, {font:"bold 9px " + FONTE, cor:"#5B6660", espaco:"0.6px", maxW:bw - 20});
+      texto(ctx, draw, v, x + 10, y + 36, {font:"bold 14px " + FONTE, maxW:bw - 20});
+    });
+    y += bh + 18;
+
+    caixa(ctx, draw, P, y, dir - P, 78, 10, "#FFFFFF", r.accent);
+    texto(ctx, draw, "ADUBO POR METRO LINEAR", P + 14, y + 22, {font:"bold 10px " + FONTE, cor:r.accent, espaco:"1.2px"});
+    texto(ctx, draw, r.aduboG, P + 14, y + 58, {font:"bold 30px " + MONO});
+    if(draw){
+      ctx.font = "bold 30px " + MONO;
+      const w = ctx.measureText(r.aduboG).width;
+      texto(ctx, draw, "g/m", P + 22 + w, y + 58, {font:"13px " + FONTE, cor:"#5B6660"});
+    }
+    y += 78 + 10;
+    texto(ctx, draw, `Metros lineares/ha: ${r.metrosLineares}   ·   Adubo/m: ${r.aduboKg} kg`, P, y, {font:"10.5px " + FONTE, cor:"#5B6660"});
+    y += 26;
+  }
+
+  risco(ctx, draw, P, y, dir);
+  texto(ctx, draw, "Gerado pela ficha de Regulagem de Plantadeira · Coasul — valores sujeitos a conferência pelo técnico.",
+        P, y + 18, {font:"9.5px " + FONTE, cor:"#5B6660"});
+  y += 30;
+
+  return { largura:W, altura:y + P - 20 };
+}
+function desenharFichaRegulagem(r){
+  const logo = document.querySelector("header img");
+  const medidor = document.createElement("canvas").getContext("2d");
+  const dim = layoutFichaRegulagem(medidor, false, r, logo);
+
+  const escala = 2;
+  const cv = document.createElement("canvas");
+  cv.width = dim.largura * escala;
+  cv.height = dim.altura * escala;
+  const ctx = cv.getContext("2d");
+  ctx.scale(escala, escala);
+  ctx.fillStyle = "#FFFFFF";
+  ctx.fillRect(0, 0, dim.largura, dim.altura);
+  ctx.textBaseline = "alphabetic";
+  layoutFichaRegulagem(ctx, true, r, logo);
+  return cv;
+}
+
 function baixar(href, nome){
   const a = document.createElement("a");
   a.href = href; a.download = nome;
@@ -1371,6 +1844,12 @@ function baixar(href, nome){
 }
 
 $("btnPng").addEventListener("click", () => {
+  if(!$("viewRegulagem").classList.contains("hidden")){
+    const r = coletarResumoRegulagem();
+    const cv = desenharFichaRegulagem(r);
+    baixar(cv.toDataURL("image/png"), nomeArquivoRegulagem(r, "png"));
+    return;
+  }
   const r = coletarResumo();
   const cv = desenharFicha(r);
   // toDataURL é síncrono: o download dispara na hora, sem depender de callback
@@ -1412,8 +1891,66 @@ function calcRegulagem(){
   $("regMetrosLineares").textContent = fmtDecCasas(metrosLineares, 2);
   $("regPlantasMetroStep").textContent = fmtDecCasas(plantasMetro, 2);
   $("regPlantasMetro").textContent = fmtDecCasas(plantasMetro, 2);
+
+  calcRegulagemAvancada(plantasHa, espacamento, plantasMetro);
 }
 ["regPopulacao","regEspacamento","regGerminacao"].forEach(id => $(id).addEventListener("input", calcRegulagem));
+
+// ---- Regulagem avançada (opcional): linhas, teste de campo, velocidade e
+// reservatório. Depende dos mesmos plantasHa/espacamento/plantasMetro que
+// calcRegulagem() já calcula — por isso é chamada de dentro dela, em vez de
+// recalcular tudo de novo a partir dos campos de "Dados da regulagem".
+function calcRegulagemAvancada(plantasHa, espacamento, plantasMetro){
+  $("regSementesPorMetroLinha").textContent = fmtDecCasas(plantasMetro, 2);
+
+  const numLinhas = parseFloat($("regNumLinhas").value) || 0;
+
+  // 2) teste de campo (50/100 m)
+  const testeMetros = parseFloat($("regTesteMetros").value) || 0;
+  const esperadoPorLinha = plantasMetro * testeMetros;
+  const esperadoTotal = esperadoPorLinha * numLinhas;
+  $("regTesteMetrosLabel").textContent = fmtInt(testeMetros);
+  $("regTesteEsperadoPorLinha").textContent = fmtInt(esperadoPorLinha);
+  $("regTesteNumLinhasLabel").textContent = fmtInt(numLinhas);
+  $("regTesteEsperadoTotal").textContent = fmtInt(esperadoTotal);
+
+  const alertBox = $("regTesteAlertBox");
+  alertBox.innerHTML = "";
+  show(alertBox, false);
+  const coletadas = parseFloat($("regSementesColetadas").value) || 0;
+  if(coletadas > 0 && esperadoPorLinha > 0){
+    const diffPct = ((coletadas - esperadoPorLinha) / esperadoPorLinha) * 100;
+    if(Math.abs(diffPct) > 10){
+      const meta = ALERT_META.warn;
+      const div = document.createElement("div");
+      div.className = "alert-item alert-warn";
+      div.innerHTML =
+        `<svg class="ti ti-${meta.icon} alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${meta.paths}</svg>` +
+        `<span class="alert-text">Sementes coletadas divergem do esperado em ${fmtDecCasas(Math.abs(diffPct), 1)}%. Reveja a regulagem.</span>`;
+      alertBox.appendChild(div);
+      show(alertBox, true);
+    }
+  }
+
+  // 3) velocidade de plantio -> área plantada por hora
+  const velocidade = parseFloat($("regVelocidade").value) || 0;
+  const areaHora = espacamento * numLinhas * velocidade * 0.1;
+  $("regAreaPorHora").textContent = fmtDecCasas(areaHora, 2);
+
+  // 4) reservatório de sementes -> abastecimentos necessários
+  const capacidade = parseFloat($("regCapacidadeReservatorio").value) || 0;
+  const areaTotal = parseFloat($("regAreaTotal").value) || 0;
+  const abastecimentos = capacidade > 0 ? Math.ceil((areaTotal * plantasHa) / capacidade) : 0;
+  $("regAbastecimentos").textContent = fmtInt(abastecimentos);
+
+  // 5) engrenagem/disco é só anotação livre — sem cálculo, de propósito (ver nota no HTML)
+}
+enhanceSelect($("regTesteMetros"));
+[
+  "regNumLinhas", "regSementesColetadas",
+  "regVelocidade", "regCapacidadeReservatorio", "regAreaTotal",
+].forEach(id => $(id).addEventListener("input", calcRegulagem));
+$("regTesteMetros").addEventListener("change", calcRegulagem); // select personalizado dispara "change", não "input"
 calcRegulagem();
 
 // ---- Regulagem de plantadeira: sub-abas semente / adubo

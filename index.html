@@ -95,7 +95,9 @@
           </div>
           <div>
             <label class="lbl" for="cultivar" id="cultivarLabel">Cultivar cotada</label>
-            <input type="text" id="cultivar" class="inp" placeholder="Ex.: BRS 404" autocomplete="off">
+            <input type="text" id="cultivar" class="inp" placeholder="Ex.: BRS 404" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false">
+            <ul id="cultivarSuggestList" class="csel-list hidden" role="listbox"></ul>
+            <p id="cultivarPmsHint" class="mt-1.5 hidden text-[11px] text-muted"></p>
           </div>
           <div>
             <label class="lbl" for="area">Área (alqueires)</label>
@@ -118,6 +120,7 @@
             <div id="plantasField" class="fld-wide">
               <label class="lbl" for="plantas" id="plantasLabel">Plantas por metro</label>
               <input type="number" id="plantas" class="inp inp-num" step="0.1" min="0" inputmode="decimal" placeholder="0">
+              <p class="mt-1.5 text-[11px] text-muted" id="plantasSuggestionHint"></p>
             </div>
             <div>
               <label class="lbl" for="espacamento">Espaçamento (m)</label>
@@ -250,7 +253,7 @@
         </p>
         <p class="mt-1.5 text-[11px] text-muted lg:hidden" id="totalCaption">necessário para toda a área informada</p>
         <div class="mt-3 grid grid-cols-2 gap-2.5 border-t border-ink/10 pt-3 sm:grid-cols-3 lg:mt-2 lg:gap-2 lg:pt-2" id="packsWrap"></div>
-        <p id="comboHint" class="mt-2 hidden text-[11px] leading-snug text-muted"></p>
+        <div id="comboHint" class="mt-3 hidden"></div>
 
         <div id="memoriaBox" class="mt-3">
           <button type="button" id="memoriaToggle" class="mem-toggle flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-[13px] font-extrabold text-ink" aria-expanded="false" aria-controls="memoriaPanel">
@@ -369,6 +372,102 @@
         <p class="mt-3 text-[11px] leading-snug text-muted lg:text-[10.5px]">Fórmula: Plantas/ha = Stand de plantas ÷ (% germinação ÷ 100) · Metros lineares em 1 ha = 10.000 m² ÷ espaçamento entre linhas · Plantas por metro = Plantas/ha ÷ metros lineares em 1 ha.</p>
         </div>
         </div>
+
+        <section class="mt-6 border-t border-dashed border-line pt-5 lg:mt-5">
+          <h2 class="mb-3 flex items-center gap-2 text-[12px] font-extrabold uppercase tracking-wider text-muted">
+            <span class="h-4 w-1 rounded-full" style="background:var(--accent)"></span>Regulagem avançada (opcional)
+          </h2>
+          <div class="grid gap-4 lg:grid-cols-2">
+
+            <!-- 1) Número de linhas + sementes por metro de linha -->
+            <div class="rounded-xl border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3.5">
+              <h3 class="mb-3 flex items-center gap-2 text-[13px] font-extrabold">
+                <span aria-hidden="true">📏</span>Linhas da plantadeira
+              </h3>
+              <div>
+                <label class="lbl" for="regNumLinhas">Nº de linhas</label>
+                <input type="number" id="regNumLinhas" class="inp inp-num" step="1" min="0" inputmode="decimal" placeholder="Ex.: 10">
+              </div>
+              <div class="mt-3 rounded-xl border border-line bg-white px-3 py-2.5">
+                <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">Sementes por metro de linha</div>
+                <div class="mt-1 font-mono text-[16px] font-bold tabular-nums text-ink"><span id="regSementesPorMetroLinha">0</span> <span class="text-[11px] font-normal text-muted">sementes/m</span></div>
+                <div class="mt-0.5 text-[10px] leading-snug text-muted">mesmo valor de "Plantas por metro linear" acima — é a dosagem que a semeadora precisa entregar por linha</div>
+              </div>
+            </div>
+
+            <!-- 2) Teste de campo (50/100 m) -->
+            <div class="rounded-xl border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3.5">
+              <h3 class="mb-3 flex items-center gap-2 text-[13px] font-extrabold">
+                <span aria-hidden="true">🧪</span>Teste de campo
+              </h3>
+              <div>
+                <label class="lbl" for="regTesteMetros">Comprimento do teste</label>
+                <select id="regTesteMetros" class="inp inp-num">
+                  <option value="50">50 metros</option>
+                  <option value="100">100 metros</option>
+                </select>
+              </div>
+              <div class="mt-3 rounded-xl border border-line bg-white px-3 py-2.5 text-[12.5px] leading-relaxed text-ink">
+                <div>Teste recomendado: <strong class="font-mono tabular-nums" id="regTesteMetrosLabel">50</strong> metros</div>
+                <div>Sementes esperadas por linha: <strong class="font-mono tabular-nums" id="regTesteEsperadoPorLinha">0</strong></div>
+                <div>Sementes esperadas em <strong class="font-mono tabular-nums" id="regTesteNumLinhasLabel">0</strong> linhas: <strong class="font-mono tabular-nums" id="regTesteEsperadoTotal">0</strong></div>
+              </div>
+              <div class="mt-3">
+                <label class="lbl" for="regSementesColetadas">Sementes coletadas no teste (1 linha)</label>
+                <input type="number" id="regSementesColetadas" class="inp inp-num" step="1" min="0" inputmode="decimal" placeholder="Ex.: 495">
+              </div>
+              <div id="regTesteAlertBox" class="alerts-box hidden mt-3"></div>
+            </div>
+
+            <!-- 3) Velocidade de plantio -> área por hora -->
+            <div class="rounded-xl border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3.5">
+              <h3 class="mb-3 flex items-center gap-2 text-[13px] font-extrabold">
+                <span aria-hidden="true">🚜</span>Velocidade de plantio
+              </h3>
+              <div>
+                <label class="lbl" for="regVelocidade">Velocidade (km/h)</label>
+                <input type="number" id="regVelocidade" class="inp inp-num" step="0.1" min="0" inputmode="decimal" placeholder="Ex.: 6">
+              </div>
+              <div class="mt-3 rounded-xl border border-line bg-white px-3 py-2.5">
+                <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">Área plantada por hora</div>
+                <div class="mt-1 font-mono text-[16px] font-bold tabular-nums text-ink"><span id="regAreaPorHora">0</span> <span class="text-[11px] font-normal text-muted">ha/h</span></div>
+                <div class="mt-0.5 text-[10px] leading-snug text-muted">Espaçamento × nº de linhas × velocidade × 0,1</div>
+              </div>
+            </div>
+
+            <!-- 4) Reservatório de sementes -> abastecimentos -->
+            <div class="rounded-xl border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3.5">
+              <h3 class="mb-3 flex items-center gap-2 text-[13px] font-extrabold">
+                <span aria-hidden="true">🛢️</span>Reservatório de sementes
+              </h3>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="lbl" for="regCapacidadeReservatorio">Capacidade (sementes)</label>
+                  <input type="number" id="regCapacidadeReservatorio" class="inp inp-num" step="1" min="0" inputmode="decimal" placeholder="Ex.: 50000">
+                </div>
+                <div>
+                  <label class="lbl" for="regAreaTotal">Área total (ha)</label>
+                  <input type="number" id="regAreaTotal" class="inp inp-num" step="0.1" min="0" inputmode="decimal" placeholder="Ex.: 40">
+                </div>
+              </div>
+              <div class="mt-3 rounded-xl border border-line bg-white px-3 py-2.5">
+                <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">Abastecimentos necessários</div>
+                <div class="mt-1 font-mono text-[16px] font-bold tabular-nums text-ink" id="regAbastecimentos">0</div>
+              </div>
+            </div>
+
+            <!-- 5) Engrenagem/disco: só anotação manual, sem cálculo -->
+            <div class="rounded-xl border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3.5 lg:col-span-2">
+              <h3 class="mb-3 flex items-center gap-2 text-[13px] font-extrabold">
+                <span aria-hidden="true">⚙️</span>Engrenagem/disco
+              </h3>
+              <label class="lbl" for="regEngrenagemRef">Engrenagem/disco (referência do manual do fabricante)</label>
+              <input type="text" id="regEngrenagemRef" class="inp" placeholder="Ex.: Semeato TDA — disco 18 furos, engrenagem 32x14" autocomplete="off">
+              <p class="mt-1.5 text-[11px] leading-snug text-muted">Cada fabricante (Semeato, Jumil, Vence Tudo, Stara etc.) tem sua própria tabela de engrenagens/discos — o app não calcula isso automaticamente, pra não arriscar uma regulagem errada no campo. Anote aqui só o que foi consultado no manual, para ficar registrado na ficha.</p>
+            </div>
+
+          </div>
+        </section>
         </div>
 
         <div id="regAduboBox" class="hidden">
@@ -436,14 +535,17 @@
     </main>
   </div>
 
-  <footer class="mt-6 shrink-0 text-center text-[11px] text-muted lg:mt-3">
-    Ferramenta de campo · calcula automaticamente conforme você digita
+  <footer class="mt-6 shrink-0 text-center text-muted lg:mt-3">
+    <p class="text-[11px] font-medium">Calculadora Coasul · Ferramenta técnica de campo · <span id="footerVersion"></span></p>
+    <p class="mt-0.5 text-[10px]">Estimativa técnica, sujeita a conferência</p>
   </footer>
 </div>
 
 <!-- folha usada ao gerar o PDF (fica fora do app, que some na impressão) -->
 <div id="printSheet"></div>
 
+<script src="js/calculos.js"></script>
+<script src="js/cultivares.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

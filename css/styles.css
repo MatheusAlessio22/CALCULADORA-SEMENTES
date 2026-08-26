@@ -215,6 +215,9 @@
     box-shadow:0 0 0 4px var(--accent-soft);
   }
   .inp-num{font-family:Consolas,"SFMono-Regular",Menlo,monospace; font-variant-numeric:tabular-nums;}
+  /* valor típico pré-preenchido (ex.: germinação/pureza) que o usuário ainda
+     não confirmou digitando: borda tracejada até o primeiro "input" no campo. */
+  .inp.is-suggested{ border-style:dashed; border-color:#C9D2BC; background:#FBFCF9; }
   .inp-money{padding-left:40px;} /* espaço para o prefixo R$ */
   /* 16px no celular: abaixo disso o Safari/Chrome mobile dão zoom automático
      ao focar o campo (aqui é a data de vencimento), o que sacode a tela. */
@@ -262,7 +265,7 @@
   }
   .csel-list{
     position:absolute; z-index:30; left:0; right:0; top:calc(100% + 6px);
-    max-height:240px; overflow-y:auto;
+    max-height:264px; overflow-y:auto;
     background:#fff; border:1.5px solid var(--accent); border-radius:10px;
     box-shadow:0 16px 32px -14px rgba(30,36,32,.35), 0 2px 8px rgba(30,36,32,.10);
     padding:6px; margin:0; list-style:none;
@@ -273,6 +276,7 @@
     font-size:15px; color:#1E2420; cursor:pointer;
     transition:background .1s, color .1s;
   }
+  .csel-option:hover,
   .csel-option.is-active{ background:var(--accent-soft); }
   .csel-option.is-selected{ background:var(--accent); color:#fff; font-weight:700; }
 
@@ -438,6 +442,17 @@
   @media (min-width:1024px){
     .reg-col-left{ padding-right:24px; }
     .reg-col-right{ padding-left:24px; }
+  }
+
+  /* Regulagem avançada (5 blocos novos): mesmo motivo do comentário acima —
+     lg:grid-cols-2, lg:col-span-2, lg:mt-5 e pt-5 não vieram no bundle
+     Tailwind pré-compilado por não terem sido usados em nenhuma outra tela
+     na hora em que ele foi gerado. */
+  .pt-5{ padding-top:1.25rem; }
+  @media (min-width:1024px){
+    .lg\:mt-5{ margin-top:1.25rem; }
+    .lg\:grid-cols-2{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
+    .lg\:col-span-2{ grid-column:span 2 / span 2; }
   }
 
   /* folha de impressão / PDF: só aparece na hora de imprimir */
