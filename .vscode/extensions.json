@@ -4,6 +4,8 @@
     "dbaeumer.vscode-eslint",
     "EditorConfig.EditorConfig",
     "vitest.explorer",
-    "ritwickdey.liveserver"
+    "ritwickdey.liveserver",
+    "webhint.vscode-webhint",
+    "johnpapa.vscode-peacock"
   ]
 }
