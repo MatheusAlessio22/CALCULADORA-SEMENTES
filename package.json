@@ -4,6 +4,10 @@
   "description": "Ficha de campo para calcular necessidade de sementes, adubação e custo por embalagem (Soja, Milho, Feijão, Trigo e Adubação/Ureia), além de uma calculadora de regulagem de plantadeira. Funciona 100% offline — não faz nenhuma chamada de rede.",
   "main": "service-worker.js",
   "scripts": {
+    "dev": "serve . -l 5173",
+    "build": "node scripts/validate-standalone.js",
+    "lint": "eslint .",
+    "format": "prettier --check .",
     "test": "vitest run"
   },
   "repository": {
@@ -19,6 +23,9 @@
   },
   "homepage": "https://github.com/MatheusAlessio22/CALCULADORA-SEMENTES#readme",
   "devDependencies": {
+    "eslint": "^8.57.1",
+    "prettier": "^3.9.6",
+    "serve": "^14.2.6",
     "vitest": "^4.1.11"
   }
 }

@@ -5,6 +5,13 @@ embalagem (Soja, Milho, Feijão, Trigo e Adubação/Ureia), além de uma
 calculadora de regulagem de plantadeira. Funciona 100% offline — não faz
 nenhuma chamada de rede.
 
+## Stack
+
+Vanilla JavaScript (ES6+), CSS3 e HTML5 — sem framework nem bundler. PWA
+offline-first via Service Worker (cache de arquivos estáticos). Testes de
+lógica de cálculo com [Vitest](https://vitest.dev). Qualidade de código com
+ESLint e Prettier.
+
 Este repositório tem **duas versões equivalentes** da mesma ficha:
 
 ## 1. App instalável (raiz do repositório)
@@ -16,6 +23,8 @@ Android), com ícone próprio e funcionamento offline via service worker.
 
 **Rodar localmente para testar:**
 ```bash
+npm run dev
+# ou, sem instalar dependências:
 npx serve .
 # ou
 python -m http.server 8000
@@ -38,3 +47,28 @@ offline normalmente.
 
 As duas versões têm a mesma interface e a mesma lógica de cálculo — ao
 alterar uma, replique a mudança na outra.
+
+## Build
+
+Não há bundler nem etapa de compilação — os arquivos servidos são os mesmos
+do repositório. `npm run build` roda uma validação sintática do JavaScript
+embutido na versão `standalone/`, para pegar erros de digitação antes de
+publicar:
+```bash
+npm run build
+```
+
+## Testes
+
+A lógica de cálculo pura (sementes, dose, calagem/gessagem etc.) fica em
+`js/calculos.js` e é coberta por testes automatizados com Vitest:
+```bash
+npm test
+```
+
+## Lint & Format
+
+```bash
+npm run lint    # ESLint (no-unused-vars, no-undef, eqeqeq)
+npm run format  # Prettier --check (relatório; standalone/ fica fora, ver .prettierignore)
+```

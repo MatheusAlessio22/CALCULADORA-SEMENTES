@@ -94,14 +94,14 @@ function aplicarFormulacao(){
     // a formulação que tinha preenchido o NPK foi apagada/mudou: zera em vez de deixar o valor antigo
     // (se o NPK nunca veio de uma formulação lida — ex.: valor padrão do ureia — não mexe)
     if(!eraAutoDetectada) return false;
-    const mudou = $("npkN").value != 0 || $("npkP").value != 0 || $("npkK").value != 0;
+    const mudou = Number($("npkN").value) !== 0 || Number($("npkP").value) !== 0 || Number($("npkK").value) !== 0;
     $("npkN").value = 0;
     $("npkP").value = 0;
     $("npkK").value = 0;
     return mudou;
   }
   const [n, p, k] = npk;
-  const mudou = $("npkN").value != n || $("npkP").value != p || $("npkK").value != k;
+  const mudou = Number($("npkN").value) !== n || Number($("npkP").value) !== p || Number($("npkK").value) !== k;
   $("npkN").value = n;
   $("npkP").value = p;
   $("npkK").value = k;

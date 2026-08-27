@@ -1,0 +1,46 @@
+{
+  "root": true,
+  "env": {
+    "browser": true,
+    "es2022": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 2022,
+    "sourceType": "script"
+  },
+  "globals": {
+    "Calculos": "readonly",
+    "CULTIVARES": "readonly",
+    "module": "readonly"
+  },
+  "rules": {
+    "no-unused-vars": ["warn", { "vars": "local" }],
+    "no-undef": "error",
+    "eqeqeq": ["error", "smart"]
+  },
+  "ignorePatterns": [
+    "node_modules/",
+    ".screenshot-tools/",
+    "standalone/",
+    "dist/"
+  ],
+  "overrides": [
+    {
+      "files": ["tests/**/*.js"],
+      "env": {
+        "node": true,
+        "es2022": true
+      },
+      "parserOptions": {
+        "sourceType": "module"
+      }
+    },
+    {
+      "files": ["scripts/**/*.js"],
+      "env": {
+        "node": true,
+        "es2022": true
+      }
+    }
+  ]
+}
