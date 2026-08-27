@@ -183,6 +183,150 @@ const Calculos = (function () {
     return { enxofreKgHa: d * 0.15, calcioKgHa: d * 0.18 };
   }
 
+  // ---------- Comparador de Formulações: Custo por Ponto de Nutriente ----------
+  // Ajuda a comparar adubos comerciais não só pelo preço da embalagem, mas pelo
+  // custo real de cada kg de nutriente ativo (N + P₂O₅ + K₂O) que ela entrega —
+  // duas formulações com preços parecidos podem ter custo-benefício bem
+  // diferente se a concentração de nutrientes também for diferente.
+
+  // Soma simples dos três nutrientes primários (%). Ex.: Ureia 45-00-00 = 45%;
+  // 04-14-08 = 26%; 10-15-15 = 40%; KCl 00-00-60 = 60%.
+  function calcularConcentracaoTotalNutrientes(npkN, npkP, npkK) {
+    return (Number(npkN) || 0) + (Number(npkP) || 0) + (Number(npkK) || 0);
+  }
+
+  // Custo por kg de nutriente ativo (R$/kg) de uma embalagem: quanto do preço
+  // pago vai de fato para nutriente, e não para o "peso morto" do produto.
+  // `preco` é o preço da embalagem inteira (não confundir com preço por kg do
+  // produto) — para comparar por preço/kg de produto, basta chamar com
+  // `tamanhoEmbalagemKg: 1`, já que o preço de 1 kg é o preço de uma
+  // "embalagem" de 1 kg.
+  function calcularCustoPorKgNutriente({ preco = 0, tamanhoEmbalagemKg = 0, npkN = 0, npkP = 0, npkK = 0 } = {}) {
+    const precoN = Number(preco) || 0;
+    const tamanhoN = Number(tamanhoEmbalagemKg) || 0;
+    const somaNpk = calcularConcentracaoTotalNutrientes(npkN, npkP, npkK);
+    if (somaNpk <= 0 || precoN <= 0 || tamanhoN <= 0) return 0;
+    const nutrienteTotalKg = tamanhoN * (somaNpk / 100);
+    return precoN / nutrienteTotalKg;
+  }
+
+  // A partir de uma lista de linhas do comparador (cada uma já com o campo
+  // `custoPorKgNutriente` calculado), aponta a de melhor custo-benefício —
+  // ignorando linhas zeradas ou sem preço/NPK reconhecido. Retorna a própria
+  // linha vencedora (preservando o índice `i`, se houver) ou `null` se nenhuma
+  // linha for válida.
+  function identificarMelhorCustoBeneficio(linhasComparador) {
+    const validas = (linhasComparador || []).filter((l) => (l.custoPorKgNutriente || 0) > 0);
+    if (!validas.length) return null;
+    return validas.reduce((melhor, atual) => (atual.custoPorKgNutriente < melhor.custoPorKgNutriente ? atual : melhor));
+  }
+
+  // ---------- Texto formatado para envio no WhatsApp ----------
+  // Cada função recebe o mesmo objeto "resumo" que já alimenta a exportação em
+  // PDF/PNG daquela ficha (coletarResumo/coletarResumoRegulagem/
+  // coletarResumoCalagem, em app.js) — são funções puras: só formatam texto a
+  // partir do que já foi coletado do DOM, nunca leem o DOM elas mesmas.
+
+  // Linha "Ref: #X · data às hora" do cabeçalho — a versão standalone (arquivo
+  // único) não gera código de referência nem hora de geração, então essas
+  // partes somem graciosamente em vez de aparecer como "undefined".
+  function montarLinhaRefData(r) {
+    const dataHora = r.horaGeracao ? `${r.data} às ${r.horaGeracao}` : r.data;
+    return r.ref ? `Ref: #${r.ref} · ${dataHora}` : dataHora;
+  }
+
+  // Sementes & Adubação
+  function montarTextoWhatsApp(r) {
+    const blocos = [];
+    blocos.push(`🌱 *COASUL AGRO — COTAÇÃO TÉCNICA*\n${montarLinhaRefData(r)}`);
+    blocos.push(
+      `👤 *Produtor:* ${r.cliente || "Não informado"}\n` +
+      `🌾 *Cultura:* ${r.cultura}${r.cultivar ? " (" + r.cultivar + ")" : ""}\n` +
+      `📐 *Área:* ${r.area}`
+    );
+    if (r.params && r.params.length) {
+      blocos.push(`⚙️ *Parâmetros:*\n` + r.params.map(([k, v]) => `• ${k}: ${v}`).join("\n"));
+    }
+    let necessidade = `📦 *NECESSIDADE TOTAL:*\n*${r.total} ${r.unidade}*`;
+    if (r.combo) necessidade += `\n↳ Combinado: ${r.combo}`;
+    blocos.push(necessidade);
+    if (r.nutrientes && r.nutrientes.length) {
+      blocos.push(`🧪 *Nutrientes no Solo (Total):*\n` + r.nutrientes.map((n) => `• ${n.nome}: ${n.valor} (${n.porAlq})`).join("\n"));
+    }
+    if (r.linhas && r.linhas.length) {
+      const linhasCusto = r.linhas.map((l) => {
+        const temVista = l.precoVista && l.precoVista !== "—";
+        let s = `• ${l.nome}: ${l.qtd} × ${temVista ? l.precoVista : "Sob consulta"} = *${temVista ? l.vista : "Sob consulta"}*`;
+        if (l.precoPrazo && l.precoPrazo !== "—") s += `\n  ↳ A prazo (${r.vencimento || "Safra"}): ${l.prazo}`;
+        return s;
+      }).join("\n");
+      blocos.push(`💰 *INVESTIMENTO ESTIMADO:*\n${linhasCusto}`);
+    }
+    blocos.push(`──────────────────────\n_Preço válido no momento da geração — sujeito a alteração._\n_Documento técnico de uso interno · Coasul Agro_`);
+    return blocos.join("\n\n");
+  }
+
+  // Regulagem de Plantadeira (Semente ou Adubo)
+  function montarTextoWhatsAppRegulagem(r) {
+    const ehSemente = r.variante === "semente";
+    const blocos = [];
+    blocos.push(`🚜 *COASUL AGRO — REGULAGEM DE IMPLEMENTO*\n${ehSemente ? "🌱 Semente" : "🧪 Adubação"} · ${r.data}`);
+    const parametros = [`• Espaçamento entre linhas: ${r.espacamento} m`];
+    if (ehSemente) {
+      parametros.push(`• Stand de plantas: ${r.populacao} plantas/ha`);
+      parametros.push(`• Germinação do lote: ${r.germinacao}%`);
+    } else {
+      parametros.push(`• Dose desejada: ${r.dose} kg/ha`);
+    }
+    blocos.push(`⚙️ *Parâmetros:*\n` + parametros.join("\n"));
+    const resultado = ehSemente ? `${r.plantasMetro} plantas/m` : `${r.aduboG} g/m`;
+    blocos.push(`🎯 *REGULAGEM RECOMENDADA:*\n*${resultado}*\n↳ Metros lineares/ha: ${r.metrosLineares} m`);
+    if (ehSemente && r.testeMetros) {
+      blocos.push(`📏 *Teste de Campo (${r.testeMetros} metros):*\n• Esperado por linha: ${r.esperadoPorLinha} sementes`);
+    }
+    blocos.push(`──────────────────────\n_Estimativa técnica para calibração de semeadora · Coasul Agro_`);
+    return blocos.join("\n\n");
+  }
+
+  // Calagem & Gessagem
+  function montarTextoWhatsAppCalagem(r) {
+    const blocos = [];
+    blocos.push(`🧪 *COASUL AGRO — RECOMENDAÇÃO DE CALAGEM E GESSAGEM*\n${montarLinhaRefData(r)}`);
+    blocos.push(
+      `👤 *Produtor:* ${r.cliente || "Não informado"}\n` +
+      `📐 *Área:* ${r.area}\n` +
+      `🎯 *Cultura-Alvo:* ${r.culturaAlvoResumida || r.cultura} (V₂ desejado: ${r.v2}%)`
+    );
+    blocos.push(
+      `📊 *Diagnóstico do Solo:*\n` +
+      `• V₁ atual: ${r.v1}% ➔ V₂ alvo: ${r.v2}%\n` +
+      `• CTC (T): ${r.ctc} cmolc/dm³ · Soma de Bases: ${r.sb} cmolc/dm³\n` +
+      `• Relação Ca/Mg: ${r.relCaMg} · Mg: ${r.mg} cmolc/dm³`
+    );
+    let calagemTexto =
+      `💧 *CALAGEM RECOMENDADA:*\n` +
+      `*${r.ncAplicar} t/ha* (Total: *${r.totalCalcario} toneladas*)\n` +
+      `• Corretivo: *${r.tipoCalcario}* (PRNT ${r.prnt}%)\n` +
+      `• Logística: ~${r.cargasCalcario} cargas de carreta (ou ${r.bagsCalcario} big bags)`;
+    if (r.alertaParcelamento) {
+      calagemTexto += `\n⚠️ _Atenção: Dose > 2,5 t/ha em plantio direto superficial — recomenda-se parcelamento anual._`;
+    }
+    blocos.push(calagemTexto);
+
+    let gessagemTexto = `⚡ *GESSAGEM:*\n*${r.ngDoseKgHa} kg/ha* (Total: *${r.totalGesso} toneladas*)\n`;
+    gessagemTexto += r.gessagemNecessaria
+      ? `• Aporte: ~${r.enxofre} kg/ha de Enxofre (S) e ~${r.calcio} kg/ha de Cálcio (Ca)`
+      : `• _Subsolo sem impedimento químico crítico — gessagem dispensada._`;
+    blocos.push(gessagemTexto);
+
+    if (r.custoTotal) {
+      blocos.push(`💰 *Investimento Estimado:*\n• Custo Total: *${r.custoTotal}* (${r.custoPorAlq}/alq · ${r.custoPorHa}/ha)`);
+    }
+
+    blocos.push(`──────────────────────\n_Baseado no Manual de Adubação e Calagem para o Estado do Paraná (SBCS-NEPAR)_`);
+    return blocos.join("\n\n");
+  }
+
   return {
     FORMULACOES_750KG,
     ALQ_HA,
@@ -205,6 +349,12 @@ const Calculos = (function () {
     verificarNecessidadeGessagem,
     calcularGessagem,
     nutrientesGesso,
+    calcularConcentracaoTotalNutrientes,
+    calcularCustoPorKgNutriente,
+    identificarMelhorCustoBeneficio,
+    montarTextoWhatsApp,
+    montarTextoWhatsAppRegulagem,
+    montarTextoWhatsAppCalagem,
   };
 
 })();

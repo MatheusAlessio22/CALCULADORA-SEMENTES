@@ -44,6 +44,15 @@
       <button type="button" id="btnPng" title="Baixa a ficha desta cultura como imagem, pronta para enviar ao produtor"
               class="rounded-lg border bg-white px-3.5 py-2 text-[12px] font-bold transition hover:brightness-105 active:translate-y-px"
               style="border-color:#D99A1E; color:#1E2420"><svg class="ti ti-photo icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 8h.01" /><path d="M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12" /><path d="M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5" /><path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3" /></svg> Salvar imagem</button>
+      <button type="button" id="btnWhatsapp" title="Enviar cotação formatada no WhatsApp"
+              class="rounded-lg px-3.5 py-2 text-[12px] font-bold text-white transition hover:brightness-110 active:translate-y-px"
+              style="background:#25D366">
+        <svg class="ti ti-brand-whatsapp icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 21l1.65 -3.8a9 9 0 1 1 3.4 2.9l-5.05 .9" />
+          <path d="M9 10a.5 .5 0 0 0 1 0v-1a.5 .5 0 0 0 -1 0v1a5 5 0 0 0 5 5h1a.5 .5 0 0 0 0 -1h-1a.5 .5 0 0 0 0 1" />
+        </svg>
+        WhatsApp
+      </button>
     </div>
   </header>
 
@@ -833,6 +842,40 @@
 
 <!-- folha usada ao gerar o PDF (fica fora do app, que some na impressão) -->
 <div id="printSheet"></div>
+
+<!-- Modal WhatsApp -->
+<div id="whatsappModal" class="modal-backdrop hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/50 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="modalWaTitle">
+  <div class="modal-card w-full max-w-lg rounded-xl bg-white p-5 shadow-xl border border-line flex flex-col max-h-[90vh]">
+    <div class="flex items-center justify-between pb-3 border-b border-line">
+      <div class="flex items-center gap-2">
+        <span class="flex h-8 w-8 items-center justify-center rounded-full bg-[#25D366]/15 text-[#128C7E]">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l1.65 -3.8a9 9 0 1 1 3.4 2.9l-5.05 .9" /><path d="M9 10a.5 .5 0 0 0 1 0v-1a.5 .5 0 0 0 -1 0v1a5 5 0 0 0 5 5h1a.5 .5 0 0 0 0 -1h-1a.5 .5 0 0 0 0 1" /></svg>
+        </span>
+        <h3 id="modalWaTitle" class="text-[15px] font-bold text-ink">Enviar Cotação pelo WhatsApp</h3>
+      </div>
+      <button type="button" id="modalWaClose" class="rounded-lg p-1.5 text-muted hover:bg-canvas hover:text-ink transition" aria-label="Fechar modal">
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+    <div class="py-3 flex-1 overflow-y-auto">
+      <label for="modalWaText" class="lbl text-[11px] uppercase tracking-wider text-muted">Pré-visualização da Mensagem</label>
+      <textarea id="modalWaText" readonly class="inp inp-num w-full h-64 p-3 text-[12.5px] font-mono leading-relaxed bg-[#F7FAF5] border border-line rounded-lg resize-none focus:outline-none select-all"></textarea>
+    </div>
+    <div class="pt-3 border-t border-line flex flex-wrap items-center justify-end gap-2.5">
+      <button type="button" id="modalWaCopy" class="flex-1 sm:flex-none rounded-lg border border-line bg-white px-4 py-2.5 text-[12.5px] font-bold text-ink hover:bg-canvas transition active:translate-y-px">
+        📋 Copiar Texto
+      </button>
+      <button type="button" id="modalWaSend" class="flex-1 sm:flex-none rounded-lg px-5 py-2.5 text-[12.5px] font-bold text-white transition hover:brightness-110 active:translate-y-px" style="background:#25D366">
+        💬 Abrir no WhatsApp
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast de Feedback -->
+<div id="appToast" class="pointer-events-none fixed bottom-6 left-1/2 -translate-x-1/2 z-50 hidden rounded-full bg-ink/90 px-4 py-2 text-[12px] font-semibold text-white shadow-lg backdrop-blur transition-all">
+  <span id="appToastText">Mensagem copiada!</span>
+</div>
 
 <script src="js/calculos.js"></script>
 <script src="js/cultivares.js"></script>

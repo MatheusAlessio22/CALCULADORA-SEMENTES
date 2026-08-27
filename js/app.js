@@ -1,5 +1,5 @@
 
-const APP_VERSION = "1.2.0";
+const APP_VERSION = "1.4.0";
 
 const CROPS = {
   soja: {
@@ -53,6 +53,8 @@ const {
   montarCombo, bagSizeFromNpk, calcularCusto, formatarPrecoResumo, precisaAlertarPrazoAusente,
   converterKMgParaCmolc, calcularIndicesSolo, calcularCalagem, determinarTipoCalcario,
   verificarNecessidadeGessagem, calcularGessagem, nutrientesGesso,
+  calcularConcentracaoTotalNutrientes, calcularCustoPorKgNutriente, identificarMelhorCustoBeneficio,
+  montarTextoWhatsApp, montarTextoWhatsAppRegulagem, montarTextoWhatsAppCalagem,
 } = Calculos;
 
 // Unidade em que o campo "Área" está sendo exibido/digitado ("alq" ou "ha") — a
@@ -1248,6 +1250,9 @@ const compRows = [
   { texto: "", preco: "" },
   { texto: "", preco: "" },
 ];
+// snapshot do último cálculo do comparador, pra exportação (PDF/PNG) ler sem
+// recalcular — ver coletarResumo() e updateComparador()
+let ultimoComparador = null;
 
 // chips de preenchimento rápido: MAP/Ureia/KCl entram já com o NPK padrão de
 // mercado embutido no texto (ex.: "MAP 11-52-00"), pra lerFormulacao() (a
@@ -1358,21 +1363,34 @@ function updateComparador(){
     const custoHa = dose * preco;
     const custoAlq = custoHa * ALQ_HA;
     const custoTotal = custoHa * areaHa; // mesma fórmula de sempre (dose × preço × área em ha)
+    // custo-benefício intrínseco do produto (R$ por kg de N+P₂O₅+K₂O ativo) —
+    // independe da dose/área informada, só de preço e concentração; `preco`
+    // aqui já é por kg do produto, então uma "embalagem" de 1 kg custa `preco`
+    const custoPorKgNutriente = calcularCustoPorKgNutriente({ preco, tamanhoEmbalagemKg: 1, npkN: n, npkP: p, npkK: k });
 
     resultados.push({
       i, box, n, p, k, somaNpk, dose, doseAlq, bagTamanho, bags, sacas,
-      custoHa, custoAlq, custoTotal, temPreco: preco > 0 && dose > 0,
+      custoHa, custoAlq, custoTotal, custoPorKgNutriente, temPreco: preco > 0 && dose > 0,
     });
   });
 
   const validos = resultados.filter(r => r.temPreco);
   const menor = validos.length > 1 ? validos.reduce((a, b) => a.custoTotal < b.custoTotal ? a : b) : null;
+  // melhor custo-benefício = menor R$/kg de nutriente entre as linhas reconhecidas
+  // com preço informado — ao contrário de `menor` (custo total), não depende de
+  // dose/área terem sido informadas, só do preço e da concentração do produto.
+  const melhorCustoBeneficio = resultados.length > 1
+    ? identificarMelhorCustoBeneficio(resultados.filter(r => r.custoPorKgNutriente > 0))
+    : null;
+
+  ultimoComparador = { modo: compModo, necessidade, resultados, menor, melhorCustoBeneficio };
 
   // 2ª passada: agora que sabemos qual é a mais barata, desenha o cartão de
   // cada linha reconhecida (badge de NPK, grade de 4 métricas e, quando
   // aplicável, o badge "menor custo" ou a diferença em R$/% pra ela).
   resultados.forEach(r => {
     const isCheapest = !!menor && r.i === menor.i;
+    const isMelhorCustoBeneficio = !!melhorCustoBeneficio && r.i === melhorCustoBeneficio.i;
     const bagLabel = r.bagTamanho === 750 ? "bags 750kg" : "bags 1.000kg";
     let deltaHtml = "";
     if(menor && !isCheapest && r.temPreco){
@@ -1383,8 +1401,15 @@ function updateComparador(){
     r.box.innerHTML = `
       <div class="comp-npk-row">
         <span class="comp-npk-badge">${r.n}-${r.p}-${r.k} <span class="comp-npk-total">· ${fmtInt(r.somaNpk)}% ativos</span></span>
-        ${isCheapest ? `<span class="comp-cheapest-badge">★ Menor Custo</span>` : ""}
+        <div class="comp-badge-group">
+          ${isCheapest ? `<span class="comp-cheapest-badge">★ Menor Custo</span>` : ""}
+          ${isMelhorCustoBeneficio ? `<span class="comp-best-value-badge">★ Melhor Custo-Benefício</span>` : ""}
+        </div>
       </div>
+      ${r.custoPorKgNutriente > 0 ? `
+      <div class="comp-nutrient-badge">
+        ${fmtMoeda(r.custoPorKgNutriente)} / kg nutriente total <span class="comp-nutrient-pct">(${fmtInt(r.somaNpk)}% de NPK)</span>
+      </div>` : ""}
       <div class="comp-metric-grid">
         <div class="comp-metric-box">
           <div class="comp-metric-label">Dose calculada</div>
@@ -1577,6 +1602,24 @@ function coletarResumo(){
       }))
     : [];
 
+  // Comparador de Formulações — só existe na aba Adubação/Ureia; usa o snapshot
+  // que updateComparador() já deixou pronto (evita recalcular e reler o DOM
+  // aqui). Só entra na ficha exportada quando há pelo menos uma linha reconhecida.
+  const comparadorLinhas = (currentCrop === "adubacao" && ultimoComparador)
+    ? ultimoComparador.resultados.map(res => ({
+        npk: `${res.n}-${res.p}-${res.k}`,
+        somaNpk: fmtInt(res.somaNpk),
+        custoPorKgNutriente: res.custoPorKgNutriente > 0 ? fmtMoeda(res.custoPorKgNutriente) : "—",
+        custoTotal: fmtMoeda(res.custoTotal),
+        dose: `${fmtDec(res.dose)} kg/ha`,
+        isMenorCusto: !!ultimoComparador.menor && res.i === ultimoComparador.menor.i,
+        isMelhorCustoBeneficio: !!ultimoComparador.melhorCustoBeneficio && res.i === ultimoComparador.melhorCustoBeneficio.i,
+      }))
+    : [];
+  const comparador = comparadorLinhas.length
+    ? { modo: ultimoComparador.modo === "dose" ? "Mesma dose para todas" : "Bater necessidade de NPK", linhas: comparadorLinhas }
+    : null;
+
   return {
     cultura: c.nome, icone: c.icon, accent: c.accent,
     cliente, cultivar,
@@ -1586,7 +1629,7 @@ function coletarResumo(){
     total: $("totalValue").textContent,
     unidade: $("unitLabel").textContent,
     combo: $("comboHint").classList.contains("hidden") ? "" : ($("comboHint").dataset.plain || ""),
-    linhas, nutrientes,
+    linhas, nutrientes, comparador,
     vencimento: venc, vencimentoDias: $("prazoDias").textContent,
     data: agora.toLocaleDateString("pt-BR"),
     ref: gerarCodigoRef(agora),
@@ -1749,6 +1792,34 @@ function montarFolha(r){
     <div style="margin-top:12px;font-size:11px;">
       <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#4B554F;margin-bottom:4px;">Nutriente que será fornecido ao solo · total na área</div>
       ${r.nutrientes.map(n => `<span style="display:inline-block;background:#F7FAF5;border:1px solid #DCE3D6;border-radius:6px;padding:5px 9px;margin-right:6px;">${esc(n.nome)}: <strong>${esc(n.valor)}</strong> <span style="color:#4B554F;">(${esc(n.porAlq)})</span></span>`).join("")}
+    </div>` : ""}
+
+    ${r.comparador ? `
+    <div style="margin-top:14px;">
+      <div style="font-size:12px;font-weight:800;color:#4B554F;">Comparador de formulações <span style="font-weight:400;font-size:10.5px;">— ${esc(r.comparador.modo)}</span></div>
+      <table style="width:100%;border-collapse:separate;border-spacing:0;margin-top:8px;font-size:11px;">
+        <thead>
+          <tr style="text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:#4B554F;background:#F1F5ED;">
+            <th style="padding:7px 8px;border-radius:6px 0 0 6px;">Formulação</th>
+            <th style="padding:7px 8px;text-align:right;">Dose</th>
+            <th style="padding:7px 8px;text-align:right;">R$/kg nutriente</th>
+            <th style="padding:7px 8px;text-align:right;border-radius:0 6px 6px 0;">Custo total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${r.comparador.linhas.map(l => `
+          <tr>
+            <td style="padding:8px;border-bottom:1px solid #EEF2EB;">
+              <strong style="font-family:monospace;">${esc(l.npk)}</strong> <span style="color:#4B554F;font-size:9.5px;">(${esc(l.somaNpk)}% NPK)</span>
+              ${l.isMenorCusto ? ' <span style="display:inline-block;background:rgba(35,107,86,0.10);color:#236B56;font-size:8.5px;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:2px;">MENOR CUSTO</span>' : ""}
+              ${l.isMelhorCustoBeneficio ? ' <span style="display:inline-block;background:#236B56;color:#fff;font-size:8.5px;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:2px;">★ MELHOR CUSTO-BENEFÍCIO</span>' : ""}
+            </td>
+            <td style="padding:8px;border-bottom:1px solid #EEF2EB;text-align:right;font-family:monospace;white-space:nowrap;">${esc(l.dose)}</td>
+            <td style="padding:8px;border-bottom:1px solid #EEF2EB;text-align:right;font-family:monospace;font-weight:700;white-space:nowrap;">${esc(l.custoPorKgNutriente)}</td>
+            <td style="padding:8px;border-bottom:1px solid #EEF2EB;text-align:right;font-family:monospace;font-weight:700;white-space:nowrap;">${esc(l.custoTotal)}</td>
+          </tr>`).join("")}
+        </tbody>
+      </table>
     </div>` : ""}
 
     <div style="margin-top:14px;">
@@ -2019,6 +2090,37 @@ function layoutFicha(ctx, draw, r, logo){
     y += nh + 18;
   }
 
+  // comparador de formulações (adubação/ureia)
+  if(r.comparador){
+    texto(ctx, draw, `COMPARADOR DE FORMULAÇÕES — ${r.comparador.modo.toUpperCase()}`, P, y + 10, {font:"bold 9.5px " + FONTE, cor:"#4B554F", espaco:"0.6px"});
+    y += 20;
+    caixa(ctx, draw, P, y, dir - P, 22, 6, "#F1F5ED");
+    texto(ctx, draw, "FORMULAÇÃO", P + 8, y + 14, {font:"bold 9px " + FONTE, cor:"#4B554F", espaco:"0.5px"});
+    const cDose = dir - 260, cRs = dir - 130, cTotal = dir;
+    [["DOSE", cDose], ["R$/KG NUTRIENTE", cRs], ["CUSTO TOTAL", cTotal - 8]]
+      .forEach(([t, x]) => texto(ctx, draw, t, x, y + 14, {font:"bold 9px " + FONTE, cor:"#4B554F", align:"right", espaco:"0.5px"}));
+    y += 30;
+    r.comparador.linhas.forEach(l => {
+      const nomeMaxW = cDose - P - 16;
+      texto(ctx, draw, l.npk, P, y + 15, {font:"bold 12px " + MONO, maxW:nomeMaxW});
+      ctx.font = "bold 12px " + MONO;
+      const wn = ctx.measureText(l.npk).width;
+      texto(ctx, draw, `(${l.somaNpk}% NPK)`, P + wn + 8, y + 15, {font:"10px " + FONTE, cor:"#4B554F"});
+      if(l.isMelhorCustoBeneficio){
+        texto(ctx, draw, "★ MELHOR CUSTO-BENEFÍCIO", P, y + 30, {font:"bold 8.5px " + FONTE, cor:"#236B56"});
+      } else if(l.isMenorCusto){
+        texto(ctx, draw, "MENOR CUSTO", P, y + 30, {font:"bold 8.5px " + FONTE, cor:"#236B56"});
+      }
+      texto(ctx, draw, l.dose, cDose, y + 16, {font:"11px " + MONO, cor:"#4B554F", align:"right"});
+      texto(ctx, draw, l.custoPorKgNutriente, cRs, y + 16, {font:"bold 12px " + MONO, align:"right"});
+      texto(ctx, draw, l.custoTotal, cTotal, y + 16, {font:"bold 12px " + MONO, align:"right"});
+      y += 40;
+      risco(ctx, draw, P, y, dir, "#EEF2EB");
+      y += 4;
+    });
+    y += 14;
+  }
+
   // tabela de custos
   texto(ctx, draw, "Custo por embalagem", P, y + 12, {font:"bold 13px " + FONTE, cor:"#4B554F"});
   texto(ctx, draw, r.vencimento ? `Vencimento do prazo: ${r.vencimento} ${r.vencimentoDias}` : "Prazo sem data informada",
@@ -2229,23 +2331,108 @@ function baixar(href, nome){
   a.remove();
 }
 
+// Compartilha a imagem via Web Share API (abre a folha nativa do celular —
+// WhatsApp, e-mail etc. — sem precisar baixar no disco primeiro); cai pro
+// download tradicional (baixar()) quando a API não existe, quando o
+// navegador não sabe compartilhar arquivos, ou se o compartilhamento falhar
+// por outro motivo que não o usuário simplesmente ter cancelado.
+async function compartilharOuBaixarImagem(cv, nomeArq){
+  if(navigator.share && navigator.canShare){
+    try {
+      const blob = await new Promise(resolve => cv.toBlob(resolve, "image/png"));
+      const file = new File([blob], nomeArq, { type: "image/png" });
+      if(navigator.canShare({ files: [file] })){
+        await navigator.share({ title: "Cotação Coasul", files: [file] });
+        return;
+      }
+    } catch(e){
+      if(e && e.name === "AbortError") return; // usuário cancelou a folha de compartilhamento
+      // qualquer outro erro (ex.: canShare/share indisponível de fato): cai pro download abaixo
+    }
+  }
+  baixar(cv.toDataURL("image/png"), nomeArq);
+}
+
 $("btnPng").addEventListener("click", () => {
   if(!$("viewRegulagem").classList.contains("hidden")){
     const r = coletarResumoRegulagem();
     const cv = desenharFichaRegulagem(r);
-    baixar(cv.toDataURL("image/png"), nomeArquivoRegulagem(r, "png"));
+    compartilharOuBaixarImagem(cv, nomeArquivoRegulagem(r, "png"));
     return;
   }
   if(!$("viewCalagem").classList.contains("hidden")){
     const r = coletarResumoCalagem();
     const cv = desenharFichaCalagem(r);
-    baixar(cv.toDataURL("image/png"), nomeArquivoCalagem(r, "png"));
+    compartilharOuBaixarImagem(cv, nomeArquivoCalagem(r, "png"));
     return;
   }
   const r = coletarResumo();
   const cv = desenharFicha(r);
-  // toDataURL é síncrono: o download dispara na hora, sem depender de callback
-  baixar(cv.toDataURL("image/png"), nomeArquivo(r, "png"));
+  compartilharOuBaixarImagem(cv, nomeArquivo(r, "png"));
+});
+
+// ---------- Envio de cotação formatada no WhatsApp ----------
+// Monta o texto a partir da mesma ficha (resumo) já usada pelo PDF/PNG desta
+// aba — a formatação em si (montarTextoWhatsApp*) é pura e mora em
+// calculos.js; aqui só decide qual das três chamar, conforme a ferramenta
+// ativa no momento (Sementes/Adubação, Regulagem ou Calagem).
+function montarTextoWhatsAppAtual(){
+  if(!$("viewRegulagem").classList.contains("hidden")){
+    return montarTextoWhatsAppRegulagem(coletarResumoRegulagem());
+  }
+  if(!$("viewCalagem").classList.contains("hidden")){
+    return montarTextoWhatsAppCalagem(coletarResumoCalagem());
+  }
+  return montarTextoWhatsApp(coletarResumo());
+}
+
+const whatsappModal = $("whatsappModal");
+
+function abrirModalWhatsApp(){
+  const texto = montarTextoWhatsAppAtual();
+  $("modalWaText").value = texto;
+  whatsappModal.classList.remove("hidden");
+}
+function fecharModalWhatsApp(){
+  whatsappModal.classList.add("hidden");
+}
+
+$("btnWhatsapp").addEventListener("click", abrirModalWhatsApp);
+$("modalWaClose").addEventListener("click", fecharModalWhatsApp);
+whatsappModal.addEventListener("click", e => { if(e.target === whatsappModal) fecharModalWhatsApp(); });
+document.addEventListener("keydown", e => {
+  if(e.key === "Escape" && !whatsappModal.classList.contains("hidden")) fecharModalWhatsApp();
+});
+
+$("modalWaSend").addEventListener("click", () => {
+  const texto = $("modalWaText").value;
+  window.open("https://api.whatsapp.com/send?text=" + encodeURIComponent(texto), "_blank");
+});
+
+let toastTimer = null;
+function mostrarToast(mensagem){
+  const toast = $("appToast");
+  $("appToastText").textContent = mensagem;
+  toast.classList.remove("hidden");
+  toast.classList.add("is-visible");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toast.classList.remove("is-visible");
+    toast.classList.add("hidden");
+  }, 2500);
+}
+
+$("modalWaCopy").addEventListener("click", async () => {
+  const texto = $("modalWaText").value;
+  try {
+    await navigator.clipboard.writeText(texto);
+  } catch(e){
+    // clipboard-write pode ser bloqueado (contexto não-seguro, permissão negada
+    // etc.) — mesmo assim o texto já está selecionável/selecionado na textarea
+    $("modalWaText").select();
+    document.execCommand("copy");
+  }
+  mostrarToast("Texto copiado com sucesso!");
 });
 
 // ---- Alternância entre as três ferramentas: calculadora de sementes,
@@ -2699,9 +2886,23 @@ function coletarResumoCalagem(){
   const d = calUltimoResultado || {};
   const num = id => { const val = $(id).value.trim(); return val === "" ? "—" : val.replace(".", ","); };
 
+  // custo total (calcário + gesso) na área — mesma conta de calRenderCustoCard,
+  // só que somando os dois produtos pro resumo exportado/WhatsApp
+  const custoCalcario = calCustoProduto(d.totalCalcarioT || 0, $("calPrecoCalcarioVista").value, $("calPrecoCalcarioPrazo").value);
+  const custoGesso = calCustoProduto(d.totalGessoT || 0, $("calPrecoGessoVista").value, $("calPrecoGessoPrazo").value);
+  const custoTotalVista = custoCalcario.vista + custoGesso.vista;
+  const areaHa = d.areaAlq ? alqParaHa(d.areaAlq) : 0;
+
+  // versão curta do rótulo da cultura-alvo pro texto do WhatsApp — a option
+  // completa já traz "— descrição (V₂ X%)" embutido, o que duplicaria o
+  // "(V₂ desejado: X%)" que o próprio texto do WhatsApp acrescenta depois
+  const culturaTexto = $("calCultura").selectedOptions[0].textContent;
+  const culturaAlvoResumida = culturaTexto.split(" — ")[0].replace(/\s*\(V.*?\)\s*$/, "").trim();
+
   return {
     cliente: $("calCliente").value.trim(),
-    cultura: $("calCultura").selectedOptions[0].textContent,
+    cultura: culturaTexto,
+    culturaAlvoResumida,
     manejo: $("calManejo").selectedOptions[0].textContent,
     area: calFmtAreaRelatorio(d.areaAlq || 0),
     laudo020: [["Ca²⁺", num("calCa020")], ["Mg²⁺", num("calMg020")], ["K⁺", num("calK020")], ["Al³⁺", num("calAl020")], ["H+Al", num("calHAl020")]],
@@ -2712,12 +2913,18 @@ function coletarResumoCalagem(){
     v2: d.v2 !== undefined ? fmtDec(d.v2) : "0,00",
     prnt: d.prnt !== undefined ? fmtDec(d.prnt) : "0,00",
     profundidade: d.profundidade !== undefined ? fmtDec(d.profundidade) : "0,00",
+    sb: d.idx020 ? fmtDec(d.idx020.sb) : "0,00",
+    ctc: d.idx020 ? fmtDec(d.idx020.ctcPh7) : "0,00",
+    relCaMg: d.idx020 ? fmtDec(d.idx020.caMg) : "0,00",
+    mg: num("calMg020"),
     ncBase: d.calagem ? fmtDec(d.calagem.ncBase) : "0,00",
     ncAplicar: d.calagem ? fmtDec(d.calagem.ncAplicar) : "0,00",
     totalCalcario: d.totalCalcarioT !== undefined ? fmtDec(d.totalCalcarioT) : "0,00",
     tipoCalcario: d.tipoCalcario ? ("Calcário " + d.tipoCalcario.tipo) : "—",
     faixaMgo: d.tipoCalcario ? d.tipoCalcario.faixaMgO : "",
     alertaParcelamento: !!(d.calagem && d.calagem.alertaParcelamento),
+    cargasCalcario: d.totalCalcarioT ? Math.ceil(d.totalCalcarioT / CAL_CARGA_GRANEL_T) : 0,
+    bagsCalcario: d.totalCalcarioT ? Math.ceil(d.totalCalcarioT / 1) : 0,
     gessagemNecessaria: !!(d.gessagem && d.gessagem.necessaria),
     gessagemMotivos: d.gessagem ? d.gessagem.motivos : [],
     metodoGessagem: $("calMetodoGessagem").selectedOptions[0].textContent,
@@ -2725,6 +2932,9 @@ function coletarResumoCalagem(){
     totalGesso: d.totalGessoT !== undefined ? fmtDec(d.totalGessoT) : "0,00",
     enxofre: d.nutrientes ? fmtDec(d.nutrientes.enxofreKgHa) : "0,00",
     calcio: d.nutrientes ? fmtDec(d.nutrientes.calcioKgHa) : "0,00",
+    custoTotal: custoTotalVista > 0 ? fmtMoeda(custoTotalVista) : "",
+    custoPorAlq: (custoTotalVista > 0 && d.areaAlq) ? fmtMoeda(custoTotalVista / d.areaAlq) : "",
+    custoPorHa: (custoTotalVista > 0 && areaHa) ? fmtMoeda(custoTotalVista / areaHa) : "",
     data: agora.toLocaleDateString("pt-BR"),
     ref: gerarCodigoRef(agora),
     horaGeracao: agora.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"}),

@@ -883,6 +883,27 @@
     background:var(--accent); color:#fff;
     font-size:10.5px; font-weight:700; letter-spacing:.02em; white-space:nowrap;
   }
+  .comp-badge-group{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+  /* melhor custo-benefício (R$/kg de nutriente) — verde "dinheiro" fixo, igual
+     ao usado no rótulo "MENOR CUSTO" da ficha exportada, e propositalmente
+     diferente do accent da cultura: mede uma coisa distinta de .comp-cheapest-badge
+     (menor custo total pra área informada), então precisa ler como outro selo. */
+  .comp-best-value-badge{
+    display:inline-flex; align-items:center; gap:3px;
+    border-radius:999px; padding:3px 10px;
+    background:#236B56; color:#fff;
+    font-size:10.5px; font-weight:700; letter-spacing:.02em; white-space:nowrap;
+  }
+  .comp-nutrient-badge{
+    display:inline-block;
+    background:rgba(35,107,86,0.08);
+    border:1px solid rgba(35,107,86,0.22);
+    border-radius:8px;
+    padding:5px 10px;
+    margin-bottom:10px;
+    font-size:11px; font-weight:700; color:#236B56;
+  }
+  .comp-nutrient-pct{ font-weight:600; color:#4B554F; }
 
   .comp-metric-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .comp-metric-box{
@@ -935,6 +956,80 @@
     transition:background .15s, border-color .15s;
   }
   .comp-add-row:hover{ background:var(--accent-soft); border-color:var(--accent); }
+
+  /* Botão "Enviar WhatsApp" no cabeçalho: micro-elevação no hover, igual ao
+     estilo já usado no #btnPdf/#btnPng do arquivo standalone. */
+  #btnWhatsapp{
+    transition:transform .15s ease, box-shadow .15s ease, filter .15s ease;
+  }
+  #btnWhatsapp:hover{
+    transform:translateY(-1px);
+    box-shadow:0 4px 12px -2px rgba(30,36,32,.12);
+  }
+  #btnWhatsapp:active{ transform:translateY(0); }
+
+  /* Modal do WhatsApp e toast de feedback: mesmo motivo dos comentários acima
+     (bundle Tailwind pré-compilado sem essas classes, por não terem sido
+     usadas em nenhuma outra tela até agora) — backfill manual, valores iguais
+     aos que o Tailwind geraria pra cada uma. */
+  .fixed{ position:fixed; }
+  .inset-0{ top:0; right:0; bottom:0; left:0; }
+  .z-50{ z-index:50; }
+  .bg-ink\/50{ background-color:rgb(30 36 32 / 0.5); }
+  .bg-ink\/90{ background-color:rgb(30 36 32 / 0.9); }
+  .bg-\[\#25D366\]\/15{ background-color:rgb(37 211 102 / 0.15); }
+  .text-\[\#128C7E\]{ color:#128C7E; }
+  .backdrop-blur-sm{ backdrop-filter:blur(4px); }
+  .backdrop-blur{ backdrop-filter:blur(8px); }
+  .max-w-lg{ max-width:32rem; }
+  .max-h-\[90vh\]{ max-height:90vh; }
+  .shadow-xl{ box-shadow:0 20px 25px -5px rgba(30,36,32,.1), 0 8px 10px -6px rgba(30,36,32,.1); }
+  .shadow-lg{ box-shadow:0 10px 15px -3px rgba(30,36,32,.1), 0 4px 6px -4px rgba(30,36,32,.1); }
+  .h-5{ height:1.25rem; } .w-5{ width:1.25rem; }
+  .h-8{ height:2rem; } .w-8{ width:2rem; }
+  .h-64{ height:16rem; }
+  .bg-\[\#F7FAF5\]{ background-color:#F7FAF5; }
+  .text-\[15px\]{ font-size:15px; }
+  .p-1\.5{ padding:0.375rem; }
+  .p-3{ padding:0.75rem; }
+  .py-3{ padding-top:0.75rem; padding-bottom:0.75rem; }
+  .pb-3{ padding-bottom:0.75rem; }
+  .border-b{ border-bottom-width:1px; }
+  .flex-1{ flex:1 1 0%; }
+  .overflow-y-auto{ overflow-y:auto; }
+  .justify-end{ justify-content:flex-end; }
+  .resize-none{ resize:none; }
+  .leading-relaxed{ line-height:1.625; }
+  .select-all{ user-select:all; -webkit-user-select:all; }
+  .transition-all{ transition-property:all; transition-timing-function:cubic-bezier(.4,0,.2,1); transition-duration:150ms; }
+  .focus\:outline-none:focus{ outline:2px solid transparent; outline-offset:2px; }
+  .hover\:bg-canvas:hover{ background-color:#F4F7F0; }
+  .hover\:text-ink:hover{ color:#1E2420; }
+  .bottom-6{ bottom:1.5rem; }
+  .left-1\/2{ left:50%; }
+  .-translate-x-1\/2{ --tw-translate-x:-50%; transform:translate(var(--tw-translate-x), var(--tw-translate-y, 0)); }
+  @media (min-width:640px){ .sm\:flex-none{ flex:none; } }
+
+  /* .modal-backdrop / .modal-card: overlay do modal de WhatsApp, com fade e
+     scale-up suaves na abertura (a classe some via `hidden`, então a
+     transição só é visível quando o JS remove/adiciona `hidden` com um
+     pequeno atraso — ver abrirModalWhatsApp() em app.js). */
+  .modal-backdrop{
+    animation:wa-fade-in .18s ease-out;
+  }
+  .modal-backdrop .modal-card{
+    animation:wa-scale-up .18s cubic-bezier(.2,.9,.3,1.1);
+  }
+  @keyframes wa-fade-in{ from{ opacity:0; } to{ opacity:1; } }
+  @keyframes wa-scale-up{ from{ opacity:0; transform:scale(.96); } to{ opacity:1; transform:scale(1); } }
+
+  /* toast de feedback (#appToast): oculto via `hidden`, some visível quando o
+     JS troca pra .is-visible (ver mostrarToast() em app.js). */
+  #appToast.is-visible{
+    display:block !important;
+    animation:wa-toast-in .18s ease-out;
+  }
+  @keyframes wa-toast-in{ from{ opacity:0; transform:translate(-50%, 6px); } to{ opacity:1; transform:translate(-50%, 0); } }
 
   /* folha de impressão / PDF: só aparece na hora de imprimir */
   #printSheet{display:none;}

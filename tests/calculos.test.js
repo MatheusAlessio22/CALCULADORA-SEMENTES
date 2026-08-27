@@ -20,6 +20,12 @@ import {
   verificarNecessidadeGessagem,
   calcularGessagem,
   nutrientesGesso,
+  calcularConcentracaoTotalNutrientes,
+  calcularCustoPorKgNutriente,
+  identificarMelhorCustoBeneficio,
+  montarTextoWhatsApp,
+  montarTextoWhatsAppRegulagem,
+  montarTextoWhatsAppCalagem,
 } from "../js/calculos.js";
 
 // formatador simples só pra isolar formatarPrecoResumo da formatação de moeda real
@@ -431,5 +437,321 @@ describe("nutrientesGesso", () => {
   it("dose zero ou inválida resulta em nutrientes zerados", () => {
     expect(nutrientesGesso(0)).toEqual({ enxofreKgHa: 0, calcioKgHa: 0 });
     expect(nutrientesGesso(undefined)).toEqual({ enxofreKgHa: 0, calcioKgHa: 0 });
+  });
+});
+
+describe("calcularConcentracaoTotalNutrientes", () => {
+  it("soma N + P2O5 + K2O das formulações comerciais mais comuns", () => {
+    expect(calcularConcentracaoTotalNutrientes(45, 0, 0)).toBe(45); // Ureia 45-00-00
+    expect(calcularConcentracaoTotalNutrientes(0, 0, 60)).toBe(60); // KCl 00-00-60
+    expect(calcularConcentracaoTotalNutrientes(11, 52, 0)).toBe(63); // MAP 11-52-00
+    expect(calcularConcentracaoTotalNutrientes(4, 14, 8)).toBe(26); // 04-14-08
+    expect(calcularConcentracaoTotalNutrientes(10, 15, 15)).toBe(40); // 10-15-15
+  });
+
+  it("entradas ausentes/inválidas contam como zero", () => {
+    expect(calcularConcentracaoTotalNutrientes(undefined, null, "")).toBe(0);
+    expect(calcularConcentracaoTotalNutrientes(10, undefined, 5)).toBe(15);
+  });
+});
+
+describe("calcularCustoPorKgNutriente", () => {
+  it("Ureia 45-00-00: saca de 50kg a R$ 150,00", () => {
+    const r = calcularCustoPorKgNutriente({ preco: 150, tamanhoEmbalagemKg: 50, npkN: 45, npkP: 0, npkK: 0 });
+    expect(r).toBeCloseTo(150 / (50 * 0.45), 9); // R$ 6,6667/kg de N
+  });
+
+  it("KCl 00-00-60: saca de 50kg a R$ 180,00", () => {
+    const r = calcularCustoPorKgNutriente({ preco: 180, tamanhoEmbalagemKg: 50, npkN: 0, npkP: 0, npkK: 60 });
+    expect(r).toBeCloseTo(180 / (50 * 0.6), 9); // R$ 6,00/kg de K2O
+  });
+
+  it("MAP 11-52-00: saca de 50kg a R$ 220,00", () => {
+    const r = calcularCustoPorKgNutriente({ preco: 220, tamanhoEmbalagemKg: 50, npkN: 11, npkP: 52, npkK: 0 });
+    expect(r).toBeCloseTo(220 / (50 * 0.63), 9);
+  });
+
+  it("formulação mista 04-14-08: saca de 50kg a R$ 100,00", () => {
+    const r = calcularCustoPorKgNutriente({ preco: 100, tamanhoEmbalagemKg: 50, npkN: 4, npkP: 14, npkK: 8 });
+    expect(r).toBeCloseTo(100 / (50 * 0.26), 9);
+  });
+
+  it("formulação mista 10-15-15: saca de 50kg a R$ 160,00 — mais cara por kg de nutriente que a 04-14-08 acima", () => {
+    const r = calcularCustoPorKgNutriente({ preco: 160, tamanhoEmbalagemKg: 50, npkN: 10, npkP: 15, npkK: 15 });
+    expect(r).toBeCloseTo(160 / (50 * 0.4), 9);
+    expect(r).toBeGreaterThan(100 / (50 * 0.26));
+  });
+
+  it("preço por kg do produto (embalagem de 1kg) equivale à mesma fórmula", () => {
+    const porSaca = calcularCustoPorKgNutriente({ preco: 150, tamanhoEmbalagemKg: 50, npkN: 45, npkP: 0, npkK: 0 });
+    const porKg = calcularCustoPorKgNutriente({ preco: 3, tamanhoEmbalagemKg: 1, npkN: 45, npkP: 0, npkK: 0 }); // R$3/kg = R$150/saca 50kg
+    expect(porKg).toBeCloseTo(porSaca, 9);
+  });
+
+  it("NPK somando zero (formulação sem nutrientes reconhecidos) retorna 0", () => {
+    expect(calcularCustoPorKgNutriente({ preco: 100, tamanhoEmbalagemKg: 50, npkN: 0, npkP: 0, npkK: 0 })).toBe(0);
+  });
+
+  it("preço zero ou ausente retorna 0", () => {
+    expect(calcularCustoPorKgNutriente({ preco: 0, tamanhoEmbalagemKg: 50, npkN: 45, npkP: 0, npkK: 0 })).toBe(0);
+    expect(calcularCustoPorKgNutriente({ tamanhoEmbalagemKg: 50, npkN: 45, npkP: 0, npkK: 0 })).toBe(0);
+  });
+
+  it("tamanho de embalagem zero ou ausente retorna 0", () => {
+    expect(calcularCustoPorKgNutriente({ preco: 150, tamanhoEmbalagemKg: 0, npkN: 45, npkP: 0, npkK: 0 })).toBe(0);
+    expect(calcularCustoPorKgNutriente({ preco: 150, npkN: 45, npkP: 0, npkK: 0 })).toBe(0);
+  });
+
+  it("sem argumentos não lança erro e retorna 0", () => {
+    expect(calcularCustoPorKgNutriente()).toBe(0);
+  });
+});
+
+describe("identificarMelhorCustoBeneficio", () => {
+  it("identifica a linha de menor R$/kg de nutriente entre formulações concorrentes", () => {
+    const linhas = [
+      { i: 0, custoPorKgNutriente: 100 / (50 * 0.26) }, // 04-14-08, ~R$ 7,69/kg
+      { i: 1, custoPorKgNutriente: 160 / (50 * 0.4) },  // 10-15-15, R$ 8,00/kg
+      { i: 2, custoPorKgNutriente: 150 / (50 * 0.45) }, // Ureia, ~R$ 6,67/kg — vence
+    ];
+    const melhor = identificarMelhorCustoBeneficio(linhas);
+    expect(melhor.i).toBe(2);
+  });
+
+  it("ignora linhas zeradas (sem preço ou sem NPK reconhecido)", () => {
+    const linhas = [
+      { i: 0, custoPorKgNutriente: 0 },
+      { i: 1, custoPorKgNutriente: 9.5 },
+      { i: 2, custoPorKgNutriente: 0 },
+    ];
+    expect(identificarMelhorCustoBeneficio(linhas).i).toBe(1);
+  });
+
+  it("lista vazia ou só com linhas zeradas retorna null", () => {
+    expect(identificarMelhorCustoBeneficio([])).toBeNull();
+    expect(identificarMelhorCustoBeneficio([{ i: 0, custoPorKgNutriente: 0 }])).toBeNull();
+    expect(identificarMelhorCustoBeneficio(undefined)).toBeNull();
+  });
+});
+
+describe("montarTextoWhatsApp", () => {
+  const resumoSoja = {
+    ref: "20260101-0001", data: "01/01/2026", horaGeracao: "10:00",
+    cliente: "João da Silva", cultura: "Soja", cultivar: "BRS 404", area: "10,00 alq (24,20 ha)",
+    params: [["Plantas por metro", "10"], ["Espaçamento", "0,45 m"], ["Transpasse", "5%"]],
+    total: "1.234.567", unidade: "sementes",
+    combo: "", nutrientes: [],
+    linhas: [
+      { nome: "Embalagem 125.000", qtd: "10 un.  (exato 9,88)", precoVista: "R$ 450,00", precoPrazo: "R$ 470,00", vista: "R$ 4.500,00", prazo: "R$ 4.700,00" },
+    ],
+    vencimento: "15/06/2026",
+  };
+
+  it("inclui cabeçalho, ref/data/hora e identificação do produtor", () => {
+    const texto = montarTextoWhatsApp(resumoSoja);
+    expect(texto).toContain("🌱 *COASUL AGRO — COTAÇÃO TÉCNICA*");
+    expect(texto).toContain("Ref: #20260101-0001 · 01/01/2026 às 10:00");
+    expect(texto).toContain("👤 *Produtor:* João da Silva");
+    expect(texto).toContain("🌾 *Cultura:* Soja (BRS 404)");
+    expect(texto).toContain("📐 *Área:* 10,00 alq (24,20 ha)");
+  });
+
+  it("cliente ausente cai no texto padrão 'Não informado'", () => {
+    const texto = montarTextoWhatsApp({ ...resumoSoja, cliente: "" });
+    expect(texto).toContain("👤 *Produtor:* Não informado");
+  });
+
+  it("lista os parâmetros com marcador", () => {
+    const texto = montarTextoWhatsApp(resumoSoja);
+    expect(texto).toContain("⚙️ *Parâmetros:*");
+    expect(texto).toContain("• Plantas por metro: 10");
+    expect(texto).toContain("• Espaçamento: 0,45 m");
+  });
+
+  it("necessidade total em negrito, com combo quando houver", () => {
+    const texto = montarTextoWhatsApp(resumoSoja);
+    expect(texto).toContain("📦 *NECESSIDADE TOTAL:*");
+    expect(texto).toContain("*1.234.567 sementes*");
+    expect(texto).not.toContain("↳ Combinado:");
+
+    const comCombo = montarTextoWhatsApp({ ...resumoSoja, combo: "2 × Bag 1.000kg + 13 × Sacas 40kg" });
+    expect(comCombo).toContain("↳ Combinado: 2 × Bag 1.000kg + 13 × Sacas 40kg");
+  });
+
+  it("investimento estimado: embalagem, preço à vista e total em negrito, com linha 'a prazo' quando houver preço a prazo", () => {
+    const texto = montarTextoWhatsApp(resumoSoja);
+    expect(texto).toContain("💰 *INVESTIMENTO ESTIMADO:*");
+    expect(texto).toContain("• Embalagem 125.000: 10 un.  (exato 9,88) × R$ 450,00 = *R$ 4.500,00*");
+    expect(texto).toContain("↳ A prazo (15/06/2026): R$ 4.700,00");
+  });
+
+  it("sem preço à vista informado, mostra 'Sob consulta' em vez de R$ 0,00", () => {
+    const resumo = { ...resumoSoja, linhas: [{ nome: "Embalagem 125.000", qtd: "0 un.", precoVista: "—", precoPrazo: "—", vista: "R$ 0,00", prazo: "R$ 0,00" }] };
+    const texto = montarTextoWhatsApp(resumo);
+    expect(texto).toContain("× Sob consulta = *Sob consulta*");
+    expect(texto).not.toContain("↳ A prazo");
+  });
+
+  it("Adubação/Ureia: inclui bloco de nutrientes no solo quando presente", () => {
+    const resumoAdubacao = {
+      ...resumoSoja, cultura: "Adubação/Ureia", cultivar: "",
+      nutrientes: [
+        { nome: "N (45%)", valor: "12,34 kg / alqueire", porAlq: "298,68 kg total na área" },
+        { nome: "P₂O₅ (0%)", valor: "0,00 kg / alqueire", porAlq: "0,00 kg total na área" },
+      ],
+    };
+    const texto = montarTextoWhatsApp(resumoAdubacao);
+    expect(texto).toContain("🧪 *Nutrientes no Solo (Total):*");
+    expect(texto).toContain("• N (45%): 12,34 kg / alqueire (298,68 kg total na área)");
+    expect(texto).toContain("🌾 *Cultura:* Adubação/Ureia");
+    expect(texto).not.toContain("Adubação/Ureia ()");
+  });
+
+  it("termina com o rodapé de aviso técnico", () => {
+    const texto = montarTextoWhatsApp(resumoSoja);
+    expect(texto).toContain("_Preço válido no momento da geração — sujeito a alteração._");
+    expect(texto).toContain("_Documento técnico de uso interno · Coasul Agro_");
+  });
+
+  it("sem ref/horaGeracao (versão standalone, mais simples): mostra só a data, sem 'undefined'", () => {
+    // eslint-disable-next-line no-unused-vars -- destructuring só pra remover ref/horaGeracao do objeto
+    const { ref, horaGeracao, ...resumoSemRef } = resumoSoja;
+    const texto = montarTextoWhatsApp(resumoSemRef);
+    expect(texto).toContain("🌱 *COASUL AGRO — COTAÇÃO TÉCNICA*\n01/01/2026");
+    expect(texto).not.toContain("undefined");
+    expect(texto).not.toContain("Ref:");
+  });
+});
+
+describe("montarTextoWhatsAppRegulagem", () => {
+  it("variante semente: parâmetros, regulagem recomendada e teste de campo", () => {
+    const resumo = {
+      variante: "semente", data: "01/01/2026",
+      espacamento: "0,45", populacao: "280.000", germinacao: "90",
+      plantasMetro: "12,60", metrosLineares: "22.222",
+      testeMetros: "40", esperadoPorLinha: "50",
+    };
+    const texto = montarTextoWhatsAppRegulagem(resumo);
+    expect(texto).toContain("🚜 *COASUL AGRO — REGULAGEM DE IMPLEMENTO*");
+    expect(texto).toContain("🌱 Semente · 01/01/2026");
+    expect(texto).toContain("• Espaçamento entre linhas: 0,45 m");
+    expect(texto).toContain("• Stand de plantas: 280.000 plantas/ha");
+    expect(texto).toContain("• Germinação do lote: 90%");
+    expect(texto).toContain("🎯 *REGULAGEM RECOMENDADA:*\n*12,60 plantas/m*\n↳ Metros lineares/ha: 22.222 m");
+    expect(texto).toContain("📏 *Teste de Campo (40 metros):*");
+    expect(texto).toContain("• Esperado por linha: 50 sementes");
+  });
+
+  it("variante semente sem teste de campo informado não inclui a seção", () => {
+    const resumo = {
+      variante: "semente", data: "01/01/2026",
+      espacamento: "0,45", populacao: "280.000", germinacao: "90",
+      plantasMetro: "12,60", metrosLineares: "22.222",
+      testeMetros: "", esperadoPorLinha: "",
+    };
+    expect(montarTextoWhatsAppRegulagem(resumo)).not.toContain("Teste de Campo");
+  });
+
+  it("variante adubo: dose desejada e regulagem em g/m, sem teste de campo", () => {
+    const resumo = {
+      variante: "adubo", data: "01/01/2026",
+      espacamento: "0,45", dose: "300", metrosLineares: "22.222", aduboG: "13,50", aduboKg: "0,0135",
+    };
+    const texto = montarTextoWhatsAppRegulagem(resumo);
+    expect(texto).toContain("🧪 Adubação · 01/01/2026");
+    expect(texto).toContain("• Dose desejada: 300 kg/ha");
+    expect(texto).toContain("🎯 *REGULAGEM RECOMENDADA:*\n*13,50 g/m*\n↳ Metros lineares/ha: 22.222 m");
+    expect(texto).not.toContain("Stand de plantas");
+    expect(texto).not.toContain("Teste de Campo");
+  });
+
+  it("termina com o rodapé de calibração de semeadora", () => {
+    const resumo = { variante: "adubo", data: "01/01/2026", espacamento: "0,45", dose: "300", metrosLineares: "22.222", aduboG: "13,50" };
+    expect(montarTextoWhatsAppRegulagem(resumo)).toContain("_Estimativa técnica para calibração de semeadora · Coasul Agro_");
+  });
+});
+
+describe("montarTextoWhatsAppCalagem", () => {
+  const resumoBase = {
+    ref: "20260101-0001", data: "01/01/2026",
+    cliente: "Fazenda São Judas", area: "10,00 alq (24,20 ha)",
+    cultura: "Padrão Sudoeste do Paraná",
+    v1: "30,23", v2: "80,00", ctc: "8,60", sb: "2,60", relCaMg: "3,33", mg: "0,6",
+    ncAplicar: "2,68", totalCalcario: "64,74", tipoCalcario: "Calcário Dolomítico", prnt: "80,00",
+    cargasCalcario: 2, bagsCalcario: 65, alertaParcelamento: true,
+    ngDoseKgHa: "2.000,00", totalGesso: "48,40", gessagemNecessaria: true, enxofre: "300,00", calcio: "360,00",
+    custoTotal: "R$ 35.543,75", custoPorAlq: "R$ 3.554,38", custoPorHa: "R$ 1.468,75",
+  };
+
+  it("cabeçalho, produtor, área e cultura-alvo com V2 desejado", () => {
+    const texto = montarTextoWhatsAppCalagem(resumoBase);
+    expect(texto).toContain("🧪 *COASUL AGRO — RECOMENDAÇÃO DE CALAGEM E GESSAGEM*");
+    expect(texto).toContain("Ref: #20260101-0001 · 01/01/2026");
+    expect(texto).toContain("👤 *Produtor:* Fazenda São Judas");
+    expect(texto).toContain("📐 *Área:* 10,00 alq (24,20 ha)");
+    expect(texto).toContain("🎯 *Cultura-Alvo:* Padrão Sudoeste do Paraná (V₂ desejado: 80,00%)");
+  });
+
+  it("diagnóstico do solo com V1/V2, CTC, soma de bases e relação Ca/Mg", () => {
+    const texto = montarTextoWhatsAppCalagem(resumoBase);
+    expect(texto).toContain("• V₁ atual: 30,23% ➔ V₂ alvo: 80,00%");
+    expect(texto).toContain("• CTC (T): 8,60 cmolc/dm³ · Soma de Bases: 2,60 cmolc/dm³");
+    expect(texto).toContain("• Relação Ca/Mg: 3,33 · Mg: 0,6 cmolc/dm³");
+  });
+
+  it("calagem recomendada com dose, total, corretivo, logística e alerta de parcelamento", () => {
+    const texto = montarTextoWhatsAppCalagem(resumoBase);
+    expect(texto).toContain("💧 *CALAGEM RECOMENDADA:*");
+    expect(texto).toContain("*2,68 t/ha* (Total: *64,74 toneladas*)");
+    expect(texto).toContain("• Corretivo: *Calcário Dolomítico* (PRNT 80,00%)");
+    expect(texto).toContain("• Logística: ~2 cargas de carreta (ou 65 big bags)");
+    expect(texto).toContain("⚠️ _Atenção: Dose > 2,5 t/ha em plantio direto superficial — recomenda-se parcelamento anual._");
+  });
+
+  it("sem alerta de parcelamento, a linha de atenção não aparece", () => {
+    const texto = montarTextoWhatsAppCalagem({ ...resumoBase, alertaParcelamento: false });
+    expect(texto).not.toContain("Atenção: Dose > 2,5 t/ha");
+  });
+
+  it("gessagem necessária: mostra aporte de enxofre e cálcio", () => {
+    const texto = montarTextoWhatsAppCalagem(resumoBase);
+    expect(texto).toContain("⚡ *GESSAGEM:*");
+    expect(texto).toContain("*2.000,00 kg/ha* (Total: *48,40 toneladas*)");
+    expect(texto).toContain("• Aporte: ~300,00 kg/ha de Enxofre (S) e ~360,00 kg/ha de Cálcio (Ca)");
+  });
+
+  it("gessagem dispensada: mostra o aviso de subsolo sem impedimento", () => {
+    const texto = montarTextoWhatsAppCalagem({ ...resumoBase, gessagemNecessaria: false });
+    expect(texto).toContain("• _Subsolo sem impedimento químico crítico — gessagem dispensada._");
+    expect(texto).not.toContain("Aporte:");
+  });
+
+  it("investimento estimado aparece só quando há custo total calculado", () => {
+    const texto = montarTextoWhatsAppCalagem(resumoBase);
+    expect(texto).toContain("💰 *Investimento Estimado:*");
+    expect(texto).toContain("• Custo Total: *R$ 35.543,75* (R$ 3.554,38/alq · R$ 1.468,75/ha)");
+
+    const semCusto = montarTextoWhatsAppCalagem({ ...resumoBase, custoTotal: "" });
+    expect(semCusto).not.toContain("Investimento Estimado");
+  });
+
+  it("termina com o rodapé citando o manual do Paraná (SBCS-NEPAR)", () => {
+    const texto = montarTextoWhatsAppCalagem(resumoBase);
+    expect(texto).toContain("_Baseado no Manual de Adubação e Calagem para o Estado do Paraná (SBCS-NEPAR)_");
+  });
+
+  it("sem ref (versão standalone): mostra só a data, sem 'undefined'", () => {
+    // eslint-disable-next-line no-unused-vars -- destructuring só pra remover ref do objeto
+    const { ref, ...resumoSemRef } = resumoBase;
+    const texto = montarTextoWhatsAppCalagem(resumoSemRef);
+    expect(texto).toContain("🧪 *COASUL AGRO — RECOMENDAÇÃO DE CALAGEM E GESSAGEM*\n01/01/2026");
+    expect(texto).not.toContain("undefined");
+  });
+
+  it("usa culturaAlvoResumida quando presente, para não duplicar o '(V₂ X%)' já embutido em r.cultura", () => {
+    const resumo = { ...resumoBase, cultura: "Padrão Sudoeste do Paraná — solo argiloso da região (V₂ 80%)", culturaAlvoResumida: "Padrão Sudoeste do Paraná" };
+    const texto = montarTextoWhatsAppCalagem(resumo);
+    expect(texto).toContain("🎯 *Cultura-Alvo:* Padrão Sudoeste do Paraná (V₂ desejado: 80,00%)");
+    expect(texto).not.toContain("solo argiloso");
   });
 });
