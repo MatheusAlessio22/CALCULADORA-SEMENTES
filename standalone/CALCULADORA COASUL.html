@@ -421,8 +421,8 @@
   input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
   .inp{
     width:100%;
-    min-height:46px;
-    border:1.5px solid #D2DBD0;
+    min-height:46px; /* alvo de toque confortável no celular, ver .inp-sm abaixo pra exceção */
+    border:1.5px solid var(--border-subtle, #D2DBD0);
     border-radius:8px;
     background:#FFFFFF;
     padding:9px 12px;
@@ -437,21 +437,85 @@
     border-color:var(--accent);
     box-shadow:0 0 0 3px var(--accent-soft);
   }
+  .inp:focus-visible{
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px var(--accent-soft);
+  }
   .inp-num{font-family:'JetBrains Mono','Inter',-apple-system,monospace; font-feature-settings:'tnum' 1,'cv05' 1; font-variant-numeric:tabular-nums;}
   /* valor típico pré-preenchido (ex.: germinação/pureza) que o usuário ainda
      não confirmou digitando: moldura tracejada até o primeiro "input" no campo. */
   .inp.is-suggested{ border-style:dashed; border-color:#A8B5A3; background:#F8FAF6; }
-  .inp-money{padding-left:40px;} /* espaço para o prefixo R$ */
-  /* prefixo "R$" (span posicionado antes do input): reposicionado pra ficar
-     integrado e centralizado dentro da moldura fechada do campo. */
-  span.left-3\.5{ left:13px; }
+
+  /* Componente de campo com prefixo/sufixo (R$, cmolc/dm³ etc.) */
+  .input-group{
+    display:flex;
+    align-items:stretch;
+    width:100%;
+    min-height:46px;
+    border:1.5px solid #D2DBD0;
+    border-radius:8px;
+    background:#FFFFFF;
+    transition:border-color .15s, background .15s, box-shadow .15s;
+    overflow:hidden;
+  }
+  .input-group:hover{ border-color:#98A895; }
+  .input-group:focus-within{
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px var(--accent-soft);
+  }
+  .input-group-addon{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex:none;
+    font-size:12.5px;
+    font-weight:700;
+    color:#4B554F;
+    background:#F4F6F2;
+    white-space:nowrap;
+    user-select:none;
+  }
+  .input-group-addon.is-prefix{
+    padding-left:12px;
+    padding-right:8px;
+    border-right:1px solid #D2DBD0;
+  }
+  .input-group-addon.is-suffix{
+    padding-left:8px;
+    padding-right:12px;
+    border-left:1px solid #D2DBD0;
+  }
+  .input-group .inp{
+    min-height:auto;
+    border:0 !important;
+    background:transparent !important;
+    box-shadow:none !important;
+    padding-top:8px;
+    padding-bottom:8px;
+    padding-left:10px;
+    padding-right:10px;
+    flex:1 1 auto;
+    min-width:0;
+    font-size:15px;
+  }
+  .input-group .inp:focus,
+  .input-group .inp:focus-visible{
+    outline:none !important;
+    box-shadow:none !important;
+    border:0 !important;
+  }
+
   /* 16px no celular: abaixo disso o Safari/Chrome mobile dão zoom automático
      ao focar o campo (aqui é a data de vencimento), o que sacode a tela. */
   .inp-sm{min-height:40px; padding:6px 10px; font-size:16px;}
   @media (min-width:1024px){ .inp-sm{min-height:34px; padding:4px 8px; font-size:13.5px;} }
   @media (min-width:1024px){
     .inp{min-height:38px; padding:7px 10px; font-size:14px;}
-    .inp-money{padding-left:36px;}
+    .input-group{min-height:38px;}
+    .input-group .inp{padding-top:6px; padding-bottom:6px; font-size:14px;}
+    .input-group-addon{font-size:11.5px;}
+    .input-group-addon.is-prefix{ padding-left:10px; padding-right:6px; }
+    .input-group-addon.is-suffix{ padding-left:6px; padding-right:10px; }
   }
   select.inp{
     appearance:none;
@@ -462,7 +526,7 @@
     padding-right:38px;
   }
 
-  /* Seletor personalizado (Espaçamento, Transpasse): a lista nativa do
+  /* Seletor personalizado (Espaçamento, Transpasse, Calagem etc.): a lista nativa do
      navegador não dá pra estilizar de forma consistente (no iPhone vira uma
      rodinha do sistema, sem nenhum CSS conseguir mudar isso). Aqui a lista é
      HTML normal (um <ul> nosso), então fica com a cara do app em qualquer
@@ -477,11 +541,19 @@
   button.csel-trigger{
     display:flex; align-items:center; justify-content:space-between; gap:8px;
     width:100%; text-align:left; cursor:pointer;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235B6660' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2355665C' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
     background-repeat:no-repeat;
     background-position:right 12px center;
-    background-size:18px;
-    padding-right:38px;
+    background-size:16px;
+    padding-right:36px;
+    font-size:14px;
+    font-weight:600;
+    color:#1E2420;
+  }
+  button.csel-trigger.inp-num{
+    font-family:'JetBrains Mono','Inter',-apple-system,monospace;
+    font-feature-settings:'tnum' 1,'cv05' 1;
+    font-variant-numeric:tabular-nums;
   }
   .csel-trigger .csel-label{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .csel.is-open button.csel-trigger{
@@ -490,18 +562,31 @@
     box-shadow:0 0 0 3px var(--accent-soft);
   }
   .csel-list{
-    position:absolute; z-index:30; left:0; right:0; top:calc(100% + 6px);
-    max-height:240px; overflow-y:auto;
-    background:#fff; border:1px solid #D2DBD0; border-radius:10px;
-    box-shadow:0 12px 28px -6px rgba(30,36,32,.15);
+    position:absolute; z-index:50; left:0; right:0; top:calc(100% + 6px);
+    max-height:280px; overflow-y:auto;
+    background:#fff; border:1.5px solid #D2DBD0; border-radius:10px;
+    box-shadow:0 12px 28px -6px rgba(30,36,32,.18), 0 4px 10px -2px rgba(30,36,32,.08);
     padding:6px; margin:0; list-style:none;
   }
   .csel-option{
-    padding:9px 12px; border-radius:8px;
-    font-family:'JetBrains Mono','Inter',-apple-system,monospace; font-feature-settings:'tnum' 1,'cv05' 1; font-variant-numeric:tabular-nums;
-    font-size:15px; color:#1E2420; cursor:pointer;
+    padding:8px 12px; border-radius:8px;
+    font-family:Inter,"Segoe UI",system-ui,-apple-system,sans-serif;
+    font-size:13.5px;
+    font-weight:500;
+    line-height:1.35;
+    color:#1E2420;
+    cursor:pointer;
     position:relative;
+    white-space:normal;
+    word-break:break-word;
     transition:background .1s, color .1s;
+  }
+  .csel-trigger.inp-num + .csel-list .csel-option,
+  .csel-native.inp-num ~ .csel-list .csel-option{
+    font-family:'JetBrains Mono','Inter',-apple-system,monospace;
+    font-feature-settings:'tnum' 1,'cv05' 1;
+    font-variant-numeric:tabular-nums;
+    font-size:14px;
   }
   .csel-option:hover,
   .csel-option.is-active{ background:var(--accent-soft); }
@@ -514,6 +599,47 @@
     width:6px; height:6px; margin-top:-3px;
     border-radius:999px; background:var(--accent);
   }
+
+  /* Semáforo agronômico */
+  .semaforo-item{
+    display:flex; align-items:flex-start; gap:12px;
+    border-radius:12px; padding:12px 14px;
+    font-size:12.5px; font-weight:600; line-height:1.45;
+    border: 1px solid transparent;
+  }
+  .status-icon-badge{
+    display:flex; align-items:center; justify-content:center;
+    width:22px; height:22px; flex:none;
+    border-radius:999px;
+    color:#fff;
+    margin-top:1px;
+  }
+  .status-icon-badge svg{ width:13px; height:13px; stroke-width:2.5; }
+  .semaforo-ok{ background:#E9F5E7; color:#1E5C2E; border-color:#C7E6C3; }
+  .semaforo-ok .status-icon-badge{ background:#1E5C2E; box-shadow:0 0 0 3px rgba(30,92,46,.16); }
+  .semaforo-atencao{ background:#FCF3DC; color:#8A5A00; border-color:#F5E0A8; }
+  .semaforo-atencao .status-icon-badge{ background:#8A5A00; box-shadow:0 0 0 3px rgba(138,90,0,.16); }
+  .semaforo-alerta{ background:#FBE8E7; color:#9C2B22; border-color:#F7C8C5; }
+  .semaforo-alerta .status-icon-badge{ background:#9C2B22; box-shadow:0 0 0 3px rgba(156,43,34,.16); }
+
+  /* Leitura instantânea */
+  .readout-metrics{
+    display:inline-flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:10px;
+    font-family:'JetBrains Mono','Inter',-apple-system,monospace;
+    font-feature-settings:'tnum' 1,'cv05' 1;
+    font-variant-numeric:tabular-nums;
+    font-size:13px;
+    color:#1E2420;
+  }
+  .readout-metric{
+    display:inline-flex;
+    align-items:baseline;
+    gap:4px;
+  }
+  .readout-metric strong{ font-weight:700; color:#1E2420; }
 
   #pmsBox[open] > summary > span:last-child{visibility:hidden;}
   #pmsBox > summary::-webkit-details-marker{display:none;}
@@ -1499,7 +1625,7 @@ tailwind.config = {
   </div>
 
   <div id="viewCalagem" class="hidden">
-    <main class="print-plain overflow-hidden rounded-2xl border border-line bg-white shadow-card lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
+    <main class="print-plain overflow-hidden rounded-lg bg-white shadow-sm lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
       <div class="p-5 sm:p-7 lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:p-0">
       <div class="lg:flex lg:h-full lg:min-h-0">
 
@@ -1511,9 +1637,22 @@ tailwind.config = {
           <h2 class="crm-card-title">Identificação e Área do Cooperado</h2>
         </div>
         <div class="fld-grid">
-          <div class="fld-wide">
+          <div>
             <label class="lbl" for="calCliente">Cliente</label>
             <input type="text" id="calCliente" class="inp" placeholder="Nome do cliente" autocomplete="off">
+          </div>
+          <div>
+            <div class="area-label-row">
+              <label class="lbl" for="calArea">Área a corrigir</label>
+              <div id="calAreaUnitToggle" class="unit-toggle" role="group" aria-label="Unidade de área">
+                <button type="button" class="unit-toggle-btn is-active" data-unit="alq" aria-pressed="true" title="Alqueire paulista (1 alq = 2,42 ha)">Alqueire</button>
+                <button type="button" class="unit-toggle-btn" data-unit="ha" aria-pressed="false" title="Hectare">Hectare</button>
+              </div>
+            </div>
+            <input type="number" id="calArea" class="inp inp-num" step="0.1" min="0" inputmode="decimal" placeholder="0">
+            <p class="field-note" title="Equivalência automática: 1 alqueire = 2,42 ha">
+              <span class="note-ico" aria-hidden="true"><svg class="ti ti-ruler-2 icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3l4 4l-14 14l-4 -4l14 -14" /><path d="M16 7l-1.5 -1.5" /><path d="M13 10l-1.5 -1.5" /><path d="M10 13l-1.5 -1.5" /><path d="M7 16l-1.5 -1.5" /></svg></span><span id="calAreaHaHint">0 ha</span>
+            </p>
           </div>
           <div>
             <label class="lbl" for="calCultura">Cultura-alvo / V₂ desejado</label>
@@ -1527,21 +1666,11 @@ tailwind.config = {
             </select>
           </div>
           <div>
-            <label class="lbl" for="calV2">Saturação por bases desejada — V₂ (%)</label>
-            <input type="number" id="calV2" class="inp inp-num" step="1" min="0" max="100" inputmode="decimal" placeholder="80" value="80">
-          </div>
-          <div class="fld-wide">
-            <div class="area-label-row">
-              <label class="lbl" for="calArea">Área a corrigir</label>
-              <div id="calAreaUnitToggle" class="unit-toggle" role="group" aria-label="Unidade de área">
-                <button type="button" class="unit-toggle-btn is-active" data-unit="alq" aria-pressed="true" title="Alqueire paulista (1 alq = 2,42 ha)">Alqueire</button>
-                <button type="button" class="unit-toggle-btn" data-unit="ha" aria-pressed="false" title="Hectare">Hectare</button>
-              </div>
+            <label class="lbl" for="calV2">Saturação por bases desejada — V₂</label>
+            <div class="input-group">
+              <input type="number" id="calV2" class="inp inp-num" step="1" min="0" max="100" inputmode="decimal" placeholder="80" value="80">
+              <span class="input-group-addon is-suffix">%</span>
             </div>
-            <input type="number" id="calArea" class="inp inp-num" step="0.1" min="0" inputmode="decimal" placeholder="0">
-            <p class="field-note" title="Equivalência automática: 1 alqueire = 2,42 ha">
-              <span class="note-ico" aria-hidden="true">📐</span><span id="calAreaHaHint">0 ha</span>
-            </p>
           </div>
         </div>
       </section>
@@ -1552,12 +1681,18 @@ tailwind.config = {
         </div>
         <div class="fld-grid fld-grid-3">
           <div>
-            <label class="lbl" for="calCa020">Ca²⁺ (cmolc/dm³)</label>
-            <input type="number" id="calCa020" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+            <label class="lbl" for="calCa020">Ca²⁺</label>
+            <div class="input-group">
+              <input type="number" id="calCa020" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+              <span class="input-group-addon is-suffix">cmolc/dm³</span>
+            </div>
           </div>
           <div>
-            <label class="lbl" for="calMg020">Mg²⁺ (cmolc/dm³)</label>
-            <input type="number" id="calMg020" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+            <label class="lbl" for="calMg020">Mg²⁺</label>
+            <div class="input-group">
+              <input type="number" id="calMg020" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+              <span class="input-group-addon is-suffix">cmolc/dm³</span>
+            </div>
           </div>
           <div>
             <label class="lbl" for="calK020">K⁺</label>
@@ -1571,12 +1706,18 @@ tailwind.config = {
             </select>
           </div>
           <div>
-            <label class="lbl" for="calAl020">Al³⁺ (cmolc/dm³)</label>
-            <input type="number" id="calAl020" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+            <label class="lbl" for="calAl020">Al³⁺</label>
+            <div class="input-group">
+              <input type="number" id="calAl020" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+              <span class="input-group-addon is-suffix">cmolc/dm³</span>
+            </div>
           </div>
           <div>
-            <label class="lbl" for="calHAl020">H+Al (cmolc/dm³)</label>
-            <input type="number" id="calHAl020" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+            <label class="lbl" for="calHAl020">H+Al</label>
+            <div class="input-group">
+              <input type="number" id="calHAl020" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+              <span class="input-group-addon is-suffix">cmolc/dm³</span>
+            </div>
           </div>
           <div>
             <label class="lbl" for="calPrnt">PRNT do calcário (%)</label>
@@ -1600,8 +1741,12 @@ tailwind.config = {
           </div>
         </div>
         <div class="readout mt-3">
-          <span class="text-[11px] font-semibold uppercase tracking-wide text-muted">🧪 Leitura instantânea</span>
-          <span class="font-mono text-[13px] font-bold text-ink">SB <span id="calReadoutSB">0,00</span> · CTC(T) <span id="calReadoutCtc020">0,00</span> · V₁ <span id="calReadoutV1">0,00%</span></span>
+          <span class="text-[11px] font-semibold uppercase tracking-wide text-muted"><svg class="ti ti-flask icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3l6 0" /><path d="M10 9l4 0" /><path d="M10 3v6l-4 11a.7 .7 0 0 0 .5 1h11a.7 .7 0 0 0 .5 -1l-4 -11v-6" /></svg> Leitura instantânea</span>
+          <span class="readout-metrics">
+            <span class="readout-metric">SB <strong id="calReadoutSB">0,00</strong></span>
+            <span class="readout-metric">CTC(T) <strong id="calReadoutCtc020">0,00</strong></span>
+            <span class="readout-metric">V₁ <strong id="calReadoutV1">0,00%</strong></span>
+          </span>
         </div>
         <p class="mt-2 text-[11px] leading-snug text-muted">H+Al pode vir direto do laudo ou ser estimado pelo Índice SMP conforme a tabela do laboratório — informe aqui o valor já em cmolc/dm³.</p>
       </section>
@@ -1616,24 +1761,39 @@ tailwind.config = {
             <input type="number" id="calArgila2040" class="inp inp-num" step="1" min="0" max="100" inputmode="decimal" placeholder="0">
           </div>
           <div>
-            <label class="lbl" for="calAl2040">Al³⁺ (cmolc/dm³)</label>
-            <input type="number" id="calAl2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+            <label class="lbl" for="calAl2040">Al³⁺</label>
+            <div class="input-group">
+              <input type="number" id="calAl2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+              <span class="input-group-addon is-suffix">cmolc/dm³</span>
+            </div>
           </div>
           <div>
-            <label class="lbl" for="calCa2040">Ca²⁺ (cmolc/dm³)</label>
-            <input type="number" id="calCa2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+            <label class="lbl" for="calCa2040">Ca²⁺</label>
+            <div class="input-group">
+              <input type="number" id="calCa2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+              <span class="input-group-addon is-suffix">cmolc/dm³</span>
+            </div>
           </div>
           <div>
-            <label class="lbl" for="calMg2040">Mg²⁺ (cmolc/dm³)</label>
-            <input type="number" id="calMg2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+            <label class="lbl" for="calMg2040">Mg²⁺</label>
+            <div class="input-group">
+              <input type="number" id="calMg2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+              <span class="input-group-addon is-suffix">cmolc/dm³</span>
+            </div>
           </div>
           <div>
-            <label class="lbl" for="calK2040">K⁺ (cmolc/dm³)</label>
-            <input type="number" id="calK2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+            <label class="lbl" for="calK2040">K⁺</label>
+            <div class="input-group">
+              <input type="number" id="calK2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+              <span class="input-group-addon is-suffix">cmolc/dm³</span>
+            </div>
           </div>
           <div>
-            <label class="lbl" for="calHAl2040">H+Al (cmolc/dm³)</label>
-            <input type="number" id="calHAl2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+            <label class="lbl" for="calHAl2040">H+Al</label>
+            <div class="input-group">
+              <input type="number" id="calHAl2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+              <span class="input-group-addon is-suffix">cmolc/dm³</span>
+            </div>
           </div>
         </div>
         <div class="mt-3">
@@ -1644,8 +1804,11 @@ tailwind.config = {
           </select>
         </div>
         <div class="readout mt-3">
-          <span class="text-[11px] font-semibold uppercase tracking-wide text-muted">🪨 Leitura instantânea (subsolo)</span>
-          <span class="font-mono text-[13px] font-bold text-ink">V% <span id="calReadoutV2040">0,00%</span> · m% <span id="calReadoutM2040">0,00%</span></span>
+          <span class="text-[11px] font-semibold uppercase tracking-wide text-muted"><svg class="ti ti-triangle-square-circle icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M15 3l6 9l-6 9h-6" /></svg> Leitura instantânea (subsolo)</span>
+          <span class="readout-metrics">
+            <span class="readout-metric">V₂₀₋₄₀ <strong id="calReadoutV2040">0,00%</strong></span>
+            <span class="readout-metric">m% <strong id="calReadoutM2040">0,00%</strong></span>
+          </span>
         </div>
       </section>
 
@@ -1658,10 +1821,10 @@ tailwind.config = {
 
       <section class="crm-card mt-4">
         <div class="crm-card-header">
-          <h2 class="crm-card-title"><span aria-hidden="true">💧</span> Dosagem de Calcário</h2>
+          <h2 class="crm-card-title"><span aria-hidden="true"><svg class="ti ti-droplet icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.502 19.423c-3.32 -3.319 -3.32 -8.704 0 -12.023l4.498 -4.5l4.498 4.5c3.32 3.319 3.32 8.704 0 12.023a6.364 6.364 0 0 1 -8.996 0z" /></svg></span>Dosagem de Calcário</h2>
         </div>
-        <p class="mt-1 font-mono leading-none tabular-nums text-ink" aria-live="polite">
-          <span id="calNcAplicar" class="cal-kpi-number">0,00</span>
+        <p class="result-total mt-1 font-mono leading-none tabular-nums text-ink" aria-live="polite">
+          <span id="calNcAplicar">0,00</span>
           <span class="text-[14px] font-normal text-muted">t/ha</span>
         </p>
         <p class="mt-1.5 text-[11px] text-muted">dose base (NC) <span id="calNcBase" class="font-mono font-semibold text-ink">0,00</span> t/ha, ajustada por profundidade e área aplicada</p>
@@ -1679,10 +1842,10 @@ tailwind.config = {
 
       <section class="crm-card mt-4">
         <div class="crm-card-header">
-          <h2 class="crm-card-title"><span aria-hidden="true">🪨</span> Dosagem de Gesso Agrícola</h2>
+          <h2 class="crm-card-title"><span aria-hidden="true"><svg class="ti ti-triangle-square-circle icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M15 3l6 9l-6 9h-6" /></svg></span>Dosagem de Gesso Agrícola</h2>
         </div>
-        <p class="mt-1 font-mono leading-none tabular-nums text-ink" aria-live="polite">
-          <span id="calNgDose" class="cal-kpi-number">0,00</span>
+        <p class="result-total mt-1 font-mono leading-none tabular-nums text-ink" aria-live="polite">
+          <span id="calNgDose">0,00</span>
           <span class="text-[14px] font-normal text-muted">kg/ha</span>
         </p>
         <div id="calGessoNecessariaBox" class="mt-2"></div>
@@ -1696,44 +1859,44 @@ tailwind.config = {
         </div>
       </section>
 
-      <section class="mt-4 rounded-lg border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3.5">
-        <h3 class="mb-3 flex items-center gap-2 text-[13px] font-extrabold">
-          <span aria-hidden="true">🚚</span>Logística de cargas e embalagens
-        </h3>
+      <section class="crm-card mt-4">
+        <div class="crm-card-header">
+          <h2 class="crm-card-title"><span aria-hidden="true"><svg class="ti ti-truck icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M5 17h-2v-11a1 1 0 0 1 1 -1h9v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5" /></svg></span>Logística de cargas e embalagens</h2>
+        </div>
         <div id="calLogisticaWrap" class="grid grid-cols-2 gap-2.5 lg:grid-cols-4"></div>
       </section>
 
-      <section class="mt-4 rounded-lg border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3.5">
-        <h3 class="mb-3 flex items-center gap-2 text-[13px] font-extrabold">
-          <span aria-hidden="true">💰</span>Investimento e custos do produtor
-        </h3>
+      <section class="crm-card mt-4">
+        <div class="crm-card-header">
+          <h2 class="crm-card-title"><span aria-hidden="true"><svg class="ti ti-coin icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M14.8 9a2 2 0 0 0 -1.8 -1h-2a2 2 0 1 0 0 4h2a2 2 0 1 1 0 4h-2a2 2 0 0 1 -1.8 -1" /><path d="M12 7v10" /></svg></span>Investimento e custos do produtor</h2>
+        </div>
         <div class="fld-grid fld-grid-3">
           <div>
             <label class="lbl" for="calPrecoCalcarioVista">Calcário — à vista (R$/t)</label>
-            <div class="relative">
-              <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[13px] font-semibold text-muted">R$</span>
+            <div class="input-group">
+              <span class="input-group-addon is-prefix">R$</span>
               <input type="number" id="calPrecoCalcarioVista" class="inp inp-num inp-money" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
             </div>
           </div>
           <div>
             <label class="lbl" for="calPrecoCalcarioPrazo">Calcário — a prazo (R$/t)</label>
-            <div class="relative">
-              <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[13px] font-semibold text-muted">R$</span>
+            <div class="input-group">
+              <span class="input-group-addon is-prefix">R$</span>
               <input type="number" id="calPrecoCalcarioPrazo" class="inp inp-num inp-money" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
             </div>
           </div>
           <div></div>
           <div>
             <label class="lbl" for="calPrecoGessoVista">Gesso — à vista (R$/t)</label>
-            <div class="relative">
-              <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[13px] font-semibold text-muted">R$</span>
+            <div class="input-group">
+              <span class="input-group-addon is-prefix">R$</span>
               <input type="number" id="calPrecoGessoVista" class="inp inp-num inp-money" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
             </div>
           </div>
           <div>
             <label class="lbl" for="calPrecoGessoPrazo">Gesso — a prazo (R$/t)</label>
-            <div class="relative">
-              <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[13px] font-semibold text-muted">R$</span>
+            <div class="input-group">
+              <span class="input-group-addon is-prefix">R$</span>
               <input type="number" id="calPrecoGessoPrazo" class="inp inp-num inp-money" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
             </div>
           </div>
@@ -1743,7 +1906,7 @@ tailwind.config = {
 
       <section id="calMemoriaBox" class="mt-4">
         <button type="button" id="calMemoriaToggle" class="mem-toggle flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-[13px] font-extrabold text-ink" aria-expanded="false" aria-controls="calMemoriaPanel">
-          <span aria-hidden="true">🧾</span>Memória de cálculo e laudo técnico
+          <span aria-hidden="true"><svg class="ti ti-receipt-2 icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16l-3 -2l-2 2l-2 -2l-2 2l-2 -2l-3 2m4 -14h6m-6 4h6m-2 4h2" /></svg></span>Memória de cálculo e laudo técnico
           <svg class="mem-chevron ml-auto h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
         <div id="calMemoriaPanel" class="mem-panel">
@@ -2309,8 +2472,10 @@ function enhanceSelect(selectEl){
   // Milho). Fixando fora da coluna, a lista nunca mexe no scroll dela.
   function positionList(){
     const rect = btn.getBoundingClientRect();
-    list.style.left = rect.left + "px";
-    list.style.width = rect.width + "px";
+    const minW = Math.min(window.innerWidth - 16, Math.max(rect.width, 280));
+    list.style.width = minW + "px";
+    const leftPos = Math.min(Math.max(8, rect.left), window.innerWidth - minW - 8);
+    list.style.left = leftPos + "px";
     const espacoAbaixo = window.innerHeight - rect.bottom;
     const abrePraCima = espacoAbaixo < list.offsetHeight + 6 && rect.top > list.offsetHeight + 6;
     list.style.top = abrePraCima ? (rect.top - list.offsetHeight - 6) + "px" : (rect.bottom + 6) + "px";
@@ -4493,15 +4658,17 @@ calAreaUnitButtons.forEach(btn => {
 
 // Cultura-alvo -> V₂ sugerido (editável); "Personalizado" deixa o campo livre.
 $("calCultura").addEventListener("change", () => {
-  const opt = $("calCultura").selectedOptions[0];
-  const v2 = opt.dataset.v2;
+  const sel = $("calCultura");
+  const opt = sel.selectedOptions?.[0] || sel.options[sel.selectedIndex] || sel.querySelector(`option[value="${sel.value}"]`);
+  const v2 = opt?.dataset?.v2;
   if(v2) $("calV2").value = v2;
   calcCalagem();
 });
 // Sistema de manejo -> profundidade sugerida (editável); "Personalizado" deixa o campo livre.
 $("calManejo").addEventListener("change", () => {
-  const opt = $("calManejo").selectedOptions[0];
-  const prof = opt.dataset.prof;
+  const sel = $("calManejo");
+  const opt = sel.selectedOptions?.[0] || sel.options[sel.selectedIndex] || sel.querySelector(`option[value="${sel.value}"]`);
+  const prof = opt?.dataset?.prof;
   if(prof) $("calProfundidade").value = prof;
   calcCalagem();
 });
@@ -4517,13 +4684,18 @@ $("calArea").addEventListener("input", calcCalagem);
 $("calKUnidade020").addEventListener("change", calcCalagem);
 $("calMetodoGessagem").addEventListener("change", calcCalagem);
 
+enhanceSelect($("calCultura"));
+enhanceSelect($("calKUnidade020"));
+enhanceSelect($("calManejo"));
+enhanceSelect($("calMetodoGessagem"));
+
 // toneladas de calcário/gesso -> quantidade de embalagens (Big Bag 1.000 kg,
 // sacaria de 50 kg) e de cargas a granel (referência: bitrem médio, 34 t)
 const CAL_CARGA_GRANEL_T = 35; // carreta/bitrem médio
 function calAddEmbalagem(wrap, produto, label, toneladas, tamanhoT){
   const exato = toneladas / tamanhoT;
   const div = document.createElement("div");
-  div.className = "rounded-xl border border-ink/[.08] bg-white/80 px-3 py-2.5";
+  div.className = "rounded-lg border border-line bg-white px-3 py-2.5";
   div.innerHTML =
     `<div class="text-[10px] font-semibold uppercase tracking-wide text-muted">${produto} · ${label}</div>` +
     `<div class="mt-0.5 font-mono text-[18px] font-bold tabular-nums text-ink">${fmtDec(exato)}</div>` +
@@ -4543,8 +4715,8 @@ function calRenderLogistica(totalCalcarioT, totalGessoT){
 
 // custo total/por área de um produto a partir do preço por tonelada digitado
 function calCustoProduto(totalT, precoVista, precoPrazo){
-  const vista = (totalT || 0) * (parseFloat(precoVista) || 0);
-  const prazo = (totalT || 0) * (parseFloat(precoPrazo) || 0);
+  const vista = calcularCusto(totalT, precoVista);
+  const prazo = calcularCusto(totalT, precoPrazo);
   return { vista, prazo };
 }
 function calRenderCustoCard(wrap, produto, totalT, precoVista, precoPrazo, areaAlq){
@@ -4552,36 +4724,45 @@ function calRenderCustoCard(wrap, produto, totalT, precoVista, precoPrazo, areaA
   const { vista, prazo } = calCustoProduto(totalT, precoVista, precoPrazo);
   const areaHa = alqParaHa(areaAlq);
   const div = document.createElement("div");
-  div.className = "rounded-lg border border-line bg-white px-3 py-2.5";
+  div.className = "custo-card-item";
   div.innerHTML = `
-    <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-      <div class="text-[11px] font-bold text-ink">${produto} <span class="font-mono text-[10.5px] font-normal text-muted">(${fmtDec(totalT)} t)</span></div>
-      <div class="flex flex-wrap gap-x-3 gap-y-1" style="text-align:right">
-        <div>
-          <div class="text-[9px] font-semibold uppercase tracking-wide text-muted">à vista</div>
-          <div class="font-mono text-[13px] font-bold tabular-nums text-ink">${fmtMoeda(vista)}</div>
-        </div>
-        <div>
-          <div class="text-[9px] font-semibold uppercase tracking-wide text-muted">a prazo</div>
-          <div class="font-mono text-[13px] font-bold tabular-nums text-ink">${fmtMoeda(prazo)}</div>
-        </div>
-        <div>
-          <div class="text-[9px] font-semibold uppercase tracking-wide text-muted">por alqueire</div>
-          <div class="font-mono text-[11.5px] text-muted">${areaAlq ? fmtMoeda(vista / areaAlq) : "—"}</div>
-        </div>
-        <div>
-          <div class="text-[9px] font-semibold uppercase tracking-wide text-muted">por hectare</div>
-          <div class="font-mono text-[11.5px] text-muted">${areaHa ? fmtMoeda(vista / areaHa) : "—"}</div>
-        </div>
+    <div class="custos-grid">
+      <div>
+        <span class="text-[13px] font-extrabold text-ink lg:leading-tight">${produto}</span>
+        <div class="mt-0.5"><span class="whitespace-nowrap font-mono text-[11px] text-muted">${fmtDec(totalT)} t</span></div>
+      </div>
+      <div>
+        <div class="custo-mobile-label">Custo à vista</div>
+        <div class="whitespace-nowrap font-mono text-[14px] font-bold tabular-nums text-ink">${fmtMoeda(vista)}</div>
+      </div>
+      <div>
+        <div class="custo-mobile-label">Custo a prazo</div>
+        <div class="whitespace-nowrap font-mono text-[14px] font-bold tabular-nums text-ink">${fmtMoeda(prazo)}</div>
+      </div>
+      <div>
+        <div class="custo-mobile-label">Por alqueire</div>
+        <div class="whitespace-nowrap font-mono text-[11.5px] text-muted">${areaAlq ? fmtMoeda(vista / areaAlq) : "—"}</div>
+      </div>
+      <div>
+        <div class="custo-mobile-label">Por hectare</div>
+        <div class="whitespace-nowrap font-mono text-[11.5px] text-muted">${areaHa ? fmtMoeda(vista / areaHa) : "—"}</div>
       </div>
     </div>`;
   wrap.appendChild(div);
 }
 
+const ALERT_META = {
+  info: { icon: "info-circle", paths: '<path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 9h.01" /><path d="M11 12h1v4h1" />' },
+  warn: { icon: "alert-triangle", paths: '<path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 9v4" /><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z" /><path d="M12 16h.01" />' },
+  error: { icon: "alert-circle", paths: '<path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 8v4" /><path d="M12 16h.01" />' },
+};
+const SEMAFORO_ICON_OK = '<path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 12l2 2l4 -4" /><path d="M21 12a9 9 0 1 1 -18 0a9 9 0 0 1 18 0" />';
 function calSemaforoItem(status, texto){
-  const emoji = status === "ok" ? "🟢" : status === "atencao" ? "🟡" : "🔴";
   const classe = status === "ok" ? "semaforo-ok" : status === "atencao" ? "semaforo-atencao" : "semaforo-alerta";
-  return `<div class="semaforo-item ${classe}"><span class="semaforo-emoji" aria-hidden="true">${emoji}</span><span>${texto}</span></div>`;
+  const paths = status === "ok" ? SEMAFORO_ICON_OK : status === "atencao" ? ALERT_META.warn.paths : ALERT_META.error.paths;
+  return `<div class="semaforo-item ${classe}">` +
+    `<span class="status-icon-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${paths}</svg></span>` +
+    `<span>${texto}</span></div>`;
 }
 
 // guarda o último resultado calculado — reaproveitado por coletarResumoCalagem() na exportação (PDF/PNG)
@@ -4646,7 +4827,8 @@ function calcCalagem(){
   calAlertBox.innerHTML = "";
   show(calAlertBox, calagem.alertaParcelamento);
   if(calagem.alertaParcelamento){
-    calAlertBox.innerHTML = `<div class="alert-item alert-warn"><span aria-hidden="true">⚠️</span><span>Dose acima de 2,5 t/ha em aplicação superficial — recomenda-se parcelar entre safras para evitar supercalagem na camada superficial.</span></div>`;
+    const meta = ALERT_META.warn;
+    calAlertBox.innerHTML = `<div class="alert-item alert-warn"><svg class="ti ti-${meta.icon} alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${meta.paths}</svg><span class="alert-text">Dose acima de 2,5 t/ha em aplicação superficial — recomenda-se parcelar entre safras para evitar supercalagem na camada superficial.</span></div>`;
   }
 
   // ---- gessagem ----
@@ -4657,11 +4839,13 @@ function calcCalagem(){
 
   const gessoBox = $("calGessoNecessariaBox");
   if(gessagem.necessaria){
-    gessoBox.innerHTML = `<div class="alerts-box">${gessagem.motivos.map(m =>
-      `<div class="alert-item alert-warn"><span aria-hidden="true">⚠️</span><span>${m}</span></div>`
-    ).join("")}</div>`;
+    gessoBox.innerHTML = `<div class="alerts-box">${gessagem.motivos.map(m => {
+      const meta = ALERT_META.warn;
+      return `<div class="alert-item alert-warn"><svg class="ti ti-${meta.icon} alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${meta.paths}</svg><span class="alert-text">${m}</span></div>`;
+    }).join("")}</div>`;
   } else {
-    gessoBox.innerHTML = `<div class="alert-item alert-info"><span aria-hidden="true">ℹ️</span><span>Nenhum dos 4 critérios do subsolo foi disparado — gessagem dispensada pelos dados informados.</span></div>`;
+    const meta = ALERT_META.info;
+    gessoBox.innerHTML = `<div class="alert-item alert-info"><svg class="ti ti-${meta.icon} alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${meta.paths}</svg><span class="alert-text">Nenhum dos 4 critérios do subsolo foi disparado — gessagem dispensada pelos dados informados.</span></div>`;
   }
 
   // ---- logística e custos ----
