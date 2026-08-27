@@ -1,5 +1,5 @@
 
-const APP_VERSION = "1.1.0";
+const APP_VERSION = "1.2.0";
 
 const CROPS = {
   soja: {
@@ -48,9 +48,18 @@ const FAIXA_USUAL_PLANTAS = {
 // fórmulas puras (sem DOM) moram em calculos.js, carregado antes deste arquivo — ver ali
 // para as implementações e o motivo da separação (testes automatizados com Vitest)
 const {
-  ALQ_HA, calcularSementes, calcularSacas, calcularDose, calcularDosePMS,
+  ALQ_HA, alqParaHa, haParaAlq, normalizarAreaParaAlqueires,
+  calcularSementes, calcularSacas, calcularDose, calcularDosePMS,
   montarCombo, bagSizeFromNpk, calcularCusto, formatarPrecoResumo, precisaAlertarPrazoAusente,
+  converterKMgParaCmolc, calcularIndicesSolo, calcularCalagem, determinarTipoCalcario,
+  verificarNecessidadeGessagem, calcularGessagem, nutrientesGesso,
 } = Calculos;
+
+// Unidade em que o campo "Área" está sendo exibido/digitado ("alq" ou "ha") — a
+// unidade canônica usada internamente em todas as fórmulas continua sendo sempre
+// alqueires (ver normalizarAreaParaAlqueires em calculos.js); a alternância aqui é
+// só de exibição, compartilhada entre todas as culturas (não é salva por aba).
+let areaUnit = "alq";
 
 const $ = id => document.getElementById(id);
 
@@ -267,6 +276,25 @@ for(let t=5;t<=10;t++){
 enhanceSelect(transSel);
 enhanceSelect($("espacamento"));
 
+// Alternância de unidade da Área (Alqueire/Hectare): troca só a exibição do campo
+// #area (convertendo o valor já digitado) — o valor canônico usado nas contas
+// continua sempre em alqueires, ver areaAlqDoInput()/normalizarAreaParaAlqueires().
+const areaUnitButtons = Array.from(document.querySelectorAll("#areaUnitToggle .unit-toggle-btn"));
+areaUnitButtons.forEach(btn => {
+  btn.addEventListener("click", () => {
+    if(btn.dataset.unit === areaUnit) return;
+    const areaAlq = areaAlqDoInput();
+    areaUnit = btn.dataset.unit;
+    areaUnitButtons.forEach(b => {
+      const on = b === btn;
+      b.classList.toggle("is-active", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+    formatarAreaInput(areaAlq);
+    calc();
+  });
+});
+
 // ---------- Busca/sugestão de cultivar (soja, milho, feijão, trigo) ----------
 // Catálogo em js/cultivares.js — ainda vazio, então a lista nunca aparece
 // hoje; o campo continua um texto livre normal, pronto pra quando os dados
@@ -395,6 +423,39 @@ function fmtMoeda(n){
   if(!isFinite(n)) n = 0;
   return "R$ " + n.toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2});
 }
+
+// ---------- Área: leitura/escrita do campo #area na unidade de exibição atual ----------
+// O campo mostra alqueires ou hectares conforme `areaUnit`, mas todo o resto do app
+// (calc(), custos, comparador, ficha exportada) trabalha só com o valor canônico em
+// alqueires — essas funções são a única ponte entre as duas representações.
+function areaAlqDoInput(){
+  return normalizarAreaParaAlqueires($("area").value, areaUnit);
+}
+// Reescreve o valor exibido no campo a partir de uma área canônica (alqueires),
+// convertendo para a unidade selecionada no momento. Usado ao trocar de unidade e
+// ao restaurar a área salva de uma cultura.
+function formatarAreaInput(areaAlq){
+  if(!areaAlq){ $("area").value = ""; return; }
+  const valorExibido = areaUnit === "ha" ? alqParaHa(areaAlq) : areaAlq;
+  $("area").value = Math.round(valorExibido * 10000) / 10000; // 4 casas evitam ruído de ponto flutuante sem cortar precisão útil
+}
+// Hint abaixo do campo: sempre mostra a equivalência na OUTRA unidade.
+function atualizarAreaHint(areaAlq){
+  $("areaHaHint").textContent = areaUnit === "ha"
+    ? fmtDec(areaAlq) + " alq"
+    : fmtDec(alqParaHa(areaAlq)) + " ha";
+}
+// Texto "10,00 alqueires" / "24,20 ha" na unidade de exibição atual — usado na memória de cálculo.
+function fmtAreaComUnidade(areaAlq){
+  return areaUnit === "ha" ? fmtDec(alqParaHa(areaAlq)) + " ha" : fmtDec(areaAlq) + " alqueires";
+}
+// "10,00 alq (24,20 ha)" / "24,20 ha (10,00 alq)" — usado na ficha exportada (PDF/PNG),
+// sempre com as duas unidades para não depender de qual estava selecionada na hora da geração.
+function fmtAreaRelatorio(areaAlq){
+  if(!areaAlq) return "—";
+  const alq = fmtDec(areaAlq) + " alq", ha = fmtDec(alqParaHa(areaAlq)) + " ha";
+  return areaUnit === "ha" ? `${ha} (${alq})` : `${alq} (${ha})`;
+}
 // número "solto" (sem casas fixas) pra faixas e sugestões: 8 -> "8", 2.6 -> "2,6"
 function fmtLivre(n){
   if(!isFinite(n)) return "0";
@@ -471,6 +532,7 @@ function captureState(crop){
   if(!crop) return;
   const snap = { variant: cropVariant[crop] };
   STATE_FIELD_IDS.forEach(id => { snap[id] = $(id).value; });
+  snap.area = areaAlqDoInput(); // guardado sempre em alqueires (canônico), independente da unidade exibida no momento
   cropState[crop] = snap;
 }
 
@@ -497,7 +559,7 @@ function selectCrop(crop){
   $("custosCropNome").textContent = "· " + c.nome;
   $("prazoData").value = custoPrazoData[crop] || "";
   $("cultivar").value = (saved && saved.cultivar) ? saved.cultivar : (mesmaCultura ? cultivarAtual : "");
-  $("area").value = (saved && saved.area !== undefined) ? saved.area : "";
+  formatarAreaInput((saved && saved.area !== undefined) ? parseFloat(saved.area) || 0 : 0);
   const ehAdubo = crop === "adubacao";
   show($("comparadorSection"), ehAdubo);
   $("cultivarLabel").textContent = ehAdubo ? "Formulação cotada" : "Cultivar cotada";
@@ -610,8 +672,8 @@ function hexToSoft(hex){
 
 function calc(){
   const c = getConfig(currentCrop);
-  const area = parseFloat($("area").value) || 0;
-  $("areaHaHint").textContent = fmtDec(area * ALQ_HA) + " ha";
+  const area = areaAlqDoInput(); // sempre em alqueires (canônico), qualquer que seja a unidade exibida no campo
+  atualizarAreaHint(area);
   let total = 0;
 
   // valores dos passos de cada ramo, guardados para alimentar a memória de cálculo mais abaixo
@@ -921,7 +983,7 @@ function renderMemoria(c, area, total, mem){
   }
 
   if(c.tipo === "semente"){
-    addStep("Área equivalente", fmtDec(area * ALQ_HA) + " ha", "Área × 2,42");
+    addStep("Área", fmtAreaComUnidade(area), "informada acima");
     addStep("Espaçamento", fmtDec(mem.espacamento) + " m", "informado ao lado");
     addStep("População informada", fmtDec(mem.plantas) + " plantas/m", "informado ao lado");
     addStep("Transpasse", fmtDec(mem.transpasse) + " %", "informado ao lado");
@@ -930,11 +992,11 @@ function renderMemoria(c, area, total, mem){
       addResult("Peso estimado (via PMS)", fmtDec(mem.kgTrigo) + " kg", "Total × PMS ÷ 1.000.000");
     }
   } else if(c.tipo === "sacas"){
-    addStep("Área", fmtDec(area) + " alqueires", "informada acima");
+    addStep("Área", fmtAreaComUnidade(area), "informada acima");
     addStep("Sacas por alqueire", fmtDec(mem.sacasAlq), "informado ao lado");
     addResult("Resultado", fmtDec(total) + " sacas", "Área × Sacas por alqueire");
   } else {
-    addStep("Área", fmtDec(area) + " alqueires", "informada acima");
+    addStep("Área", fmtAreaComUnidade(area), "informada acima");
     addStep("Dose por alqueire", fmtDec(mem.doseAlq) + " kg", "informado ao lado");
     addResult("Resultado", fmtDec(total) + " kg", "Área × Dose por alqueire");
   }
@@ -1115,7 +1177,7 @@ function refreshVencimento(){
 }
 
 function updateCustos(){
-  const area = parseFloat($("area").value) || 0;
+  const area = areaAlqDoInput();
   const venc = refreshVencimento();
   const rotPrazo = venc ? `Custo a prazo · ${venc}` : "Custo a prazo";
   let menorVista = Infinity, menorIdx = -1;
@@ -1254,7 +1316,7 @@ function renderComparador(){
 
 function updateComparador(){
   if(currentCrop !== "adubacao") return;
-  const area = parseFloat($("area").value) || 0; // alqueires — mesmo campo da Identificação, não duplicado aqui
+  const area = areaAlqDoInput(); // alqueires (canônico) — mesmo campo da Identificação, não duplicado aqui
   const areaHa = area * ALQ_HA;
   const necessidade = parseFloat($("compDose").value) || 0; // kg/ha: dose (modo "dose") ou necessidade de NPK (modo "npk")
 
@@ -1461,7 +1523,7 @@ function gerarCodigoRef(d){
 function coletarResumo(){
   const agora = new Date();
   const c = getConfig(currentCrop);
-  const area = parseFloat($("area").value) || 0;
+  const area = areaAlqDoInput();
   const cliente = $("cliente").value.trim();
   const cultivar = $("cultivar").value.trim();
 
@@ -1519,7 +1581,7 @@ function coletarResumo(){
     cultura: c.nome, icone: c.icon, accent: c.accent,
     cliente, cultivar,
     rotuloCultivar: currentCrop === "adubacao" ? "Formulação" : "Cultivar",
-    area: area ? area.toLocaleString("pt-BR") + " alqueires" : "—",
+    area: fmtAreaRelatorio(area),
     params,
     total: $("totalValue").textContent,
     unidade: $("unitLabel").textContent,
@@ -1818,6 +1880,9 @@ $("btnPdf").addEventListener("click", async () => {
   if(!$("viewRegulagem").classList.contains("hidden")){
     const r = coletarResumoRegulagem();
     $("printSheet").innerHTML = montarFolhaRegulagem(r);
+  } else if(!$("viewCalagem").classList.contains("hidden")){
+    const r = coletarResumoCalagem();
+    $("printSheet").innerHTML = montarFolhaCalagem(r);
   } else {
     const r = coletarResumo();
     $("printSheet").innerHTML = montarFolha(r);
@@ -2171,29 +2236,59 @@ $("btnPng").addEventListener("click", () => {
     baixar(cv.toDataURL("image/png"), nomeArquivoRegulagem(r, "png"));
     return;
   }
+  if(!$("viewCalagem").classList.contains("hidden")){
+    const r = coletarResumoCalagem();
+    const cv = desenharFichaCalagem(r);
+    baixar(cv.toDataURL("image/png"), nomeArquivoCalagem(r, "png"));
+    return;
+  }
   const r = coletarResumo();
   const cv = desenharFicha(r);
   // toDataURL é síncrono: o download dispara na hora, sem depender de callback
   baixar(cv.toDataURL("image/png"), nomeArquivo(r, "png"));
 });
 
-// ---- Alternância entre a calculadora de sementes e a regulagem de plantadeira
+// ---- Alternância entre as três ferramentas: calculadora de sementes,
+// regulagem de plantadeira e calagem & gessagem
 const viewBtnCalc = $("viewBtnCalc");
 const viewBtnReg = $("viewBtnReg");
+const viewBtnCalagem = $("viewBtnCalagem");
 const viewCalculadora = $("viewCalculadora");
 const viewRegulagem = $("viewRegulagem");
+const viewCalagem = $("viewCalagem");
+let emCalagem = false; // sinaliza que o accent atual é o da Calagem, pra restaurar o da cultura ao sair
 
 function setView(view){
-  const ehCalc = view === "calc";
-  viewBtnCalc.classList.toggle("is-active", ehCalc);
-  viewBtnCalc.setAttribute("aria-selected", ehCalc ? "true" : "false");
-  viewBtnReg.classList.toggle("is-active", !ehCalc);
-  viewBtnReg.setAttribute("aria-selected", !ehCalc ? "true" : "false");
-  viewCalculadora.classList.toggle("hidden", !ehCalc);
-  viewRegulagem.classList.toggle("hidden", ehCalc);
+  viewBtnCalc.classList.toggle("is-active", view === "calc");
+  viewBtnCalc.setAttribute("aria-selected", view === "calc" ? "true" : "false");
+  viewBtnReg.classList.toggle("is-active", view === "reg");
+  viewBtnReg.setAttribute("aria-selected", view === "reg" ? "true" : "false");
+  viewBtnCalagem.classList.toggle("is-active", view === "calagem");
+  viewBtnCalagem.setAttribute("aria-selected", view === "calagem" ? "true" : "false");
+  viewCalculadora.classList.toggle("hidden", view !== "calc");
+  viewRegulagem.classList.toggle("hidden", view !== "reg");
+  viewCalagem.classList.toggle("hidden", view !== "calagem");
+
+  if(view === "calagem"){
+    emCalagem = true;
+    document.documentElement.style.setProperty("--accent", "#8C6D46");
+    document.documentElement.style.setProperty("--accent-soft", hexToSoft("#8C6D46"));
+    document.documentElement.style.setProperty("--accent-light", "#D2A97A");
+    document.documentElement.style.setProperty("--accent-line", hexToRgba("#8C6D46", .30));
+  } else if(emCalagem){
+    // reaplica as variáveis de accent da cultura corrente sem tocar em nenhum campo
+    // (chamar selectCrop() de novo aqui apagaria digitação ainda não salva na aba)
+    emCalagem = false;
+    const c = getConfig(currentCrop);
+    document.documentElement.style.setProperty("--accent", c.accent);
+    document.documentElement.style.setProperty("--accent-soft", hexToSoft(c.accent));
+    document.documentElement.style.setProperty("--accent-light", c.accentLight || c.accent);
+    document.documentElement.style.setProperty("--accent-line", hexToRgba(c.accent, .30));
+  }
 }
 viewBtnCalc.addEventListener("click", () => setView("calc"));
 viewBtnReg.addEventListener("click", () => setView("reg"));
+viewBtnCalagem.addEventListener("click", () => setView("calagem"));
 
 // ---- Regulagem de plantadeira: só preenche e calcula pelas fórmulas de plantas/m linear
 function fmtDecCasas(n, casas){
@@ -2308,6 +2403,496 @@ function calcRegulagemAdubo(){
 }
 ["regAduboDose","regAduboEspacamento"].forEach(id => $(id).addEventListener("input", calcRegulagemAdubo));
 calcRegulagemAdubo();
+
+// ---------- Calagem & Gessagem (Manual de Adubação e Calagem para o Estado do
+// Paraná — SBCS-NEPAR / IDR-Paraná / Embrapa) ----------
+// Ferramenta técnica independente (terceira aba, ao lado de Sementes & Adubação
+// e Regulagem de Plantadeira): a matemática pura mora em calculos.js
+// (calcularIndicesSolo, calcularCalagem, determinarTipoCalcario,
+// verificarNecessidadeGessagem, calcularGessagem, nutrientesGesso) — aqui só lê
+// os campos, chama essas funções e desenha o resultado.
+
+// Área a corrigir: mesmo esquema de alternância alqueire/hectare da aba de
+// Sementes & Adubação (ver areaAlqDoInput/formatarAreaInput acima), só que
+// como uma instância própria — é um campo de área independente, de outra
+// ferramenta, não o mesmo #area da calculadora de cultura.
+let calAreaUnit = "alq";
+function calAreaAlqDoInput(){
+  return normalizarAreaParaAlqueires($("calArea").value, calAreaUnit);
+}
+function calFormatarAreaInput(areaAlq){
+  if(!areaAlq){ $("calArea").value = ""; return; }
+  const valorExibido = calAreaUnit === "ha" ? alqParaHa(areaAlq) : areaAlq;
+  $("calArea").value = Math.round(valorExibido * 10000) / 10000;
+}
+function calAtualizarAreaHint(areaAlq){
+  $("calAreaHaHint").textContent = calAreaUnit === "ha"
+    ? fmtDec(areaAlq) + " alq"
+    : fmtDec(alqParaHa(areaAlq)) + " ha";
+}
+function calFmtAreaRelatorio(areaAlq){
+  if(!areaAlq) return "—";
+  const alq = fmtDec(areaAlq) + " alq", ha = fmtDec(alqParaHa(areaAlq)) + " ha";
+  return calAreaUnit === "ha" ? `${ha} (${alq})` : `${alq} (${ha})`;
+}
+const calAreaUnitButtons = Array.from(document.querySelectorAll("#calAreaUnitToggle .unit-toggle-btn"));
+calAreaUnitButtons.forEach(btn => {
+  btn.addEventListener("click", () => {
+    if(btn.dataset.unit === calAreaUnit) return;
+    const areaAlq = calAreaAlqDoInput();
+    calAreaUnit = btn.dataset.unit;
+    calAreaUnitButtons.forEach(b => {
+      const on = b === btn;
+      b.classList.toggle("is-active", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+    calFormatarAreaInput(areaAlq);
+    calcCalagem();
+  });
+});
+
+// Cultura-alvo -> V₂ sugerido (editável); "Personalizado" deixa o campo livre.
+$("calCultura").addEventListener("change", () => {
+  const opt = $("calCultura").selectedOptions[0];
+  const v2 = opt.dataset.v2;
+  if(v2) $("calV2").value = v2;
+  calcCalagem();
+});
+// Sistema de manejo -> profundidade sugerida (editável); "Personalizado" deixa o campo livre.
+$("calManejo").addEventListener("change", () => {
+  const opt = $("calManejo").selectedOptions[0];
+  const prof = opt.dataset.prof;
+  if(prof) $("calProfundidade").value = prof;
+  calcCalagem();
+});
+
+const CAL_INPUT_IDS = [
+  "calV2","calProfundidade","calPrnt","calAreaAplicadaPct",
+  "calCa020","calMg020","calK020","calAl020","calHAl020",
+  "calCa2040","calMg2040","calK2040","calAl2040","calHAl2040","calArgila2040",
+  "calPrecoCalcarioVista","calPrecoCalcarioPrazo","calPrecoGessoVista","calPrecoGessoPrazo",
+];
+CAL_INPUT_IDS.forEach(id => $(id).addEventListener("input", calcCalagem));
+$("calArea").addEventListener("input", calcCalagem);
+$("calKUnidade020").addEventListener("change", calcCalagem);
+$("calMetodoGessagem").addEventListener("change", calcCalagem);
+
+// toneladas de calcário/gesso -> quantidade de embalagens (Big Bag 1.000 kg,
+// sacaria de 50 kg) e de cargas a granel (referência: bitrem médio, 34 t)
+const CAL_CARGA_GRANEL_T = 35; // carreta/bitrem médio
+function calAddEmbalagem(wrap, produto, label, toneladas, tamanhoT){
+  const exato = toneladas / tamanhoT;
+  const div = document.createElement("div");
+  div.className = "rounded-xl border border-ink/[.08] bg-white/80 px-3 py-2.5";
+  div.innerHTML =
+    `<div class="text-[10px] font-semibold uppercase tracking-wide text-muted">${produto} · ${label}</div>` +
+    `<div class="pack-value mt-0.5 font-mono tabular-nums text-ink">${fmtDec(exato)}</div>` +
+    `<div class="mt-0.5 text-[10.5px] text-muted">→ ${Math.ceil(exato).toLocaleString("pt-BR")} un. arredondado</div>`;
+  wrap.appendChild(div);
+}
+function calRenderLogistica(totalCalcarioT, totalGessoT){
+  const wrap = $("calLogisticaWrap");
+  wrap.innerHTML = "";
+  [["Calcário", totalCalcarioT], ["Gesso", totalGessoT]].forEach(([produto, total]) => {
+    if(!(total > 0)) return;
+    calAddEmbalagem(wrap, produto, "Granel — Carreta/Bitrem (~35 t/carga)", total, CAL_CARGA_GRANEL_T);
+    calAddEmbalagem(wrap, produto, "Big Bag 1.000 kg", total, 1);
+    calAddEmbalagem(wrap, produto, "Sacaria 50 kg", total, 0.05);
+  });
+}
+
+// custo total/por área de um produto a partir do preço por tonelada digitado
+function calCustoProduto(totalT, precoVista, precoPrazo){
+  const vista = calcularCusto(totalT, precoVista);
+  const prazo = calcularCusto(totalT, precoPrazo);
+  return { vista, prazo };
+}
+function calRenderCustoCard(wrap, produto, totalT, precoVista, precoPrazo, areaAlq){
+  if(!(totalT > 0)) return;
+  const { vista, prazo } = calCustoProduto(totalT, precoVista, precoPrazo);
+  const areaHa = alqParaHa(areaAlq);
+  const div = document.createElement("div");
+  div.className = "rounded-lg border border-line bg-white px-3 py-2.5";
+  div.innerHTML = `
+    <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+      <div class="text-[11px] font-bold text-ink">${produto} <span class="font-mono text-[10.5px] font-normal text-muted">(${fmtDec(totalT)} t)</span></div>
+      <div class="flex flex-wrap gap-x-3 gap-y-1" style="text-align:right">
+        <div>
+          <div class="text-[9px] font-semibold uppercase tracking-wide text-muted">à vista</div>
+          <div class="font-mono text-[13px] font-bold tabular-nums text-ink">${fmtMoeda(vista)}</div>
+        </div>
+        <div>
+          <div class="text-[9px] font-semibold uppercase tracking-wide text-muted">a prazo</div>
+          <div class="font-mono text-[13px] font-bold tabular-nums text-ink">${fmtMoeda(prazo)}</div>
+        </div>
+        <div>
+          <div class="text-[9px] font-semibold uppercase tracking-wide text-muted">por alqueire</div>
+          <div class="font-mono text-[11.5px] text-muted">${areaAlq ? fmtMoeda(vista / areaAlq) : "—"}</div>
+        </div>
+        <div>
+          <div class="text-[9px] font-semibold uppercase tracking-wide text-muted">por hectare</div>
+          <div class="font-mono text-[11.5px] text-muted">${areaHa ? fmtMoeda(vista / areaHa) : "—"}</div>
+        </div>
+      </div>
+    </div>`;
+  wrap.appendChild(div);
+}
+
+function calSemaforoItem(status, texto){
+  const emoji = status === "ok" ? "🟢" : status === "atencao" ? "🟡" : "🔴";
+  const classe = status === "ok" ? "semaforo-ok" : status === "atencao" ? "semaforo-atencao" : "semaforo-alerta";
+  return `<div class="semaforo-item ${classe}"><span class="semaforo-emoji" aria-hidden="true">${emoji}</span><span>${texto}</span></div>`;
+}
+
+// guarda o último resultado calculado — reaproveitado por coletarResumoCalagem() na exportação (PDF/PNG)
+let calUltimoResultado = null;
+
+function calcCalagem(){
+  const v = id => parseFloat($(id).value) || 0;
+
+  const kUnidade020 = $("calKUnidade020").value;
+  const idx020 = calcularIndicesSolo({ ca: v("calCa020"), mg: v("calMg020"), k: v("calK020"), al: v("calAl020"), hAl: v("calHAl020"), kUnidade: kUnidade020 });
+  const idx2040 = calcularIndicesSolo({ ca: v("calCa2040"), mg: v("calMg2040"), k: v("calK2040"), al: v("calAl2040"), hAl: v("calHAl2040") });
+
+  const v2 = v("calV2");
+  const prnt = v("calPrnt");
+  const profundidade = v("calProfundidade");
+  const areaAplicadaPct = v("calAreaAplicadaPct") || 100;
+  const calagem = calcularCalagem({ v1: idx020.v, v2, t: idx020.ctcPh7, prnt, profundidade, areaAplicadaPct });
+  const tipoCalcario = determinarTipoCalcario({ mg: v("calMg020"), caMg: idx020.caMg });
+
+  const gessagem = verificarNecessidadeGessagem({ al: v("calAl2040"), m: idx2040.m, ca: v("calCa2040"), v: idx2040.v });
+  const metodoGessagem = $("calMetodoGessagem").value;
+  const areaAlq = calAreaAlqDoInput();
+  const areaHa = alqParaHa(areaAlq);
+  const gesso = calcularGessagem({ argila: v("calArgila2040"), metodo: metodoGessagem, tSub: idx2040.ctcPh7, caSub: v("calCa2040"), area: areaHa });
+  const nutrientes = nutrientesGesso(gesso.doseKgHa);
+
+  calAtualizarAreaHint(areaAlq);
+
+  // ---- leitura instantânea (readouts dos laudos) ----
+  $("calReadoutSB").textContent = fmtDec(idx020.sb);
+  $("calReadoutCtc020").textContent = fmtDec(idx020.ctcPh7);
+  $("calReadoutV1").textContent = fmtDec(idx020.v) + "%";
+  $("calReadoutV2040").textContent = fmtDec(idx2040.v) + "%";
+  $("calReadoutM2040").textContent = fmtDec(idx2040.m) + "%";
+
+  const totalCalcarioT = calagem.ncAplicar * areaHa;
+  const totalGessoT = gesso.totalTArea;
+
+  // ---- semáforo agronômico ----
+  const semaforo = [];
+  if(idx020.v >= v2 && v2 > 0){
+    semaforo.push(calSemaforoItem("ok", `Saturação por bases adequada (V ${fmtDec(idx020.v)}% ≥ V₂ ${fmtDec(v2)}%) — calagem dispensada.`));
+  } else if(v2 > 0){
+    semaforo.push(calSemaforoItem("alerta", `Acidez elevada (V ${fmtDec(idx020.v)}% < V₂ ${fmtDec(v2)}%) — calagem necessária.`));
+  }
+  semaforo.push(calSemaforoItem("ok", `🧪 Corretivo indicado: Calcário ${tipoCalcario.tipo} (${tipoCalcario.faixaMgO}), pela relação Ca:Mg e teor de Mg da camada 0-20 cm.`));
+  if(gessagem.necessaria){
+    semaforo.push(calSemaforoItem("atencao", "⚡ Condição de subsolo favorável à gessagem — impedimento químico em profundidade, ver motivos abaixo."));
+  } else {
+    semaforo.push(calSemaforoItem("ok", "⚡ Subsolo (20-40 cm) sem critérios que indiquem gessagem."));
+  }
+  $("calSemaforoBox").innerHTML = semaforo.join("");
+
+  // ---- calagem ----
+  $("calNcBase").textContent = fmtDec(calagem.ncBase);
+  $("calNcAplicar").textContent = fmtDec(calagem.ncAplicar);
+  $("calNcTotal").textContent = fmtDec(totalCalcarioT);
+  $("calTipoCalcario").textContent = "Calcário " + tipoCalcario.tipo;
+  $("calFaixaMgo").textContent = tipoCalcario.faixaMgO;
+
+  const calAlertBox = $("calAlertBox");
+  calAlertBox.innerHTML = "";
+  show(calAlertBox, calagem.alertaParcelamento);
+  if(calagem.alertaParcelamento){
+    const meta = ALERT_META.warn;
+    calAlertBox.innerHTML = `<div class="alert-item alert-warn"><svg class="ti ti-${meta.icon} alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${meta.paths}</svg><span class="alert-text">Dose acima de 2,5 t/ha em aplicação superficial — recomenda-se parcelar entre safras para evitar supercalagem na camada superficial.</span></div>`;
+  }
+
+  // ---- gessagem ----
+  $("calNgDose").textContent = fmtDec(gesso.doseKgHa);
+  $("calNgTotal").textContent = fmtDec(totalGessoT);
+  $("calNgEnxofre").textContent = fmtDec(nutrientes.enxofreKgHa);
+  $("calNgCalcio").textContent = fmtDec(nutrientes.calcioKgHa);
+
+  const gessoBox = $("calGessoNecessariaBox");
+  if(gessagem.necessaria){
+    gessoBox.innerHTML = `<div class="alerts-box">${gessagem.motivos.map(m => {
+      const meta = ALERT_META.warn;
+      return `<div class="alert-item alert-warn"><svg class="ti ti-${meta.icon} alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${meta.paths}</svg><span class="alert-text">${m}</span></div>`;
+    }).join("")}</div>`;
+  } else {
+    const meta = ALERT_META.info;
+    gessoBox.innerHTML = `<div class="alert-item alert-info"><svg class="ti ti-${meta.icon} alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${meta.paths}</svg><span class="alert-text">Nenhum dos 4 critérios do subsolo foi disparado — gessagem dispensada pelos dados informados.</span></div>`;
+  }
+
+  // ---- logística e custos ----
+  calRenderLogistica(totalCalcarioT, totalGessoT);
+  const custosWrap = $("calCustosWrap");
+  custosWrap.innerHTML = "";
+  calRenderCustoCard(custosWrap, "Calcário", totalCalcarioT, $("calPrecoCalcarioVista").value, $("calPrecoCalcarioPrazo").value, areaAlq);
+  calRenderCustoCard(custosWrap, "Gesso", totalGessoT, $("calPrecoGessoVista").value, $("calPrecoGessoPrazo").value, areaAlq);
+
+  // ---- memória de cálculo ----
+  const dadosMemoria = { idx020, idx2040, al2040: v("calAl2040"), v2, prnt, profundidade, areaAplicadaPct, calagem, tipoCalcario, gessagem, metodoGessagem, gesso, nutrientes, areaAlq, areaHa, totalCalcarioT, totalGessoT };
+  calRenderMemoria(dadosMemoria);
+  calUltimoResultado = dadosMemoria;
+}
+
+function calRenderMemoria(d){
+  const wrap = $("calMemoriaStepsWrap");
+  wrap.innerHTML = "";
+  let stepNum = 0;
+  function addStep(label, value, caption){
+    stepNum++;
+    const div = document.createElement("div");
+    div.className = "mem-step";
+    div.innerHTML =
+      `<div class="mem-step-marker"><span class="mem-step-dot">${stepNum}</span></div>` +
+      `<div class="mem-step-body">` +
+        `<div class="mem-step-label">${label}</div>` +
+        `<div class="mem-step-value">${value}</div>` +
+        `<div class="mem-step-caption">${caption}</div>` +
+      `</div>`;
+    wrap.appendChild(div);
+  }
+  function addResult(label, value, caption){
+    const div = document.createElement("div");
+    div.className = "mem-result";
+    div.innerHTML = `<div class="mem-step-label">${label}</div><div class="mem-step-value">${value}</div><div class="mem-step-caption">${caption}</div>`;
+    wrap.appendChild(div);
+  }
+
+  addStep("Índices — camada 0-20 cm", `SB ${fmtDec(d.idx020.sb)} · CTC(T) ${fmtDec(d.idx020.ctcPh7)} · V ${fmtDec(d.idx020.v)}%`, "SB = Ca+Mg+K · T = SB+(H+Al) · V% = (SB÷T)×100");
+  addStep("Necessidade de calagem (NCbase)", `${fmtDec(d.calagem.ncBase)} t/ha`, `(V₂ ${fmtDec(d.v2)}% − V₁ ${fmtDec(d.idx020.v)}%) × T ${fmtDec(d.idx020.ctcPh7)} ÷ PRNT ${fmtDec(d.prnt)}%`);
+  addStep("Ajuste por profundidade e área aplicada", `${fmtDec(d.calagem.ncAplicar)} t/ha`, `NCbase × (${fmtDec(d.profundidade)}÷20) × (${fmtDec(d.areaAplicadaPct)}÷100)`);
+  addResult("Calcário recomendado", `Calcário ${d.tipoCalcario.tipo} — ${fmtDec(d.totalCalcarioT)} t na área`, `NC aplicar × ${fmtDec(d.areaHa)} ha (${d.tipoCalcario.faixaMgO})`);
+
+  addStep("Índices — subsolo 20-40 cm", `Al ${fmtDec(d.al2040)} · m ${fmtDec(d.idx2040.m)}% · V ${fmtDec(d.idx2040.v)}%`, "m% = (Al ÷ CTC efetiva) × 100");
+  addStep("Gatilhos de gessagem", d.gessagem.necessaria ? `${d.gessagem.motivos.length} critério(s) disparado(s)` : "nenhum critério disparado", "Al > 0,3 · m% > 20 · Ca < 1,5 · V% < 35 (qualquer um já indica gesso)");
+  addStep("Dose de gesso", `${fmtDec(d.gesso.doseKgHa)} kg/ha`, d.metodoGessagem === "saturacaoCa" ? "[0,6 × T subsolo − Ca subsolo] × 640" : "50 × argila% do subsolo");
+  addResult("Gesso agrícola recomendado", `${fmtDec(d.totalGessoT)} t na área`, `S: ${fmtDec(d.nutrientes.enxofreKgHa)} kg/ha · Ca: ${fmtDec(d.nutrientes.calcioKgHa)} kg/ha fornecidos`);
+}
+
+// abrir/fechar o painel da memória de cálculo (mesma animação max-height do card de Sementes & Adubação)
+const calMemoriaToggle = $("calMemoriaToggle");
+const calMemoriaPanel = $("calMemoriaPanel");
+calMemoriaToggle.addEventListener("click", () => {
+  const abrindo = calMemoriaToggle.getAttribute("aria-expanded") !== "true";
+  calMemoriaToggle.setAttribute("aria-expanded", abrindo ? "true" : "false");
+  if(abrindo){
+    calMemoriaPanel.classList.add("is-open");
+    calMemoriaPanel.style.maxHeight = calMemoriaPanel.scrollHeight + "px";
+  } else {
+    calMemoriaPanel.style.maxHeight = calMemoriaPanel.scrollHeight + "px";
+    requestAnimationFrame(() => {
+      calMemoriaPanel.classList.remove("is-open");
+      calMemoriaPanel.style.maxHeight = "0px";
+    });
+  }
+});
+
+// ---- Exportar a ficha de Calagem & Gessagem (PDF via impressão do navegador, PNG via canvas) ----
+function coletarResumoCalagem(){
+  const agora = new Date();
+  const d = calUltimoResultado || {};
+  const num = id => { const val = $(id).value.trim(); return val === "" ? "—" : val.replace(".", ","); };
+
+  return {
+    cliente: $("calCliente").value.trim(),
+    cultura: $("calCultura").selectedOptions[0].textContent,
+    manejo: $("calManejo").selectedOptions[0].textContent,
+    area: calFmtAreaRelatorio(d.areaAlq || 0),
+    laudo020: [["Ca²⁺", num("calCa020")], ["Mg²⁺", num("calMg020")], ["K⁺", num("calK020")], ["Al³⁺", num("calAl020")], ["H+Al", num("calHAl020")]],
+    laudo2040: [["Ca²⁺", num("calCa2040")], ["Mg²⁺", num("calMg2040")], ["K⁺", num("calK2040")], ["Al³⁺", num("calAl2040")], ["H+Al", num("calHAl2040")], ["Argila %", num("calArgila2040")]],
+    indices020: d.idx020 ? `SB ${fmtDec(d.idx020.sb)} · CTC efetiva ${fmtDec(d.idx020.ctcEfetiva)} · CTC a pH 7,0 ${fmtDec(d.idx020.ctcPh7)} · V ${fmtDec(d.idx020.v)}% · m ${fmtDec(d.idx020.m)}%` : "—",
+    indices2040: d.idx2040 ? `V ${fmtDec(d.idx2040.v)}% · m ${fmtDec(d.idx2040.m)}%` : "—",
+    v1: d.idx020 ? fmtDec(d.idx020.v) : "0,00",
+    v2: d.v2 !== undefined ? fmtDec(d.v2) : "0,00",
+    prnt: d.prnt !== undefined ? fmtDec(d.prnt) : "0,00",
+    profundidade: d.profundidade !== undefined ? fmtDec(d.profundidade) : "0,00",
+    ncBase: d.calagem ? fmtDec(d.calagem.ncBase) : "0,00",
+    ncAplicar: d.calagem ? fmtDec(d.calagem.ncAplicar) : "0,00",
+    totalCalcario: d.totalCalcarioT !== undefined ? fmtDec(d.totalCalcarioT) : "0,00",
+    tipoCalcario: d.tipoCalcario ? ("Calcário " + d.tipoCalcario.tipo) : "—",
+    faixaMgo: d.tipoCalcario ? d.tipoCalcario.faixaMgO : "",
+    alertaParcelamento: !!(d.calagem && d.calagem.alertaParcelamento),
+    gessagemNecessaria: !!(d.gessagem && d.gessagem.necessaria),
+    gessagemMotivos: d.gessagem ? d.gessagem.motivos : [],
+    metodoGessagem: $("calMetodoGessagem").selectedOptions[0].textContent,
+    ngDoseKgHa: d.gesso ? fmtDec(d.gesso.doseKgHa) : "0,00",
+    totalGesso: d.totalGessoT !== undefined ? fmtDec(d.totalGessoT) : "0,00",
+    enxofre: d.nutrientes ? fmtDec(d.nutrientes.enxofreKgHa) : "0,00",
+    calcio: d.nutrientes ? fmtDec(d.nutrientes.calcioKgHa) : "0,00",
+    data: agora.toLocaleDateString("pt-BR"),
+    ref: gerarCodigoRef(agora),
+    horaGeracao: agora.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"}),
+  };
+}
+
+function nomeArquivoCalagem(r, ext){
+  const limpa = t => (t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "").toLowerCase();
+  return ["calagem-gessagem", limpa(r.cultura), r.data.replace(/\//g, "-")].filter(Boolean).join("_") + "." + ext;
+}
+
+function montarFolhaCalagem(r){
+  const esc = t => String(t == null ? "" : t).replace(/[&<>]/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]));
+  const logo = getLogoSrc();
+  const bloco = (k, v) => `
+    <td style="padding:8px 12px;background:#F7FAF5;border:1px solid #DCE3D6;border-radius:8px;">
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:#4B554F;font-weight:700;">${esc(k)}</div>
+      <div style="font-size:13px;font-weight:700;margin-top:2px;">${esc(v)}</div>
+    </td>`;
+  const laudoLinha = (titulo, campos) => `
+    <div style="margin-top:10px;font-size:11px;">
+      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#4B554F;margin-bottom:4px;">${esc(titulo)}</div>
+      ${campos.map(([k, v]) => `<span style="display:inline-block;background:#F7FAF5;border:1px solid #DCE3D6;border-radius:6px;padding:4px 9px;margin-right:6px;margin-top:4px;">${esc(k)}: <strong>${esc(v)}</strong> cmolc/dm³</span>`).join("")}
+    </div>`;
+
+  return `
+  <div style="font-family:'Segoe UI',Arial,sans-serif;color:#1E2420;font-size:12px;">
+    <div style="display:flex;align-items:center;gap:16px;padding-bottom:12px;border-bottom:1px solid #DCE3D6;">
+      <img src="${logo}" alt="Coasul" style="height:42px;">
+      <div style="width:1px;align-self:stretch;background:#DCE3D6;"></div>
+      <div style="flex:1;">
+        <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#4B554F;font-weight:700;">Coasul Agro · Departamento Técnico</div>
+        <div style="font-size:18px;font-weight:700;color:#1E2420;margin-top:2px;">Laudo Técnico — Calagem &amp; Gessagem</div>
+      </div>
+      <div style="text-align:right;background:#F7FAF5;border:1px solid #DCE3D6;border-radius:8px;padding:8px 12px;font-size:10px;min-width:120px;">
+        <div style="color:#4B554F;">${esc(r.data)}</div>
+        <div style="font-family:monospace;font-weight:700;color:#1E2420;margin-top:2px;">${esc(r.ref)}</div>
+      </div>
+    </div>
+
+    <table style="width:100%;margin-top:12px;border-collapse:separate;border-spacing:10px 0;">
+      <tr>${bloco("Cliente", r.cliente || "—")}${bloco("Cultura/grupo", r.cultura)}${bloco("Manejo", r.manejo)}${bloco("Área a corrigir", r.area)}</tr>
+    </table>
+
+    ${laudoLinha("Laudo de solo — camada 0-20 cm", r.laudo020.filter(([k]) => k !== "Argila %"))}
+    <div style="margin-top:4px;font-size:10px;color:#4B554F;">${esc(r.indices020)}</div>
+    ${laudoLinha("Laudo de solo — subsolo 20-40 cm", r.laudo2040)}
+    <div style="margin-top:4px;font-size:10px;color:#4B554F;">${esc(r.indices2040)}</div>
+
+    <div style="margin-top:14px;background:#FFFFFF;border:1px solid #DCE3D6;border-radius:10px;padding:14px 16px;">
+      <div style="font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#4B554F;">Necessidade de calagem</div>
+      <div style="font-family:monospace;font-size:26px;font-weight:700;margin-top:2px;">${esc(r.ncAplicar)} <span style="font-size:13px;font-weight:400;color:#4B554F;">t/ha</span> <span style="font-size:14px;font-weight:400;color:#4B554F;">→ ${esc(r.totalCalcario)} t na área</span></div>
+      <div style="margin-top:6px;font-size:10.5px;color:#4B554F;">V₁ ${esc(r.v1)}% → V₂ ${esc(r.v2)}% · PRNT ${esc(r.prnt)}% · profundidade ${esc(r.profundidade)} cm · NC base ${esc(r.ncBase)} t/ha</div>
+      <div style="margin-top:6px;font-size:12px;font-weight:700;">${esc(r.tipoCalcario)} <span style="font-weight:400;color:#4B554F;">(${esc(r.faixaMgo)})</span></div>
+      ${r.alertaParcelamento ? `<div style="margin-top:6px;font-weight:700;color:#8A5A00;">⚠ Dose acima de 2,5 t/ha em aplicação superficial — recomenda-se parcelar entre safras.</div>` : ""}
+    </div>
+
+    <div style="margin-top:12px;background:#FFFFFF;border:1px solid #DCE3D6;border-radius:10px;padding:14px 16px;">
+      <div style="font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#4B554F;">Necessidade de gessagem</div>
+      <div style="font-family:monospace;font-size:26px;font-weight:700;margin-top:2px;">${esc(r.ngDoseKgHa)} <span style="font-size:13px;font-weight:400;color:#4B554F;">kg/ha</span> <span style="font-size:14px;font-weight:400;color:#4B554F;">→ ${esc(r.totalGesso)} t na área</span></div>
+      <div style="margin-top:6px;font-size:10.5px;color:#4B554F;">Método: ${esc(r.metodoGessagem)} · Enxofre: ${esc(r.enxofre)} kg/ha · Cálcio: ${esc(r.calcio)} kg/ha</div>
+      <div style="margin-top:6px;font-size:11px;">
+        ${r.gessagemNecessaria
+          ? `<strong style="color:#9C2B22;">Gessagem recomendada</strong> — ${r.gessagemMotivos.map(esc).join(" · ")}`
+          : `<strong style="color:#1B4E82;">Gessagem dispensada</strong> pelos critérios do subsolo (20-40 cm).`}
+      </div>
+    </div>
+
+    <div style="margin-top:16px;border-top:1px solid #DCE3D6;padding-top:8px;font-size:9.5px;color:#4B554F;">
+      <div>Calculadora Coasul — versão ${APP_VERSION}</div>
+      <div>Estimativa técnica baseada no Manual de Adubação e Calagem para o Estado do Paraná (SBCS-NEPAR / IDR-Paraná / Embrapa) — sujeita a conferência e ajuste pelo engenheiro agrônomo responsável.</div>
+      <div>Gerado em ${esc(new Date().toLocaleString("pt-BR", {day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit"}))}</div>
+    </div>
+  </div>`;
+}
+
+function layoutFichaCalagem(ctx, draw, r, logo){
+  const W = 1000, P = 40, dir = W - P;
+  let y = P;
+
+  const logoH = 44, logoW = logo && logo.naturalWidth ? logoH * logo.naturalWidth / logo.naturalHeight : 60;
+  if(draw && logo) ctx.drawImage(logo, P, y, logoW, logoH);
+  const xt = P + logoW + 16;
+  texto(ctx, draw, "COASUL AGRO · LAUDO TÉCNICO", xt, y + 14, {font:"bold 10px " + FONTE, cor:"#4B554F", espaco:"1.6px"});
+  texto(ctx, draw, "Calagem & Gessagem", xt, y + 36, {font:"600 21px " + FONTE, maxW:dir - xt - 110});
+  texto(ctx, draw, r.data, dir, y + 14, {font:"11px " + FONTE, cor:"#4B554F", align:"right"});
+  y += logoH + 12;
+  risco(ctx, draw, P, y, dir, "#8C6D46");
+  if(draw){ ctx.fillStyle = "#8C6D46"; ctx.fillRect(P, y, dir - P, 2.5); }
+  y += 20;
+
+  const info = [["Cliente", r.cliente || "—"], ["Cultura/grupo", r.cultura], ["Manejo", r.manejo], ["Área a corrigir", r.area]];
+  const gap = 10, bw = (dir - P - gap * 3) / 4, bh = 48;
+  info.forEach(([k, v], i) => {
+    const x = P + i * (bw + gap);
+    caixa(ctx, draw, x, y, bw, bh, 8, "#F7FAF5", "#DCE3D6");
+    texto(ctx, draw, k.toUpperCase(), x + 10, y + 17, {font:"bold 9px " + FONTE, cor:"#4B554F", espaco:"0.6px", maxW:bw - 20});
+    texto(ctx, draw, v, x + 10, y + 36, {font:"bold 13px " + FONTE, maxW:bw - 20});
+  });
+  y += bh + 16;
+
+  function boxResultado(titulo, valorGrande, unidade, complemento, sublinhas, accent){
+    ctx.font = "10.5px " + FONTE;
+    const linhasComplemento = complemento ? quebraTexto(ctx, complemento, dir - P - 28) : [];
+    const alturaExtra = (sublinhas.length + linhasComplemento.length) * 15;
+    const altura = 66 + alturaExtra;
+    caixa(ctx, draw, P, y, dir - P, altura, 10, "#FFFFFF", "#DCE3D6");
+    texto(ctx, draw, titulo.toUpperCase(), P + 14, y + 20, {font:"bold 10px " + FONTE, cor:"#4B554F", espaco:"1.2px"});
+    texto(ctx, draw, valorGrande, P + 14, y + 50, {font:"bold 26px " + MONO});
+    if(draw){
+      ctx.font = "bold 26px " + MONO;
+      const w = ctx.measureText(valorGrande).width;
+      texto(ctx, draw, unidade, P + 22 + w, y + 50, {font:"13px " + FONTE, cor:"#4B554F"});
+    }
+    let ly = y + 50 + 18;
+    linhasComplemento.forEach(l => { texto(ctx, draw, l, P + 14, ly, {font:"10.5px " + FONTE, cor:"#4B554F"}); ly += 15; });
+    sublinhas.forEach(l => { texto(ctx, draw, l, P + 14, ly, {font:"600 11px " + FONTE, cor: accent || "#1E2420"}); ly += 15; });
+    y += altura + 14;
+  }
+
+  boxResultado(
+    "Necessidade de calagem",
+    r.ncAplicar, "t/ha",
+    `V₁ ${r.v1}% → V₂ ${r.v2}%  ·  PRNT ${r.prnt}%  ·  profundidade ${r.profundidade} cm  ·  NC base ${r.ncBase} t/ha  ·  total na área: ${r.totalCalcario} t`,
+    [r.tipoCalcario + " (" + r.faixaMgo + ")"].concat(r.alertaParcelamento ? ["⚠ Dose acima de 2,5 t/ha — recomenda-se parcelar entre safras."] : []),
+    "#8C6D46"
+  );
+
+  boxResultado(
+    "Necessidade de gessagem",
+    r.ngDoseKgHa, "kg/ha",
+    `Método: ${r.metodoGessagem}  ·  S: ${r.enxofre} kg/ha  ·  Ca: ${r.calcio} kg/ha  ·  total na área: ${r.totalGesso} t`,
+    [r.gessagemNecessaria ? ("Gessagem recomendada — " + r.gessagemMotivos.join(" · ")) : "Gessagem dispensada pelos critérios do subsolo (20-40 cm)."],
+    r.gessagemNecessaria ? "#9C2B22" : "#1B4E82"
+  );
+
+  risco(ctx, draw, P, y, dir);
+  y += 10;
+  texto(ctx, draw, "Calculadora Coasul — versão " + APP_VERSION, P, y + 10, {font:"9.5px " + FONTE, cor:"#4B554F"});
+  y += 14;
+  ctx.font = "9.5px " + FONTE;
+  quebraTexto(ctx, "Estimativa técnica baseada no Manual de Adubação e Calagem para o Estado do Paraná (SBCS-NEPAR / IDR-Paraná / Embrapa) — sujeita a conferência e ajuste pelo engenheiro agrônomo responsável.", dir - P).forEach(l => {
+    texto(ctx, draw, l, P, y + 10, {font:"9.5px " + FONTE, cor:"#4B554F"});
+    y += 13;
+  });
+
+  return { largura: W, altura: y + P };
+}
+
+function desenharFichaCalagem(r){
+  const logo = document.querySelector("header img");
+  const medidor = document.createElement("canvas").getContext("2d");
+  const dim = layoutFichaCalagem(medidor, false, r, logo);
+
+  const escala = 2;
+  const cv = document.createElement("canvas");
+  cv.width = dim.largura * escala;
+  cv.height = dim.altura * escala;
+  const ctx = cv.getContext("2d");
+  ctx.scale(escala, escala);
+  ctx.fillStyle = "#FFFFFF";
+  ctx.fillRect(0, 0, dim.largura, dim.altura);
+  ctx.textBaseline = "alphabetic";
+  layoutFichaCalagem(ctx, true, r, logo);
+  return cv;
+}
+
+calcCalagem();
 
 selectCrop("soja");
 

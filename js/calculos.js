@@ -13,6 +13,25 @@ const Calculos = (function () {
 
   const ALQ_HA = 2.42; // 1 alqueire (padrão paulista) = 2,42 hectares
 
+  // Conversões de área entre alqueire e hectare — só matemática pura, sem qualquer
+  // suposição sobre qual unidade está selecionada na interface.
+  function alqParaHa(alqueires) {
+    return alqueires * ALQ_HA;
+  }
+  function haParaAlq(hectares) {
+    return hectares / ALQ_HA;
+  }
+
+  // Todas as fórmulas de cálculo abaixo (sementes, sacas, dose) esperam a área já
+  // na unidade canônica interna (alqueires) — esta função normaliza o valor
+  // digitado pelo usuário, seja qual for a unidade escolhida no seletor da
+  // interface, evitando qualquer divergência de arredondamento entre os dois
+  // jeitos de informar a mesma área.
+  function normalizarAreaParaAlqueires(valor, unidade) {
+    const v = Number(valor) || 0;
+    return unidade === "ha" ? haParaAlq(v) : v;
+  }
+
   // fórmula: (24.200 × área ÷ espaçamento) × plantas/m ÷ ((100 − transpasse) ÷ 100)
   function calcularSementes({ area, plantas, espacamento, transpasse }) {
     if (!(espacamento > 0) || !(transpasse < 100)) return 0;
@@ -73,9 +92,103 @@ const Calculos = (function () {
     return precoVistaStr.trim() !== "" && precoPrazoStr.trim() === "";
   }
 
+  // ---------- Calagem & Gessagem (Manual de Adubação e Calagem para o Estado do
+  // Paraná — SBCS-NEPAR / IDR-Paraná / Embrapa) ----------
+
+  // K trocável do laudo às vezes vem em mg/dm³ em vez de cmolc/dm³ — esta é a
+  // conversão oficial usada nos boletins de análise de solo do Paraná.
+  function converterKMgParaCmolc(mgDm3) {
+    return (Number(mgDm3) || 0) / 391;
+  }
+
+  // Índices de fertilidade da camada de solo (SB, CTC efetiva e a pH 7,0, V%, m%,
+  // relações catiônicas e % de ocupação de cada cátion na CTC a pH 7,0). Os
+  // cátions (Ca²⁺, Mg²⁺, Al³⁺, H+Al) entram sempre em cmolc/dm³; o K⁺ pode vir
+  // nessa mesma unidade ou em mg/dm³ (kUnidade: "cmolc" [padrão] ou "mgdm3").
+  function calcularIndicesSolo({ ca = 0, mg = 0, k = 0, al = 0, hAl = 0, kUnidade = "cmolc" } = {}) {
+    const caN = Number(ca) || 0, mgN = Number(mg) || 0, alN = Number(al) || 0, hAlN = Number(hAl) || 0;
+    const kCmolc = kUnidade === "mgdm3" ? converterKMgParaCmolc(k) : (Number(k) || 0);
+
+    const sb = caN + mgN + kCmolc;
+    const ctcEfetiva = sb + alN;
+    const ctcPh7 = sb + hAlN;
+    const v = ctcPh7 > 0 ? (sb / ctcPh7) * 100 : 0;
+    const m = ctcEfetiva > 0 ? (alN / ctcEfetiva) * 100 : 0;
+    const caMg = mgN > 0 ? caN / mgN : 0;
+    const caK = kCmolc > 0 ? caN / kCmolc : 0;
+    const mgK = kCmolc > 0 ? mgN / kCmolc : 0;
+    const pctCa = ctcPh7 > 0 ? (caN / ctcPh7) * 100 : 0;
+    const pctMg = ctcPh7 > 0 ? (mgN / ctcPh7) * 100 : 0;
+    const pctK = ctcPh7 > 0 ? (kCmolc / ctcPh7) * 100 : 0;
+
+    return { sb, ctcEfetiva, ctcPh7, v, m, caMg, caK, mgK, pctCa, pctMg, pctK, kCmolc };
+  }
+
+  // Necessidade de calagem pelo método da elevação da saturação por bases (camada
+  // 0-20 cm): NCbase (t/ha) = (V2 − V1) × T ÷ PRNT, ajustada pela profundidade de
+  // incorporação (referência 20 cm — plantio direto sem incorporação usa 10 cm,
+  // fator 0,5) e pelo percentual da área efetivamente aplicada. V1 ≥ V2 significa
+  // que a saturação por bases já está no alvo ou acima dele: não há necessidade
+  // de calagem. `alertaParcelamento` sinaliza dose acima de 2,5 t/ha numa única
+  // aplicação superficial, que o manual recomenda parcelar entre safras.
+  function calcularCalagem({ v1 = 0, v2 = 0, t = 0, prnt = 0, profundidade = 20, areaAplicadaPct = 100 } = {}) {
+    if (!(t > 0) || !(prnt > 0) || v1 >= v2) {
+      return { ncBase: 0, ncAplicar: 0, alertaParcelamento: false };
+    }
+    const ncBase = ((v2 - v1) * t) / prnt;
+    const fatorProfundidade = profundidade / 20;
+    const fatorArea = areaAplicadaPct / 100;
+    const ncAplicar = ncBase * fatorProfundidade * fatorArea;
+    return { ncBase, ncAplicar, alertaParcelamento: ncAplicar > 2.5 };
+  }
+
+  // Tipo de calcário recomendado a partir do teor de Mg²⁺ e da relação Ca/Mg da
+  // camada 0-20 cm. As duas primeiras regras (dolomítico e calcítico) cobrem os
+  // extremos definidos no manual; qualquer combinação que não caia em nenhuma das
+  // duas (o miolo: Mg entre 0,8 e 1,5 cmolc/dm³ e Ca/Mg entre 2,0 e 4,0) é
+  // magnesiano, a faixa intermediária.
+  function determinarTipoCalcario({ mg = 0, caMg = 0 } = {}) {
+    if (mg < 0.8 || caMg > 4.0) return { tipo: "Dolomítico", faixaMgO: "MgO > 12%" };
+    if (mg > 1.5 || caMg < 2.0) return { tipo: "Calcítico", faixaMgO: "MgO < 5%" };
+    return { tipo: "Magnesiano", faixaMgO: "MgO entre 5% e 12%" };
+  }
+
+  // Gatilhos oficiais (Paraná) para indicar gessagem, a partir do laudo do
+  // subsolo (20-40 cm): basta UM dos quatro critérios para recomendar gesso.
+  function verificarNecessidadeGessagem({ al = 0, m = 0, ca = 0, v = 0 } = {}) {
+    const motivos = [];
+    if (al > 0.3) motivos.push("Alumínio trocável (Al³⁺) acima de 0,3 cmolc/dm³ no subsolo (20-40 cm).");
+    if (m > 20) motivos.push("Saturação por alumínio (m%) acima de 20% no subsolo (20-40 cm).");
+    if (ca < 1.5) motivos.push("Cálcio (Ca²⁺) abaixo de 1,5 cmolc/dm³ no subsolo (20-40 cm).");
+    if (v < 35) motivos.push("Saturação por bases (V%) abaixo de 35% no subsolo (20-40 cm).");
+    return { necessaria: motivos.length > 0, motivos };
+  }
+
+  // Dose de gesso agrícola pelo método do teor de argila do subsolo (padrão
+  // sugerido: NG = 50 × argila%) ou pela elevação da saturação por cálcio no
+  // subsolo (NG = [0,6 × Tsubsolo − Ca²⁺subsolo] × 640); nunca negativa — quando a
+  // fórmula por saturação de cálcio já dá conta suprida, a dose é zero, não
+  // corretiva ao contrário. `area` aqui é sempre em hectares.
+  function calcularGessagem({ argila = 0, metodo = "argila", tSub = 0, caSub = 0, area = 0 } = {}) {
+    const doseKgHa = metodo === "saturacaoCa"
+      ? Math.max(0, (0.6 * tSub - caSub) * 640)
+      : Math.max(0, 50 * argila);
+    const doseTHa = doseKgHa / 1000;
+    return { doseKgHa, doseTHa, totalTArea: doseTHa * area };
+  }
+
+  // Enxofre (~15%) e Cálcio (~18%) aportados pela dose de gesso agrícola aplicada.
+  function nutrientesGesso(doseKgHa) {
+    const d = Number(doseKgHa) || 0;
+    return { enxofreKgHa: d * 0.15, calcioKgHa: d * 0.18 };
+  }
+
   return {
     FORMULACOES_750KG,
     ALQ_HA,
+    alqParaHa,
+    haParaAlq,
+    normalizarAreaParaAlqueires,
     calcularSementes,
     calcularSacas,
     calcularDose,
@@ -85,6 +198,13 @@ const Calculos = (function () {
     calcularCusto,
     formatarPrecoResumo,
     precisaAlertarPrazoAusente,
+    converterKMgParaCmolc,
+    calcularIndicesSolo,
+    calcularCalagem,
+    determinarTipoCalcario,
+    verificarNecessidadeGessagem,
+    calcularGessagem,
+    nutrientesGesso,
   };
 
 })();

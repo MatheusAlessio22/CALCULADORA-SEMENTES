@@ -48,9 +48,10 @@
   </header>
 
   <!-- Alternância de ferramenta -->
-  <div class="tool-switcher no-print mb-4 grid grid-cols-2 gap-1 rounded-[10px] bg-[#EAEFE7] p-1 border border-[#D6DFD1]" role="tablist" aria-label="Ferramenta">
+  <div class="tool-switcher no-print mb-4 grid grid-cols-3 gap-1 rounded-[10px] bg-[#EAEFE7] p-1 border border-[#D6DFD1]" role="tablist" aria-label="Ferramenta">
     <button type="button" id="viewBtnCalc" class="view-btn is-active rounded-[7px] px-3 py-2 text-center text-[12.5px] font-semibold text-ink transition-all" role="tab" aria-selected="true"><svg class="ti ti-calculator icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2l0 -14" /><path d="M8 8a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1v1a1 1 0 0 1 -1 1h-6a1 1 0 0 1 -1 -1l0 -1" /><path d="M8 14l0 .01" /><path d="M12 14l0 .01" /><path d="M16 14l0 .01" /><path d="M8 17l0 .01" /><path d="M12 17l0 .01" /><path d="M16 17l0 .01" /></svg> Sementes &amp; Adubação</button>
     <button type="button" id="viewBtnReg" class="view-btn rounded-[7px] px-3 py-2 text-center text-[12.5px] font-semibold text-ink transition-all" role="tab" aria-selected="false"><svg class="ti ti-ruler icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h14a1 1 0 0 1 1 1v5a1 1 0 0 1 -1 1h-7a1 1 0 0 0 -1 1v7a1 1 0 0 1 -1 1h-5a1 1 0 0 1 -1 -1v-14a1 1 0 0 1 1 -1" /><path d="M4 8l2 0" /><path d="M4 12l3 0" /><path d="M4 16l2 0" /><path d="M8 4l0 2" /><path d="M12 4l0 3" /><path d="M16 4l0 2" /></svg> Regulagem de Plantadeira</button>
+    <button type="button" id="viewBtnCalagem" class="view-btn rounded-[7px] px-3 py-2 text-center text-[12.5px] font-semibold text-ink transition-all" role="tab" aria-selected="false"><svg class="ti ti-flask-2 icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12" /><path d="M8 3v6.5l-4.5 9a1.8 1.8 0 0 0 1.5 2.5h13a1.8 1.8 0 0 0 1.5 -2.5l-4.5 -9v-6.5" /><path d="M8.5 14.5h7" /></svg> Calagem &amp; Gessagem</button>
   </div>
 
   <div id="viewCalculadora">
@@ -100,7 +101,13 @@
             <p id="cultivarPmsHint" class="mt-1.5 hidden text-[11px] text-muted"></p>
           </div>
           <div>
-            <label class="lbl" for="area">Área (alqueires)</label>
+            <div class="area-label-row">
+              <label class="lbl" for="area">Área</label>
+              <div id="areaUnitToggle" class="unit-toggle" role="group" aria-label="Unidade de área">
+                <button type="button" class="unit-toggle-btn is-active" data-unit="alq" aria-pressed="true" title="Alqueire paulista (1 alq = 2,42 ha)">Alqueire</button>
+                <button type="button" class="unit-toggle-btn" data-unit="ha" aria-pressed="false" title="Hectare">Hectare</button>
+              </div>
+            </div>
             <input type="number" id="area" class="inp inp-num" step="0.1" min="0" inputmode="decimal" placeholder="0">
             <p class="field-note" title="Equivalência automática: 1 alqueire = 2,42 ha">
               <span class="note-ico" aria-hidden="true"><svg class="ti ti-ruler-2 icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3l4 4l-14 14l-4 -4l14 -14" /><path d="M16 7l-1.5 -1.5" /><path d="M13 10l-1.5 -1.5" /><path d="M10 13l-1.5 -1.5" /><path d="M7 16l-1.5 -1.5" /></svg></span><span id="areaHaHint">0 ha</span>
@@ -551,6 +558,269 @@
         </div>
         </div>
 
+      </div>
+    </main>
+  </div>
+
+  <div id="viewCalagem" class="hidden">
+    <main class="print-plain overflow-hidden rounded-lg bg-white shadow-sm lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
+      <div class="p-5 sm:p-7 lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:p-0">
+      <div class="lg:flex lg:h-full lg:min-h-0">
+
+      <!-- Coluna 1 (desktop): laudo de solo, área e manejo -->
+      <div class="lg:min-h-0 lg:w-[44%] lg:overflow-y-auto lg:border-r lg:border-line lg:p-6">
+
+      <section class="crm-card">
+        <div class="crm-card-header">
+          <h2 class="crm-card-title">Identificação e Área do Cooperado</h2>
+        </div>
+        <div class="fld-grid">
+          <div class="fld-wide">
+            <label class="lbl" for="calCliente">Cliente</label>
+            <input type="text" id="calCliente" class="inp" placeholder="Nome do cliente" autocomplete="off">
+          </div>
+          <div>
+            <label class="lbl" for="calCultura">Cultura-alvo / V₂ desejado</label>
+            <select id="calCultura" class="inp">
+              <option value="coasul" data-v2="80" selected>Padrão Sudoeste do Paraná — solo argiloso da região (V₂ 80%)</option>
+              <option value="graos" data-v2="65">Soja/Milho/Trigo/Cevada/Girassol (V₂ 65%)</option>
+              <option value="feijao" data-v2="70">Feijão (V₂ 70%)</option>
+              <option value="pastagem" data-v2="50">Pastagem — Brachiaria (V₂ 50%)</option>
+              <option value="hortigranjeiro" data-v2="75">Hortigranjeiros/Alho/Cebola (V₂ 75%)</option>
+              <option value="manual" data-v2="">Personalizado (V₂ manual)</option>
+            </select>
+          </div>
+          <div>
+            <label class="lbl" for="calV2">Saturação por bases desejada — V₂ (%)</label>
+            <input type="number" id="calV2" class="inp inp-num" step="1" min="0" max="100" inputmode="decimal" placeholder="80" value="80">
+          </div>
+          <div class="fld-wide">
+            <div class="area-label-row">
+              <label class="lbl" for="calArea">Área a corrigir</label>
+              <div id="calAreaUnitToggle" class="unit-toggle" role="group" aria-label="Unidade de área">
+                <button type="button" class="unit-toggle-btn is-active" data-unit="alq" aria-pressed="true" title="Alqueire paulista (1 alq = 2,42 ha)">Alqueire</button>
+                <button type="button" class="unit-toggle-btn" data-unit="ha" aria-pressed="false" title="Hectare">Hectare</button>
+              </div>
+            </div>
+            <input type="number" id="calArea" class="inp inp-num" step="0.1" min="0" inputmode="decimal" placeholder="0">
+            <p class="field-note" title="Equivalência automática: 1 alqueire = 2,42 ha">
+              <span class="note-ico" aria-hidden="true"><svg class="ti ti-ruler-2 icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3l4 4l-14 14l-4 -4l14 -14" /><path d="M16 7l-1.5 -1.5" /><path d="M13 10l-1.5 -1.5" /><path d="M10 13l-1.5 -1.5" /><path d="M7 16l-1.5 -1.5" /></svg></span><span id="calAreaHaHint">0 ha</span>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="crm-card mt-4">
+        <div class="crm-card-header">
+          <h2 class="crm-card-title">Laudo de Solo — Camada 0-20 cm (Calagem)</h2>
+        </div>
+        <div class="fld-grid fld-grid-3">
+          <div>
+            <label class="lbl" for="calCa020">Ca²⁺ (cmolc/dm³)</label>
+            <input type="number" id="calCa020" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+          </div>
+          <div>
+            <label class="lbl" for="calMg020">Mg²⁺ (cmolc/dm³)</label>
+            <input type="number" id="calMg020" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+          </div>
+          <div>
+            <label class="lbl" for="calK020">K⁺</label>
+            <input type="number" id="calK020" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+          </div>
+          <div class="fld-wide">
+            <label class="lbl" for="calKUnidade020">Unidade do K⁺</label>
+            <select id="calKUnidade020" class="inp">
+              <option value="cmolc">cmolc/dm³</option>
+              <option value="mgdm3">mg/dm³ (converte ÷ 391)</option>
+            </select>
+          </div>
+          <div>
+            <label class="lbl" for="calAl020">Al³⁺ (cmolc/dm³)</label>
+            <input type="number" id="calAl020" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+          </div>
+          <div>
+            <label class="lbl" for="calHAl020">H+Al (cmolc/dm³)</label>
+            <input type="number" id="calHAl020" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+          </div>
+          <div>
+            <label class="lbl" for="calPrnt">PRNT do calcário (%)</label>
+            <input type="number" id="calPrnt" class="inp inp-num" step="1" min="1" max="100" inputmode="decimal" placeholder="80" value="80">
+          </div>
+          <div>
+            <label class="lbl" for="calManejo">Sistema de manejo</label>
+            <select id="calManejo" class="inp">
+              <option value="pd" data-prof="10">Plantio direto (0-10 cm, f=0,5)</option>
+              <option value="conv" data-prof="20">Convencional (0-20 cm, f=1,0)</option>
+              <option value="manual" data-prof="">Personalizado (profundidade manual)</option>
+            </select>
+          </div>
+          <div>
+            <label class="lbl" for="calProfundidade">Profundidade (cm)</label>
+            <input type="number" id="calProfundidade" class="inp inp-num" step="1" min="0" inputmode="decimal" placeholder="10" value="10">
+          </div>
+          <div class="fld-wide">
+            <label class="lbl" for="calAreaAplicadaPct">Área efetivamente aplicada (%)</label>
+            <input type="number" id="calAreaAplicadaPct" class="inp inp-num" step="1" min="1" max="100" inputmode="decimal" placeholder="100" value="100">
+          </div>
+        </div>
+        <div class="readout mt-3">
+          <span class="text-[11px] font-semibold uppercase tracking-wide text-muted"><svg class="ti ti-flask icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3l6 0" /><path d="M10 9l4 0" /><path d="M10 3v6l-4 11a.7 .7 0 0 0 .5 1h11a.7 .7 0 0 0 .5 -1l-4 -11v-6" /></svg> Leitura instantânea</span>
+          <span class="font-mono text-[13px] font-bold text-ink">SB <span id="calReadoutSB">0,00</span> · CTC(T) <span id="calReadoutCtc020">0,00</span> · V₁ <span id="calReadoutV1">0,00%</span></span>
+        </div>
+        <p class="mt-2 text-[11px] leading-snug text-muted">H+Al pode vir direto do laudo ou ser estimado pelo Índice SMP conforme a tabela do laboratório — informe aqui o valor já em cmolc/dm³.</p>
+      </section>
+
+      <section class="crm-card mt-4">
+        <div class="crm-card-header">
+          <h2 class="crm-card-title">Laudo de Subsolo — Camada 20-40 cm (Gessagem)</h2>
+        </div>
+        <div class="fld-grid fld-grid-3">
+          <div>
+            <label class="lbl" for="calArgila2040">Argila (%)</label>
+            <input type="number" id="calArgila2040" class="inp inp-num" step="1" min="0" max="100" inputmode="decimal" placeholder="0">
+          </div>
+          <div>
+            <label class="lbl" for="calAl2040">Al³⁺ (cmolc/dm³)</label>
+            <input type="number" id="calAl2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+          </div>
+          <div>
+            <label class="lbl" for="calCa2040">Ca²⁺ (cmolc/dm³)</label>
+            <input type="number" id="calCa2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+          </div>
+          <div>
+            <label class="lbl" for="calMg2040">Mg²⁺ (cmolc/dm³)</label>
+            <input type="number" id="calMg2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+          </div>
+          <div>
+            <label class="lbl" for="calK2040">K⁺ (cmolc/dm³)</label>
+            <input type="number" id="calK2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+          </div>
+          <div>
+            <label class="lbl" for="calHAl2040">H+Al (cmolc/dm³)</label>
+            <input type="number" id="calHAl2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+          </div>
+        </div>
+        <div class="mt-3">
+          <label class="lbl" for="calMetodoGessagem">Método de cálculo da dose de gesso (NG)</label>
+          <select id="calMetodoGessagem" class="inp">
+            <option value="argila">Teor de argila do subsolo (padrão PR/Embrapa Soja)</option>
+            <option value="saturacaoCa">Elevação da saturação por Ca no subsolo (CTC/Ca)</option>
+          </select>
+        </div>
+        <div class="readout mt-3">
+          <span class="text-[11px] font-semibold uppercase tracking-wide text-muted"><svg class="ti ti-triangle-square-circle icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M15 3l6 9l-6 9h-6" /></svg> Leitura instantânea (subsolo)</span>
+          <span class="font-mono text-[13px] font-bold text-ink">V% <span id="calReadoutV2040">0,00%</span> · m% <span id="calReadoutM2040">0,00%</span></span>
+        </div>
+      </section>
+
+      </div>
+
+      <!-- Coluna 2 (desktop): diagnóstico executivo, KPIs e custos -->
+      <div class="mt-6 lg:mt-0 lg:min-h-0 lg:w-[56%] lg:overflow-y-auto lg:p-6">
+
+      <section id="calSemaforoBox" class="grid gap-2.5"></section>
+
+      <section class="crm-card mt-4">
+        <div class="crm-card-header">
+          <h2 class="crm-card-title"><span aria-hidden="true"><svg class="ti ti-droplet icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.502 19.423c-3.32 -3.319 -3.32 -8.704 0 -12.023l4.498 -4.5l4.498 4.5c3.32 3.319 3.32 8.704 0 12.023a6.364 6.364 0 0 1 -8.996 0z" /></svg></span>Dosagem de Calcário</h2>
+        </div>
+        <p class="result-total mt-1 font-mono leading-none tabular-nums text-ink" aria-live="polite">
+          <span id="calNcAplicar">0,00</span>
+          <span class="text-[14px] font-normal text-muted">t/ha</span>
+        </p>
+        <p class="mt-1.5 text-[11px] text-muted">dose base (NC) <span id="calNcBase" class="font-mono font-semibold text-ink">0,00</span> t/ha, ajustada por profundidade e área aplicada</p>
+        <div class="readout mt-3">
+          <span class="text-[11px] font-semibold uppercase tracking-wide text-muted">Total na área informada</span>
+          <span class="font-mono text-[16px] font-bold text-ink"><span id="calNcTotal">0,00</span> toneladas</span>
+        </div>
+        <div class="mt-3 rounded-lg border border-line bg-white px-3 py-2.5">
+          <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">🧪 Corretivo recomendado</div>
+          <div class="mt-1 text-[14px] font-bold text-ink"><span id="calTipoCalcario">—</span></div>
+          <div class="mt-0.5 text-[10.5px] text-muted" id="calFaixaMgo"></div>
+        </div>
+        <div id="calAlertBox" class="alerts-box hidden mt-3"></div>
+      </section>
+
+      <section class="crm-card mt-4">
+        <div class="crm-card-header">
+          <h2 class="crm-card-title"><span aria-hidden="true"><svg class="ti ti-triangle-square-circle icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M15 3l6 9l-6 9h-6" /></svg></span>Dosagem de Gesso Agrícola</h2>
+        </div>
+        <p class="result-total mt-1 font-mono leading-none tabular-nums text-ink" aria-live="polite">
+          <span id="calNgDose">0,00</span>
+          <span class="text-[14px] font-normal text-muted">kg/ha</span>
+        </p>
+        <div id="calGessoNecessariaBox" class="mt-2"></div>
+        <div class="readout mt-3">
+          <span class="text-[11px] font-semibold uppercase tracking-wide text-muted">Total na área informada</span>
+          <span class="font-mono text-[16px] font-bold text-ink"><span id="calNgTotal">0,00</span> t</span>
+        </div>
+        <div class="mt-3 rounded-lg border border-line bg-white px-3 py-2.5">
+          <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">Aporte de nutrientes</div>
+          <div class="mt-1 text-[12.5px] text-ink">Enxofre (S-SO₄²⁻): <strong class="font-mono tabular-nums" id="calNgEnxofre">0,00</strong> kg/ha &nbsp;·&nbsp; Cálcio (Ca²⁺): <strong class="font-mono tabular-nums" id="calNgCalcio">0,00</strong> kg/ha</div>
+        </div>
+      </section>
+
+      <section class="mt-4 rounded-lg border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3.5">
+        <h3 class="mb-3 flex items-center gap-2 text-[13px] font-extrabold">
+          <span aria-hidden="true"><svg class="ti ti-truck icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M5 17h-2v-11a1 1 0 0 1 1 -1h9v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5" /></svg></span>Logística de cargas e embalagens
+        </h3>
+        <div id="calLogisticaWrap" class="grid grid-cols-2 gap-2.5 lg:grid-cols-4"></div>
+      </section>
+
+      <section class="mt-4 rounded-lg border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3.5">
+        <h3 class="mb-3 flex items-center gap-2 text-[13px] font-extrabold">
+          <span aria-hidden="true"><svg class="ti ti-coin icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M14.8 9a2 2 0 0 0 -1.8 -1h-2a2 2 0 1 0 0 4h2a2 2 0 1 1 0 4h-2a2 2 0 0 1 -1.8 -1" /><path d="M12 7v10" /></svg></span>Investimento e custos do produtor
+        </h3>
+        <div class="fld-grid fld-grid-3">
+          <div>
+            <label class="lbl" for="calPrecoCalcarioVista">Calcário — à vista (R$/t)</label>
+            <div class="relative">
+              <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[13px] font-semibold text-muted">R$</span>
+              <input type="number" id="calPrecoCalcarioVista" class="inp inp-num inp-money" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
+            </div>
+          </div>
+          <div>
+            <label class="lbl" for="calPrecoCalcarioPrazo">Calcário — a prazo (R$/t)</label>
+            <div class="relative">
+              <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[13px] font-semibold text-muted">R$</span>
+              <input type="number" id="calPrecoCalcarioPrazo" class="inp inp-num inp-money" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
+            </div>
+          </div>
+          <div></div>
+          <div>
+            <label class="lbl" for="calPrecoGessoVista">Gesso — à vista (R$/t)</label>
+            <div class="relative">
+              <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[13px] font-semibold text-muted">R$</span>
+              <input type="number" id="calPrecoGessoVista" class="inp inp-num inp-money" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
+            </div>
+          </div>
+          <div>
+            <label class="lbl" for="calPrecoGessoPrazo">Gesso — a prazo (R$/t)</label>
+            <div class="relative">
+              <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[13px] font-semibold text-muted">R$</span>
+              <input type="number" id="calPrecoGessoPrazo" class="inp inp-num inp-money" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
+            </div>
+          </div>
+        </div>
+        <div id="calCustosWrap" class="mt-3 grid gap-2"></div>
+      </section>
+
+      <section id="calMemoriaBox" class="mt-4">
+        <button type="button" id="calMemoriaToggle" class="mem-toggle flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-[13px] font-extrabold text-ink" aria-expanded="false" aria-controls="calMemoriaPanel">
+          <span aria-hidden="true"><svg class="ti ti-file-report icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /><path d="M9 9l1 0" /><path d="M9 13l6 0" /><path d="M9 17l6 0" /></svg></span>Memória de cálculo e laudo técnico
+          <svg class="mem-chevron ml-auto h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div id="calMemoriaPanel" class="mem-panel">
+          <div class="mem-panel-inner">
+            <div class="mem-steps" id="calMemoriaStepsWrap"></div>
+          </div>
+        </div>
+      </section>
+
+      <p class="mt-3 text-[10.5px] leading-snug text-muted">Estimativa técnica baseada no Manual de Adubação e Calagem para o Estado do Paraná (SBCS-NEPAR / IDR-Paraná / Embrapa) — sujeita a conferência e ajuste pelo engenheiro agrônomo responsável antes da aplicação.</p>
+
+      </div>
+      </div>
       </div>
     </main>
   </div>

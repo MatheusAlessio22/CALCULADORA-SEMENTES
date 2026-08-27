@@ -298,6 +298,41 @@
     box-shadow:0 1px 2px rgba(30,36,32,.08), 0 4px 10px -6px rgba(30,36,32,.4);
   }
 
+  /* alternância de unidade da Área (Alqueire/Hectare): pílula discreta ao lado
+     do rótulo do campo, mesma linguagem visual do segmented control acima. */
+  .area-label-row{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    margin-bottom:6px;
+  }
+  .area-label-row .lbl{ margin-bottom:0; }
+  .unit-toggle{
+    display:inline-flex; gap:2px;
+    background:#EEF2E9; border-radius:999px; padding:2px;
+  }
+  .unit-toggle-btn{
+    border:0; background:transparent; cursor:pointer;
+    font-size:10.5px; font-weight:700; letter-spacing:.02em;
+    padding:4px 9px; border-radius:999px; color:#4B554F;
+    transition:background .15s, color .15s, box-shadow .15s;
+    white-space:nowrap;
+  }
+  .unit-toggle-btn.is-active{
+    background:#fff; color:var(--accent);
+    box-shadow:0 1px 2px rgba(30,36,32,.08), 0 4px 10px -6px rgba(30,36,32,.4);
+  }
+
+  /* Semáforo agronômico (aba Calagem & Gessagem): reaproveita a paleta semântica
+     dos alertas (info/âmbar/vermelho), com um emoji de status no lugar do ícone. */
+  .semaforo-item{
+    display:flex; align-items:flex-start; gap:10px;
+    border-radius:12px; padding:12px 14px;
+    font-size:12.5px; font-weight:600; line-height:1.45;
+  }
+  .semaforo-item .semaforo-emoji{ font-size:17px; line-height:1.3; flex:none; }
+  .semaforo-ok{ background:#E9F5E7; color:#1E5C2E; }
+  .semaforo-alerta{ background:#FBE8E7; color:#9C2B22; }
+  .semaforo-atencao{ background:#FCF3DC; color:#8A5A00; }
+
   /* Toque no celular: tira o atraso/o zoom de duplo-toque em tudo que é
      clicável, e garante ~44px de altura nos botões de ação do topo (PDF/
      Imagem), a altura mínima recomendada para dedo no iOS e no Android. */
