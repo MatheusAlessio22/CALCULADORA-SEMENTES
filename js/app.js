@@ -1093,12 +1093,12 @@ function renderCustos(unidades){
             usa os preços acima
           </div>
           <div>
-            <div class="text-[10px] font-semibold uppercase tracking-wide text-muted lg:hidden">Custo à vista</div>
+            <div class="custo-mobile-label">Custo à vista</div>
             <div class="whitespace-nowrap font-mono text-[14px] font-bold tabular-nums text-ink" id="custoVista-${i}">R$ 0,00</div>
             <div class="whitespace-nowrap text-[10.5px] text-muted" id="custoVistaAlq-${i}">R$ 0,00 / alqueire</div>
           </div>
           <div>
-            <div class="text-[10px] font-semibold uppercase tracking-wide text-muted lg:hidden" id="custoPrazoRot-${i}">Custo a prazo</div>
+            <div class="custo-mobile-label" id="custoPrazoRot-${i}">Custo a prazo</div>
             <div class="whitespace-nowrap font-mono text-[14px] font-bold tabular-nums text-ink" id="custoPrazo-${i}">R$ 0,00</div>
             <div class="whitespace-nowrap text-[10.5px] text-muted" id="custoPrazoAlq-${i}">R$ 0,00 / alqueire</div>
           </div>
@@ -1120,7 +1120,7 @@ function renderCustos(unidades){
           <div>
             <label class="lbl lg:hidden" for="precoVista-${i}">Preço à vista</label>
             <div class="relative">
-              <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[13px] font-semibold text-muted">R$</span>
+              <span class="input-addon-currency">R$</span>
               <input type="number" id="precoVista-${i}" class="inp inp-num inp-money" step="0.01" min="0" inputmode="decimal"
                      placeholder="0,00" data-custo="${key}" data-tipo="vista" value="${p.vista || ""}">
             </div>
@@ -1128,18 +1128,18 @@ function renderCustos(unidades){
           <div>
             <label class="lbl lg:hidden" for="precoPrazo-${i}">Preço a prazo</label>
             <div class="relative">
-              <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[13px] font-semibold text-muted">R$</span>
+              <span class="input-addon-currency">R$</span>
               <input type="number" id="precoPrazo-${i}" class="inp inp-num inp-money" step="0.01" min="0" inputmode="decimal"
                      placeholder="0,00" data-custo="${key}" data-tipo="prazo" value="${p.prazo || ""}">
             </div>
           </div>
           <div>
-            <div class="text-[10px] font-semibold uppercase tracking-wide text-muted lg:hidden">Custo à vista</div>
+            <div class="custo-mobile-label">Custo à vista</div>
             <div class="whitespace-nowrap font-mono text-[14px] font-bold tabular-nums text-ink" id="custoVista-${i}">R$ 0,00</div>
             <div class="whitespace-nowrap text-[10.5px] text-muted" id="custoVistaAlq-${i}">R$ 0,00 / alqueire</div>
           </div>
           <div>
-            <div class="text-[10px] font-semibold uppercase tracking-wide text-muted lg:hidden" id="custoPrazoRot-${i}">Custo a prazo</div>
+            <div class="custo-mobile-label" id="custoPrazoRot-${i}">Custo a prazo</div>
             <div class="whitespace-nowrap font-mono text-[14px] font-bold tabular-nums text-ink" id="custoPrazo-${i}">R$ 0,00</div>
             <div class="whitespace-nowrap text-[10.5px] text-muted" id="custoPrazoAlq-${i}">R$ 0,00 / alqueire</div>
           </div>
@@ -1286,7 +1286,7 @@ function renderComparador(){
         <div>
           <label class="lbl" for="compPreco-${i}">Preço por kg</label>
           <div class="relative">
-            <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[13px] font-semibold text-muted">R$</span>
+            <span class="input-addon-currency">R$</span>
             <input type="number" id="compPreco-${i}" class="inp inp-num inp-money" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
           </div>
         </div>

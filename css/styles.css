@@ -224,10 +224,13 @@
   }
   .tab-btn:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
 
-  /* Trilho de alternância de ferramentas com profundidade */
-  .tool-switcher{
-    background: #E4EBE0 !important;
-    border: 1px solid #CCD7C7 !important;
+  /* Trilho de alternância de ferramentas com profundidade. Seletor
+     "div.tool-switcher" (elemento+classe) garante prioridade sobre qualquer
+     utility de fundo/borda do Tailwind aplicada no mesmo elemento, sem
+     precisar de !important. */
+  div.tool-switcher{
+    background: #E4EBE0;
+    border: 1px solid #CCD7C7;
     box-shadow: inset 0 1px 3px rgba(30,36,32,0.08);
     border-radius: 10px;
     padding: 4px;
@@ -371,16 +374,23 @@
   /* valor típico pré-preenchido (ex.: germinação/pureza) que o usuário ainda
      não confirmou digitando: moldura tracejada até o primeiro "input" no campo. */
   .inp.is-suggested{ border-style:dashed; border-color:#A8B5A3; background:#F8FAF6; }
-  /* espaço para o prefixo R$ (span absolute, ver app.js) + respiro até o valor
-     digitado — recalculado pra moldura fechada (a antiga era pro estilo de
-     linha inferior, com bem menos padding-left no campo). */
+  /* espaço para o prefixo R$ (span .input-addon-currency, ver app.js) + respiro
+     até o valor digitado — recalculado pra moldura fechada (a antiga era pro
+     estilo de linha inferior, com bem menos padding-left no campo). */
   .inp-money{padding-left:40px;}
-  /* prefixo "R$" (span posicionado antes do input, ver app.js): reposicionado
-     pra ficar integrado e centralizado dentro da nova moldura fechada, em vez
-     de colado na borda como no antigo estilo de linha inferior. Seletor pela
-     própria classe utilitária do span evita precisar mexer no template em
-     app.js. */
-  span.left-3\.5{ left:13px; }
+  /* prefixo "R$" (span posicionado antes do input, ver app.js): classe própria
+     do componente (sem depender de utilities do Tailwind encadeadas), reposicionado
+     pra ficar integrado e centralizado dentro da moldura fechada do input. */
+  .input-addon-currency{
+    position:absolute;
+    left:13px;
+    top:50%;
+    transform:translateY(-50%);
+    pointer-events:none;
+    font-size:13px;
+    font-weight:600;
+    color:#4B554F;
+  }
   /* 16px no celular: abaixo disso o Safari/Chrome mobile dão zoom automático
      ao focar o campo (aqui é a data de vencimento), o que sacode a tela. */
   .inp-sm{min-height:40px; padding:6px 10px; font-size:16px;}
@@ -635,20 +645,21 @@
      verde-claro chapado, pra dar profundidade de "mesa de trabalho" atrás
      dos cartões widget. */
   body.field-pattern{
-    background: #EEF2EB !important;
-    background-image: linear-gradient(180deg, #F0F4ED 0%, #E8EEE4 100%) !important;
+    background: #EEF2EB;
+    background-image: linear-gradient(180deg, #F0F4ED 0%, #E8EEE4 100%);
   }
 
   /* Cartão widget de dashboard: moldura padrão pra qualquer bloco que vire
      um "card" solto na grade executiva (Identificação, Parâmetros, Total,
-     Custo do produtor etc.). */
-  .crm-card{
-    background: #FFFFFF !important;
-    border: 1px solid #D8E0D2 !important;
-    border-radius: 12px !important;
-    padding: 18px !important;
-    box-shadow: 0 1px 3px rgba(30,36,32,0.04), 0 6px 16px -4px rgba(30,36,32,0.06) !important;
-    margin-bottom: 16px !important;
+     Custo do produtor etc.). Seletor "section.crm-card" (elemento+classe)
+     garante prioridade sobre utilities do Tailwind sem precisar de !important. */
+  section.crm-card{
+    background: #FFFFFF;
+    border: 1px solid #D8E0D2;
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: 0 1px 3px rgba(30,36,32,0.04), 0 6px 16px -4px rgba(30,36,32,0.06);
+    margin-bottom: 16px;
   }
   .crm-card-header{
     display: flex;
@@ -673,43 +684,45 @@
      (.custos-head/.custo-card-item/.custos-grid), em vez de utilities
      Tailwind soltas — cabeçalho e caixas de custo compartilham as mesmas
      colunas, garantindo alinhamento vertical. Ver renderCustos() em app.js. */
-  .custos-head{
+  div.custos-head{
     display: none;
   }
   @media (min-width: 1024px){
-    .custos-head{
-      display: grid !important;
-      grid-template-columns: 1.5fr 1.05fr 1.05fr 1.15fr 1.15fr !important;
-      gap: 12px !important;
-      align-items: center !important;
-      background: #F1F5ED !important;
-      border-radius: 8px !important;
-      padding: 8px 14px !important;
-      margin-bottom: 8px !important;
+    div.custos-head{
+      display: grid;
+      grid-template-columns: 1.5fr 1.05fr 1.05fr 1.15fr 1.15fr;
+      gap: 12px;
+      align-items: center;
+      background: #F1F5ED;
+      border-radius: 8px;
+      padding: 8px 14px;
+      margin-bottom: 8px;
     }
-    .custos-head > span:nth-child(n+2){
-      text-align: right !important;
+    div.custos-head > span:nth-child(n+2){
+      text-align: right;
     }
   }
 
-  /* Card individual de cada embalagem */
-  .custo-card-item{
-    border: 1px solid #DCE5D8 !important;
-    background: #FFFFFF !important;
-    border-radius: 10px !important;
-    padding: 12px 14px !important;
-    margin-bottom: 8px !important;
-    box-shadow: 0 1px 2px rgba(30,36,32,0.03) !important;
-    transition: all 0.15s ease !important;
+  /* Card individual de cada embalagem. Seletor "div.custo-card-item"
+     (elemento+classe) garante prioridade sobre utilities do Tailwind sem
+     precisar de !important. */
+  div.custo-card-item{
+    border: 1px solid #DCE5D8;
+    background: #FFFFFF;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    box-shadow: 0 1px 2px rgba(30,36,32,0.03);
+    transition: all 0.15s ease;
   }
-  .custo-card-item:hover{
-    border-color: #BCCBB6 !important;
-    box-shadow: 0 3px 8px -2px rgba(30,36,32,0.08) !important;
+  div.custo-card-item:hover{
+    border-color: #BCCBB6;
+    box-shadow: 0 3px 8px -2px rgba(30,36,32,0.08);
   }
   /* variante do card de combo (usa os preços das outras embalagens) */
-  .custo-card-item.is-combo{
-    border: 1px dashed #B5D4F4 !important;
-    background: #F4F9FD !important;
+  div.custo-card-item.is-combo{
+    border: 1px dashed #B5D4F4;
+    background: #F4F9FD;
   }
 
   /* Grade interna dos dados dentro do card */
@@ -724,21 +737,27 @@
       grid-template-columns: 1.5fr 1.05fr 1.05fr 1.15fr 1.15fr !important;
       gap: 12px !important;
     }
-    .custo-card-item [id^="custoVista-"],
-    .custo-card-item [id^="custoVistaAlq-"],
-    .custo-card-item [id^="custoPrazo-"],
-    .custo-card-item [id^="custoPrazoAlq-"]{
-      text-align: right !important;
+    div.custo-card-item [id^="custoVista-"],
+    div.custo-card-item [id^="custoVistaAlq-"],
+    div.custo-card-item [id^="custoPrazo-"],
+    div.custo-card-item [id^="custoPrazoAlq-"]{
+      text-align: right;
     }
   }
-  /* rótulos "Custo à vista"/"Custo a prazo" no celular: mesmo peso e cor
-     nítida dos rótulos .lbl vizinhos (Preço à vista/prazo), que usam classe
-     diferente e ficavam com contraste mais fraco por herdar só a utility
-     text-muted do Tailwind. */
-  #custosList div.text-\[10px\].font-semibold.uppercase.tracking-wide.text-muted.lg\:hidden{
+  /* rótulos "Custo à vista"/"Custo a prazo" no celular: classe própria do
+     componente (sem depender de encadeamento de utilities do Tailwind),
+     mesmo peso e cor nítida dos rótulos .lbl vizinhos (Preço à vista/prazo).
+     Escondido em telas >=1024px, onde a tabela de cabeçalho (.custos-head)
+     já identifica a coluna. */
+  .custo-mobile-label{
+    font-size:10px;
     font-weight:700;
-    color:#1E2420;
+    text-transform:uppercase;
     letter-spacing:.06em;
+    color:#1E2420;
+  }
+  @media (min-width:1024px){
+    .custo-mobile-label{ display:none; }
   }
 
   /* pacotes/embalagens (#packsWrap, montado em JS): cartões métricos
