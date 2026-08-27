@@ -600,6 +600,25 @@
     border-radius:999px; background:var(--accent);
   }
 
+  /* Seletor compacto de unidade embutido num .input-group (K⁺ cmolc/mg em
+     Calagem & Gessagem): o wrap .csel entra como segundo item flex do
+     input-group, com largura de conteúdo (não 100%) — a lista que abre
+     continua com a largura confortável padrão (min 280px, ver positionList
+     em app.js), só o "gatilho" fechado é que fica compacto. */
+  .input-group > .csel.csel-compact{ flex:none; width:auto; }
+  .input-group > .csel.csel-compact button.csel-trigger{
+    width:auto; min-width:0; height:100%;
+    background-color:#F4F6F2;
+    border-left:1px solid #D2DBD0;
+    padding:0 22px 0 10px;
+    font-size:11px; font-weight:700; color:#4B554F;
+    background-size:12px; background-position:right 7px center;
+  }
+  .input-group > .csel.csel-compact .csel-label{
+    max-width:60px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .input-group > .csel.csel-compact.is-open button.csel-trigger{ background-color:#fff; }
+
   /* Semáforo agronômico */
   .semaforo-item{
     display:flex; align-items:flex-start; gap:12px;
@@ -621,6 +640,18 @@
   .semaforo-atencao .status-icon-badge{ background:#8A5A00; box-shadow:0 0 0 3px rgba(138,90,0,.16); }
   .semaforo-alerta{ background:#FBE8E7; color:#9C2B22; border-color:#F7C8C5; }
   .semaforo-alerta .status-icon-badge{ background:#9C2B22; box-shadow:0 0 0 3px rgba(156,43,34,.16); }
+
+  /* Tag do corretivo indicado (Calcário Dolomítico/Calcítico/Magnesiano, ver
+     determinarTipoCalcario() em app.js): pastilha na cor da cultura ativa, no
+     lugar de texto corrido — a classificação salta aos olhos como um selo. */
+  .cal-tipo-tag{
+    display:inline-flex; align-items:center;
+    border-radius:999px;
+    padding:4px 12px;
+    background:var(--accent-soft);
+    border:1px solid var(--accent-line);
+    font-size:13.5px; font-weight:800; color:var(--accent);
+  }
 
   /* Leitura instantânea */
   .readout-metrics{
@@ -678,6 +709,21 @@
     .fld-grid > .fld-wide{grid-column:auto;}
     .fld-grid-id{grid-template-columns:1.1fr 1.1fr .95fr;}
     .fld-grid-3{grid-template-columns:repeat(3, minmax(0,1fr));}
+    .fld-grid-4{grid-template-columns:repeat(4, minmax(0,1fr));}
+  }
+
+  /* Subtítulo interno de card (ex.: "Complexo de troca" / "Parâmetros
+     agronômicos" dentro do Laudo de Solo 0-20 cm, em Calagem & Gessagem):
+     divide um card em sub-blocos temáticos sem precisar de outro crm-card
+     aninhado — mesma família tipográfica de .lbl, só que como rótulo de
+     seção (não de campo). */
+  .cal-subhead{
+    font-size:10.5px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:#6B7A70;
+    margin-bottom:10px;
   }
 
   /* nota discreta abaixo de um campo (ex.: a conversão alqueire → hectare).
@@ -1679,6 +1725,7 @@ tailwind.config = {
         <div class="crm-card-header">
           <h2 class="crm-card-title">Laudo de Solo — Camada 0-20 cm (Calagem)</h2>
         </div>
+        <h3 class="cal-subhead">Complexo de troca — cátions e acidez</h3>
         <div class="fld-grid fld-grid-3">
           <div>
             <label class="lbl" for="calCa020">Ca²⁺</label>
@@ -1696,14 +1743,13 @@ tailwind.config = {
           </div>
           <div>
             <label class="lbl" for="calK020">K⁺</label>
-            <input type="number" id="calK020" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
-          </div>
-          <div class="fld-wide">
-            <label class="lbl" for="calKUnidade020">Unidade do K⁺</label>
-            <select id="calKUnidade020" class="inp">
-              <option value="cmolc">cmolc/dm³</option>
-              <option value="mgdm3">mg/dm³ (converte ÷ 391)</option>
-            </select>
+            <div class="input-group">
+              <input type="number" id="calK020" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+              <select id="calKUnidade020" aria-label="Unidade do K⁺">
+                <option value="cmolc">cmolc/dm³</option>
+                <option value="mgdm3">mg/dm³</option>
+              </select>
+            </div>
           </div>
           <div>
             <label class="lbl" for="calAl020">Al³⁺</label>
@@ -1719,9 +1765,15 @@ tailwind.config = {
               <span class="input-group-addon is-suffix">cmolc/dm³</span>
             </div>
           </div>
+        </div>
+        <h3 class="cal-subhead mt-4">Parâmetros agronômicos de aplicação</h3>
+        <div class="fld-grid fld-grid-4">
           <div>
-            <label class="lbl" for="calPrnt">PRNT do calcário (%)</label>
-            <input type="number" id="calPrnt" class="inp inp-num" step="1" min="1" max="100" inputmode="decimal" placeholder="80" value="80">
+            <label class="lbl" for="calPrnt">PRNT do calcário</label>
+            <div class="input-group">
+              <input type="number" id="calPrnt" class="inp inp-num" step="1" min="1" max="100" inputmode="decimal" placeholder="80" value="80">
+              <span class="input-group-addon is-suffix">%</span>
+            </div>
           </div>
           <div>
             <label class="lbl" for="calManejo">Sistema de manejo</label>
@@ -1732,12 +1784,18 @@ tailwind.config = {
             </select>
           </div>
           <div>
-            <label class="lbl" for="calProfundidade">Profundidade (cm)</label>
-            <input type="number" id="calProfundidade" class="inp inp-num" step="1" min="0" inputmode="decimal" placeholder="10" value="10">
+            <label class="lbl" for="calProfundidade">Profundidade</label>
+            <div class="input-group">
+              <input type="number" id="calProfundidade" class="inp inp-num" step="1" min="0" inputmode="decimal" placeholder="10" value="10">
+              <span class="input-group-addon is-suffix">cm</span>
+            </div>
           </div>
-          <div class="fld-wide">
-            <label class="lbl" for="calAreaAplicadaPct">Área efetivamente aplicada (%)</label>
-            <input type="number" id="calAreaAplicadaPct" class="inp inp-num" step="1" min="1" max="100" inputmode="decimal" placeholder="100" value="100">
+          <div>
+            <label class="lbl" for="calAreaAplicadaPct">Área efetivamente aplicada</label>
+            <div class="input-group">
+              <input type="number" id="calAreaAplicadaPct" class="inp inp-num" step="1" min="1" max="100" inputmode="decimal" placeholder="100" value="100">
+              <span class="input-group-addon is-suffix">%</span>
+            </div>
           </div>
         </div>
         <div class="readout mt-3">
@@ -1757,14 +1815,10 @@ tailwind.config = {
         </div>
         <div class="fld-grid fld-grid-3">
           <div>
-            <label class="lbl" for="calArgila2040">Argila (%)</label>
-            <input type="number" id="calArgila2040" class="inp inp-num" step="1" min="0" max="100" inputmode="decimal" placeholder="0">
-          </div>
-          <div>
-            <label class="lbl" for="calAl2040">Al³⁺</label>
+            <label class="lbl" for="calArgila2040">Argila</label>
             <div class="input-group">
-              <input type="number" id="calAl2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
-              <span class="input-group-addon is-suffix">cmolc/dm³</span>
+              <input type="number" id="calArgila2040" class="inp inp-num" step="1" min="0" max="100" inputmode="decimal" placeholder="0">
+              <span class="input-group-addon is-suffix">%</span>
             </div>
           </div>
           <div>
@@ -1785,6 +1839,13 @@ tailwind.config = {
             <label class="lbl" for="calK2040">K⁺</label>
             <div class="input-group">
               <input type="number" id="calK2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+              <span class="input-group-addon is-suffix">cmolc/dm³</span>
+            </div>
+          </div>
+          <div>
+            <label class="lbl" for="calAl2040">Al³⁺</label>
+            <div class="input-group">
+              <input type="number" id="calAl2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
               <span class="input-group-addon is-suffix">cmolc/dm³</span>
             </div>
           </div>
@@ -1817,7 +1878,12 @@ tailwind.config = {
       <!-- Coluna 2 (desktop): diagnóstico executivo, KPIs e custos -->
       <div class="mt-6 lg:mt-0 lg:min-h-0 lg:w-[56%] lg:overflow-y-auto lg:p-6">
 
-      <section id="calSemaforoBox" class="grid gap-2.5"></section>
+      <section class="crm-card">
+        <div class="crm-card-header">
+          <h2 class="crm-card-title"><span aria-hidden="true"><svg class="ti ti-activity icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l3 8l4 -16l3 8h4" /></svg></span>Diagnóstico Agronômico do Perfil de Solo</h2>
+        </div>
+        <div id="calSemaforoBox" class="grid gap-2.5"></div>
+      </section>
 
       <section class="crm-card mt-4">
         <div class="crm-card-header">
@@ -1833,9 +1899,9 @@ tailwind.config = {
           <span class="font-mono text-[16px] font-bold text-ink"><span id="calNcTotal">0,00</span> toneladas</span>
         </div>
         <div class="mt-3 rounded-lg border border-line bg-white px-3 py-2.5">
-          <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">🧪 Corretivo recomendado</div>
-          <div class="mt-1 text-[14px] font-bold text-ink"><span id="calTipoCalcario">—</span></div>
-          <div class="mt-0.5 text-[10.5px] text-muted" id="calFaixaMgo"></div>
+          <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">Corretivo recomendado</div>
+          <div class="mt-1.5 cal-tipo-tag"><span id="calTipoCalcario">—</span></div>
+          <div class="mt-1.5 text-[10.5px] text-muted" id="calFaixaMgo"></div>
         </div>
         <div id="calAlertBox" class="alerts-box hidden mt-3"></div>
       </section>
@@ -1855,7 +1921,16 @@ tailwind.config = {
         </div>
         <div class="mt-3 rounded-lg border border-line bg-white px-3 py-2.5">
           <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">Aporte de nutrientes</div>
-          <div class="mt-1 text-[12.5px] text-ink">Enxofre (S-SO₄²⁻): <strong class="font-mono tabular-nums" id="calNgEnxofre">0,00</strong> kg/ha &nbsp;·&nbsp; Cálcio (Ca²⁺): <strong class="font-mono tabular-nums" id="calNgCalcio">0,00</strong> kg/ha</div>
+          <div class="comp-metric-grid mt-2">
+            <div class="comp-metric-box">
+              <div class="comp-metric-label">Enxofre (S-SO₄²⁻)</div>
+              <div class="comp-metric-value"><span id="calNgEnxofre">0,00</span> <span class="text-[10.5px] font-normal text-muted">kg/ha</span></div>
+            </div>
+            <div class="comp-metric-box">
+              <div class="comp-metric-label">Cálcio (Ca²⁺)</div>
+              <div class="comp-metric-value"><span id="calNgCalcio">0,00</span> <span class="text-[10.5px] font-normal text-muted">kg/ha</span></div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -4686,6 +4761,10 @@ $("calMetodoGessagem").addEventListener("change", calcCalagem);
 
 enhanceSelect($("calCultura"));
 enhanceSelect($("calKUnidade020"));
+// marca o wrap como compacto: o K⁺ embute o seletor de unidade dentro do
+// próprio .input-group (ver .csel-compact em styles.css), no lugar do
+// <select> de largura total usado nos outros 3 selects desta aba.
+$("calKUnidade020").closest(".csel").classList.add("csel-compact");
 enhanceSelect($("calManejo"));
 enhanceSelect($("calMetodoGessagem"));
 

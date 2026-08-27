@@ -2755,6 +2755,10 @@ $("calMetodoGessagem").addEventListener("change", calcCalagem);
 // redispara "change" no <select> nativo por baixo (ver enhanceSelect()).
 enhanceSelect($("calCultura"));
 enhanceSelect($("calKUnidade020"));
+// marca o wrap como compacto: o K⁺ embute o seletor de unidade dentro do
+// próprio .input-group (ver .csel-compact em styles.css), no lugar do
+// <select> de largura total usado nos outros 3 selects desta aba.
+$("calKUnidade020").closest(".csel").classList.add("csel-compact");
 enhanceSelect($("calManejo"));
 enhanceSelect($("calMetodoGessagem"));
 
@@ -2764,7 +2768,7 @@ const CAL_CARGA_GRANEL_T = 35; // carreta/bitrem médio
 function calAddEmbalagem(wrap, produto, label, toneladas, tamanhoT){
   const exato = toneladas / tamanhoT;
   const div = document.createElement("div");
-  div.className = "rounded-xl border border-subtle bg-surface-subtle px-3 py-2.5";
+  div.className = "rounded-lg border border-line bg-white px-3 py-2.5";
   div.innerHTML =
     `<div class="text-[10px] font-semibold uppercase tracking-wide text-muted">${produto} · ${label}</div>` +
     `<div class="pack-value mt-0.5 font-mono tabular-nums text-ink">${fmtDec(exato)}</div>` +

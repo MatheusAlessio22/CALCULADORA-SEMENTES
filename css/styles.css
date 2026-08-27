@@ -359,6 +359,18 @@
   .semaforo-alerta{ background:#FBE8E7; color:#9C2B22; }
   .semaforo-atencao{ background:#FCF3DC; color:#8A5A00; }
 
+  /* Tag do corretivo indicado (Calcário Dolomítico/Calcítico/Magnesiano, ver
+     determinarTipoCalcario() em app.js): pastilha na cor da cultura ativa, no
+     lugar de texto corrido — a classificação salta aos olhos como um selo. */
+  .cal-tipo-tag{
+    display:inline-flex; align-items:center;
+    border-radius:999px;
+    padding:4px 12px;
+    background:var(--accent-soft);
+    border:1px solid var(--accent-border);
+    font-size:13.5px; font-weight:800; color:var(--accent);
+  }
+
   /* Toque no celular: tira o atraso/o zoom de duplo-toque em tudo que é
      clicável, e garante ~44px de altura nos botões de ação do topo (PDF/
      Imagem), a altura mínima recomendada para dedo no iOS e no Android. */
@@ -417,6 +429,7 @@
     border:1.5px solid var(--border-subtle);
     border-radius:8px;
     background:var(--surface);
+    overflow:hidden; /* clipa o fundo do addon nos cantos arredondados do container — box-shadow do :focus-within não é afetado */
     transition:border-color .15s, background .15s, box-shadow .15s;
   }
   .input-group:hover{ border-color:var(--border-strong); }
@@ -424,17 +437,31 @@
     border-color:var(--accent);
     box-shadow:0 0 0 3px var(--accent-soft);
   }
+  /* chip de unidade/prefixo (R$, cmolc/dm³, %, cm...): fundo neutro sólido
+     destacando o addon do campo numérico em branco, no padrão "enterprise" da
+     aba de Calagem & Gessagem — reaproveitado por todo .input-group do app. */
   .input-group-addon{
     display:flex;
     align-items:center;
+    justify-content:center;
     flex:none;
-    font-size:13px;
-    font-weight:600;
-    color:var(--ink-muted);
+    background:#F4F6F2;
+    font-size:12.5px;
+    font-weight:700;
+    color:#4B554F;
     white-space:nowrap;
+    user-select:none;
   }
-  .input-group-addon.is-prefix{ padding-left:12px; padding-right:4px; }
-  .input-group-addon.is-suffix{ padding-left:4px; padding-right:12px; }
+  .input-group-addon.is-prefix{
+    padding-left:12px;
+    padding-right:8px;
+    border-right:1px solid var(--border-subtle);
+  }
+  .input-group-addon.is-suffix{
+    padding-left:8px;
+    padding-right:12px;
+    border-left:1px solid var(--border-subtle);
+  }
   .input-group .inp{
     min-height:auto;
     border:0;
@@ -461,9 +488,9 @@
     .inp{min-height:38px; padding:7px 10px; font-size:14px;}
     .input-group{min-height:38px;}
     .input-group .inp{padding-top:7px; padding-bottom:7px;}
-    .input-group-addon{font-size:12px;}
-    .input-group-addon.is-prefix{ padding-left:10px; }
-    .input-group-addon.is-suffix{ padding-right:10px; }
+    .input-group-addon{font-size:11.5px;}
+    .input-group-addon.is-prefix{ padding-left:10px; padding-right:6px; }
+    .input-group-addon.is-suffix{ padding-left:6px; padding-right:10px; }
   }
   select.inp{
     appearance:none;
@@ -564,6 +591,25 @@
     width:6px; height:6px; margin-top:-3px;
     border-radius:999px; background:var(--accent);
   }
+
+  /* Seletor compacto de unidade embutido num .input-group (K⁺ cmolc/mg em
+     Calagem & Gessagem): o wrap .csel entra como segundo item flex do
+     input-group, com largura de conteúdo (não 100%) — a lista que abre
+     continua com a largura confortável padrão (min 280px, ver positionList
+     em app.js), só o "gatilho" fechado é que fica compacto. */
+  .input-group > .csel.csel-compact{ flex:none; width:auto; }
+  .input-group > .csel.csel-compact button.csel-trigger{
+    width:auto; min-width:0; height:100%;
+    background-color:#F4F6F2;
+    border-left:1px solid var(--border-subtle);
+    padding:0 22px 0 10px;
+    font-size:11px; font-weight:700; color:#4B554F;
+    background-size:12px; background-position:right 7px center;
+  }
+  .input-group > .csel.csel-compact .csel-label{
+    max-width:60px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .input-group > .csel.csel-compact.is-open button.csel-trigger{ background-color:#fff; }
 
   #pmsBox[open] > summary > span:last-child{visibility:hidden;}
   #pmsBox > summary::-webkit-details-marker{display:none;}
@@ -705,6 +751,21 @@
     .fld-grid > .fld-wide{grid-column:auto;}
     .fld-grid-id{grid-template-columns:1.1fr 1.1fr .95fr;}
     .fld-grid-3{grid-template-columns:repeat(3, minmax(0,1fr));}
+    .fld-grid-4{grid-template-columns:repeat(4, minmax(0,1fr));}
+  }
+
+  /* Subtítulo interno de card (ex.: "Complexo de troca" / "Parâmetros
+     agronômicos" dentro do Laudo de Solo 0-20 cm, em Calagem & Gessagem):
+     divide um card em sub-blocos temáticos sem precisar de outro crm-card
+     aninhado — mesma família tipográfica de .lbl, só que como rótulo de
+     seção (não de campo). */
+  .cal-subhead{
+    font-size:10.5px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:#6B7A70;
+    margin-bottom:10px;
   }
 
   /* nota discreta abaixo de um campo (ex.: a conversão alqueire → hectare).
