@@ -34,7 +34,7 @@ service worker funcionando) só funciona em `https://` ou em `localhost` —
 não funciona abrindo o `index.html` direto pelo disco (`file://`).
 
 **Atualizar a versão instalada:** depois de editar `css/`, `js/` ou os
-ícones, mude `CACHE_VERSION` em `service-worker.js` (ex.: `v1` → `v2`) —
+ícones, mude `CACHE_NAME` em `service-worker.js` (ex.: `v1` → `v2`) —
 senão quem já instalou o app fica preso na versão em cache antiga.
 
 ## 2. Arquivo único (`standalone/`)

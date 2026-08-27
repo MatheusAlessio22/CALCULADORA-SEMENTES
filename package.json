@@ -8,7 +8,8 @@
     "build": "node scripts/validate-standalone.js",
     "lint": "eslint .",
     "format": "prettier --check .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "release": "node -e \"const fs = require('fs'); const swPath = './service-worker.js'; let sw = fs.readFileSync(swPath, 'utf8'); const v = 'cache-v' + Date.now(); sw = sw.replace(/const\\s+CACHE_NAME\\s*=\\s*['\\\"](.+?)['\\\"]/g, 'const CACHE_NAME = \\'' + v + '\\''); fs.writeFileSync(swPath, sw); console.log('Novo Cache gerado: ' + v);\" && npm run build && npm run test"
   },
   "repository": {
     "type": "git",

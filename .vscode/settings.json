@@ -1,6 +1,7 @@
 {
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  // Configurações de Formatação e Padrão de Código
   "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },
@@ -20,5 +21,28 @@
   },
   "[json]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
-  }
+  },
+
+  // Garante validação em tempo real para arquivos Web/PWA
+  "eslint.validate": ["javascript", "html"],
+  "webhint.enable": true,
+
+  // Configurações do Live Server para testar o Service Worker localmente
+  "liveServer.settings.host": "127.0.0.1",
+  "liveServer.settings.port": 5500,
+  "liveServer.settings.Https": {
+    "enable": false
+  },
+
+  // Esconde pastas pesadas para acelerar a leitura do Claude Code
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/.git": true,
+    "**/package-lock.json": true
+  },
+
+  // Integração visual de cores para diferenciar DEV de MAIN (Peacock)
+  "peacock.affectActivityBar": true,
+  "peacock.affectStatusBar": true,
+  "peacock.affectTitleBar": true
 }
