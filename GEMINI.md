@@ -1,9 +1,10 @@
 # Diretrizes do Projeto: Calculadora de Sementes (Coasul)
 
-## 🚨 REGRAS CRÍTICAS DE ARQUITETURA (OPERAÇÃO OFFLINE)
+## 🥇 Regras de Ouro de Arquitetura Offline
 1. **Dependência Zero de Rede**: É estritamente proibido o uso de CDNs, Google Fonts online ou scripts externos. Todo recurso (fontes, imagens, ícones) deve ser local e vir das pastas `/assets`, `/css`, `/js` ou `/icons`.
-2. **Ciclo de Vida do PWA**: Nunca altere a lógica de registro do `service-worker.js` ou do `manifest.json` sem autorização. Novas rotas ou arquivos criados em `/js` ou `/css` devem ser adicionados à lista de precache do Service Worker.
+2. **Ciclo de Vida do PWA**: Nunca altere a lógica de registro do `service-worker.js` ou do `manifest.json` sem autorização. Novas rotas ou arquivos criados em `/js` ou `/css` devem ser adicionados à lista de precache (`APP_SHELL`) do Service Worker.
 3. **Persistência Local**: Todos os dados gerados pelo usuário em campo devem ser salvos usando LocalStorage ou IndexedDB. Nunca assuma que uma requisição de rede (`fetch`) funcionará.
+4. **Portão de Qualidade das Fórmulas**: Alterações em fórmulas matemáticas (`js/calculos.js`) só podem ser integradas à branch `dev` depois de passar pelos testes unitários (`npm test`). Nenhuma mudança de cálculo entra sem teste verde.
 
 ## 🔀 DIRETRIZES DE FLUXO (MAIN VS DEV)
 1. **Ambiente de Trabalho**: Novas funcionalidades, fórmulas em `js/calculos.js` ou novos dados em `js/cultivares.js` devem ser alterados EXCLUSIVAMENTE na branch ou arquivos de desenvolvimento (`dev`).

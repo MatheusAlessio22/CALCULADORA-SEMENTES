@@ -1,5 +1,9 @@
-name: CI
-on: [push, pull_request]
+name: Testes
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [dev, main]
 jobs:
   check:
     runs-on: ubuntu-latest
