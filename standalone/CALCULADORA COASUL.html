@@ -52,11 +52,24 @@
   }
 
   :root{
-    /* trocado por JS conforme a cultura ativa */
+    /* Texto: alto contraste pra leitura a campo, sob luz solar direta. */
+    --ink-primary: #171E19;
+    --ink-secondary: #2E3832;
+    --ink-muted: #55665C;
+
+    /* Superfícies e bordas neutras, compartilhadas por qualquer cultura. */
+    --surface: #FFFFFF;
+    --surface-subtle: #F8FAF6;
+    --border-subtle: #D8E0D2;
+    --border-strong: #B4C4AF;
+
+    /* Tokens dinâmicos por cultura — trocados por JS (applyAccentVars() em
+       app.js), chamada em selectCrop() e no botão de Calagem & Gessagem. */
     --accent: #5C8A26;
     --accent-soft: rgba(92,138,38,.10);
-    --accent-light: #8FC33B;
-    --accent-line: rgba(92,138,38,.30); /* borda da caixa de totais, na cor da cultura */
+    --accent-surface: rgba(92,138,38,.05);
+    --accent-border: rgba(92,138,38,.30);
+    --accent-hover: #8FC33B;
   }
 
   html,body{-webkit-text-size-adjust:100%;}
@@ -241,10 +254,13 @@
   }
   .tab-btn:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
 
-  /* Trilho de alternância de ferramentas com profundidade */
-  .tool-switcher{
-    background: #E4EBE0 !important;
-    border: 1px solid #CCD7C7 !important;
+  /* Trilho de alternância de ferramentas com profundidade. Seletor
+     "div.tool-switcher" (elemento+classe) garante prioridade sobre qualquer
+     utility de fundo/borda do Tailwind aplicada no mesmo elemento, sem
+     precisar de !important. */
+  div.tool-switcher{
+    background: #E4EBE0;
+    border: 1px solid #CCD7C7;
     box-shadow: inset 0 1px 3px rgba(30,36,32,0.08);
     border-radius: 10px;
     padding: 4px;
@@ -339,16 +355,38 @@
   }
 
   /* Semáforo agronômico (aba Calagem & Gessagem): reaproveita a paleta semântica
-     dos alertas (info/âmbar/vermelho), com um emoji de status no lugar do ícone. */
+     dos alertas (info/âmbar/vermelho), com um badge circular de ícone SVG no
+     lugar do emoji cru (ver calSemaforoItem() em app.js). */
   .semaforo-item{
     display:flex; align-items:flex-start; gap:10px;
     border-radius:12px; padding:12px 14px;
     font-size:12.5px; font-weight:600; line-height:1.45;
   }
-  .semaforo-item .semaforo-emoji{ font-size:17px; line-height:1.3; flex:none; }
+  .status-icon-badge{
+    display:flex; align-items:center; justify-content:center;
+    width:22px; height:22px; flex:none;
+    border-radius:999px;
+    color:#fff;
+  }
+  .status-icon-badge svg{ width:13px; height:13px; }
+  .semaforo-ok .status-icon-badge{ background:#1E5C2E; box-shadow:0 0 0 3px rgba(30,92,46,.16); }
+  .semaforo-atencao .status-icon-badge{ background:#8A5A00; box-shadow:0 0 0 3px rgba(138,90,0,.16); }
+  .semaforo-alerta .status-icon-badge{ background:#9C2B22; box-shadow:0 0 0 3px rgba(156,43,34,.16); }
   .semaforo-ok{ background:#E9F5E7; color:#1E5C2E; }
   .semaforo-alerta{ background:#FBE8E7; color:#9C2B22; }
   .semaforo-atencao{ background:#FCF3DC; color:#8A5A00; }
+
+  /* Tag do corretivo indicado (Calcário Dolomítico/Calcítico/Magnesiano, ver
+     determinarTipoCalcario() em app.js): pastilha na cor da cultura ativa, no
+     lugar de texto corrido — a classificação salta aos olhos como um selo. */
+  .cal-tipo-tag{
+    display:inline-flex; align-items:center;
+    border-radius:999px;
+    padding:4px 12px;
+    background:var(--accent-soft);
+    border:1px solid var(--accent-border);
+    font-size:13.5px; font-weight:800; color:var(--accent);
+  }
 
   /* Toque no celular: tira o atraso/o zoom de duplo-toque em tudo que é
      clicável, e garante ~44px de altura nos botões de ação do topo (PDF/
@@ -367,37 +405,95 @@
   input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
   .inp{
     width:100%;
-    min-height:46px;
-    border:1.5px solid #D2DBD0;
+    min-height:46px; /* alvo de toque confortável no celular, ver .inp-sm abaixo pra exceção */
+    border:1.5px solid var(--border-subtle);
     border-radius:8px;
-    background:#FFFFFF;
+    background:var(--surface);
     padding:9px 12px;
     font-size:16px; /* evita zoom automático no iOS */
-    color:#1E2420;
+    color:var(--ink-primary);
     transition:border-color .15s, background .15s, box-shadow .15s;
   }
-  .inp:hover{ border-color:#98A895; }
+  .inp:hover{ border-color:var(--border-strong); }
   /* anel de foco na cor da cultura ativa (--accent-soft trocado por JS),
-     não mais um verde fixo — acompanha a aba selecionada. */
+     não mais um verde fixo — acompanha a aba selecionada. :focus-visible
+     entra como reforço de acessibilidade (mesmos valores de :focus, que
+     continua como base pra navegadores sem suporte a :focus-visible). */
   .inp:focus{
     outline:none;
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px var(--accent-soft);
+  }
+  .inp:focus-visible{
     border-color:var(--accent);
     box-shadow:0 0 0 3px var(--accent-soft);
   }
   .inp-num{font-family:'JetBrains Mono','Inter',-apple-system,monospace; font-feature-settings:'tnum' 1,'cv05' 1; font-variant-numeric:tabular-nums;}
   /* valor típico pré-preenchido (ex.: germinação/pureza) que o usuário ainda
      não confirmou digitando: moldura tracejada até o primeiro "input" no campo. */
-  .inp.is-suggested{ border-style:dashed; border-color:#A8B5A3; background:#F8FAF6; }
-  /* espaço para o prefixo R$ (span absolute, ver app.js) + respiro até o valor
-     digitado — recalculado pra moldura fechada (a antiga era pro estilo de
-     linha inferior, com bem menos padding-left no campo). */
-  .inp-money{padding-left:40px;}
-  /* prefixo "R$" (span posicionado antes do input, ver app.js): reposicionado
-     pra ficar integrado e centralizado dentro da nova moldura fechada, em vez
-     de colado na borda como no antigo estilo de linha inferior. Seletor pela
-     própria classe utilitária do span evita precisar mexer no template em
-     app.js. */
-  span.left-3\.5{ left:13px; }
+  .inp.is-suggested{ border-style:dashed; border-color:var(--border-strong); background:var(--surface-subtle); }
+
+  /* Componente de campo com prefixo/sufixo (R$, cmolc/dm³ etc.): o prefixo/
+     sufixo entra no próprio fluxo do layout (flex), como "chip" dentro da
+     mesma moldura do input — no lugar do span posicionado em absolute por
+     cima do campo (abordagem antiga, ver histórico). O <input> interno perde
+     borda/fundo/anel de foco próprios, que passam a ser só do wrapper. */
+  .input-group{
+    display:flex;
+    align-items:stretch;
+    width:100%;
+    min-height:46px;
+    border:1.5px solid var(--border-subtle);
+    border-radius:8px;
+    background:var(--surface);
+    overflow:hidden; /* clipa o fundo do addon nos cantos arredondados do container — box-shadow do :focus-within não é afetado */
+    transition:border-color .15s, background .15s, box-shadow .15s;
+  }
+  .input-group:hover{ border-color:var(--border-strong); }
+  .input-group:focus-within{
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px var(--accent-soft);
+  }
+  /* chip de unidade/prefixo (R$, cmolc/dm³, %, cm...): fundo neutro sólido
+     destacando o addon do campo numérico em branco, no padrão "enterprise" da
+     aba de Calagem & Gessagem — reaproveitado por todo .input-group do app. */
+  .input-group-addon{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex:none;
+    background:#F4F6F2;
+    font-size:12.5px;
+    font-weight:700;
+    color:#4B554F;
+    white-space:nowrap;
+    user-select:none;
+  }
+  .input-group-addon.is-prefix{
+    padding-left:12px;
+    padding-right:8px;
+    border-right:1px solid var(--border-subtle);
+  }
+  .input-group-addon.is-suffix{
+    padding-left:8px;
+    padding-right:12px;
+    border-left:1px solid var(--border-subtle);
+  }
+  .input-group .inp{
+    min-height:auto;
+    border:0;
+    background:transparent;
+    padding-top:9px;
+    padding-bottom:9px;
+    padding-left:8px;
+    padding-right:8px;
+    flex:1 1 auto;
+    min-width:0;
+  }
+  .input-group .inp:focus,
+  .input-group .inp:focus-visible{
+    box-shadow:none; /* o anel de foco é só do wrapper (.input-group:focus-within) */
+  }
   /* 16px no celular: abaixo disso o Safari/Chrome mobile dão zoom automático
      ao focar o campo (aqui é a data de vencimento), o que sacode a tela. */
   .inp-sm{min-height:40px; padding:6px 10px; font-size:16px;}
@@ -407,7 +503,11 @@
        16px de propósito (ver comentário acima sobre zoom automático do
        iOS/Android ao focar um campo com fonte menor que essa). */
     .inp{min-height:38px; padding:7px 10px; font-size:14px;}
-    .inp-money{padding-left:36px;}
+    .input-group{min-height:38px;}
+    .input-group .inp{padding-top:7px; padding-bottom:7px;}
+    .input-group-addon{font-size:11.5px;}
+    .input-group-addon.is-prefix{ padding-left:10px; padding-right:6px; }
+    .input-group-addon.is-suffix{ padding-left:6px; padding-right:10px; }
   }
   select.inp{
     appearance:none;
@@ -418,7 +518,7 @@
     padding-right:38px;
   }
 
-  /* Seletor personalizado (Espaçamento, Transpasse): a lista nativa do
+  /* Seletor personalizado (Espaçamento, Transpasse, Calagem etc.): a lista nativa do
      navegador não dá pra estilizar de forma consistente (no iPhone vira uma
      rodinha do sistema, sem nenhum CSS conseguir mudar isso). Aqui a lista é
      HTML normal (um <ul> nosso), então fica com a cara do app em qualquer
@@ -433,11 +533,19 @@
   button.csel-trigger{
     display:flex; align-items:center; justify-content:space-between; gap:8px;
     width:100%; text-align:left; cursor:pointer;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235B6660' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2355665C' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
     background-repeat:no-repeat;
     background-position:right 12px center;
-    background-size:18px;
-    padding-right:38px;
+    background-size:16px;
+    padding-right:36px;
+    font-size:14px;
+    font-weight:600;
+    color:var(--ink-primary);
+  }
+  button.csel-trigger.inp-num{
+    font-family:'JetBrains Mono','Inter',-apple-system,monospace;
+    font-feature-settings:'tnum' 1,'cv05' 1;
+    font-variant-numeric:tabular-nums;
   }
   .csel-trigger .csel-label{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .csel.is-open button.csel-trigger{
@@ -446,18 +554,47 @@
     box-shadow:0 0 0 3px var(--accent-soft);
   }
   .csel-list{
-    position:absolute; z-index:30; left:0; right:0; top:calc(100% + 6px);
-    max-height:264px; overflow-y:auto;
-    background:#fff; border:1px solid #D2DBD0; border-radius:10px;
-    box-shadow:0 12px 28px -6px rgba(30,36,32,.15);
+    position:absolute; z-index:50; left:0; right:0; top:calc(100% + 6px);
+    max-height:280px; overflow-y:auto;
+    background:#fff; border:1.5px solid var(--border-subtle); border-radius:10px;
+    box-shadow:0 10px 25px -5px rgba(23,30,25,.12);
     padding:6px; margin:0; list-style:none;
   }
+  /* micro-animação de entrada: dispara toda vez que a lista sai de display:none
+     (abrir o dropdown, seja via .hidden no fallback ou via :popover-open),
+     sem precisar de classe extra no JS. */
+  .csel-list{
+    animation:csel-pop-in .12s ease-out;
+    transform-origin:top center;
+  }
+  @keyframes csel-pop-in{
+    from{ opacity:0; transform:scale(.97); }
+    to{ opacity:1; transform:scale(1); }
+  }
+  /* elemento em [popover] (Popover API, ver enhanceSelect() em app.js): o
+     navegador já cuida de position:fixed e do estado inicial oculto — zera só
+     a margem que a folha de estilo nativa do popover adiciona, o resto da
+     aparência vem das regras acima. */
+  .csel-list[popover]{ margin:0; overflow-y:auto; }
   .csel-option{
-    padding:9px 12px; border-radius:8px;
-    font-family:'JetBrains Mono','Inter',-apple-system,monospace; font-feature-settings:'tnum' 1,'cv05' 1; font-variant-numeric:tabular-nums;
-    font-size:15px; color:#1E2420; cursor:pointer;
+    padding:8px 12px; border-radius:8px;
+    font-family:Inter,"Segoe UI",system-ui,-apple-system,sans-serif;
+    font-size:13.5px;
+    font-weight:500;
+    line-height:1.35;
+    color:var(--ink-primary);
+    cursor:pointer;
     position:relative;
+    white-space:normal;
+    word-break:break-word;
     transition:background .1s, color .1s;
+  }
+  .csel-trigger.inp-num + .csel-list .csel-option,
+  .csel-native.inp-num ~ .csel-list .csel-option{
+    font-family:'JetBrains Mono','Inter',-apple-system,monospace;
+    font-feature-settings:'tnum' 1,'cv05' 1;
+    font-variant-numeric:tabular-nums;
+    font-size:14px;
   }
   .csel-option:hover,
   .csel-option.is-active{ background:var(--accent-soft); }
@@ -471,6 +608,25 @@
     width:6px; height:6px; margin-top:-3px;
     border-radius:999px; background:var(--accent);
   }
+
+  /* Seletor compacto de unidade embutido num .input-group (K⁺ cmolc/mg em
+     Calagem & Gessagem): o wrap .csel entra como segundo item flex do
+     input-group, com largura de conteúdo (não 100%) — a lista que abre
+     continua com a largura confortável padrão (min 280px, ver positionList
+     em app.js), só o "gatilho" fechado é que fica compacto. */
+  .input-group > .csel.csel-compact{ flex:none; width:auto; }
+  .input-group > .csel.csel-compact button.csel-trigger{
+    width:auto; min-width:0; height:100%;
+    background-color:#F4F6F2;
+    border-left:1px solid var(--border-subtle);
+    padding:0 22px 0 10px;
+    font-size:11px; font-weight:700; color:#4B554F;
+    background-size:12px; background-position:right 7px center;
+  }
+  .input-group > .csel.csel-compact .csel-label{
+    max-width:60px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .input-group > .csel.csel-compact.is-open button.csel-trigger{ background-color:#fff; }
 
   #pmsBox[open] > summary > span:last-child{visibility:hidden;}
   #pmsBox > summary::-webkit-details-marker{display:none;}
@@ -512,7 +668,7 @@
   .mem-toggle:hover{ background:#fff; border-color:#C7D4C3; }
   .mem-toggle[aria-expanded="true"]{
     background:#fff;
-    border-color:var(--accent-line);
+    border-color:var(--accent-border);
     box-shadow:0 1px 2px rgba(30,36,32,.04);
   }
   .mem-chevron{ color:#4B554F; transition:transform .3s ease; }
@@ -555,7 +711,7 @@
 
   .mem-result{
     position:relative; margin-top:6px; overflow:hidden;
-    border-radius:14px; border:1px solid var(--accent-line);
+    border-radius:14px; border:1px solid var(--accent-border);
     background:var(--accent-soft);
     padding:12px 14px;
   }
@@ -612,6 +768,21 @@
     .fld-grid > .fld-wide{grid-column:auto;}
     .fld-grid-id{grid-template-columns:1.1fr 1.1fr .95fr;}
     .fld-grid-3{grid-template-columns:repeat(3, minmax(0,1fr));}
+    .fld-grid-4{grid-template-columns:repeat(4, minmax(0,1fr));}
+  }
+
+  /* Subtítulo interno de card (ex.: "Complexo de troca" / "Parâmetros
+     agronômicos" dentro do Laudo de Solo 0-20 cm, em Calagem & Gessagem):
+     divide um card em sub-blocos temáticos sem precisar de outro crm-card
+     aninhado — mesma família tipográfica de .lbl, só que como rótulo de
+     seção (não de campo). */
+  .cal-subhead{
+    font-size:10.5px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:#6B7A70;
+    margin-bottom:10px;
   }
 
   /* nota discreta abaixo de um campo (ex.: a conversão alqueire → hectare).
@@ -648,24 +819,46 @@
   }
   @media (min-width:1024px){ .readout{padding:7px 12px;} }
 
+  /* Badges de apoio dentro de um .readout (ex.: SB/CTC(T)/V₁ na aba de
+     Calagem & Gessagem): cada métrica em uma pastilha própria, com tipografia
+     mono tabular, em vez de texto corrido separado por "·". */
+  .readout-metrics{ display:flex; flex-wrap:wrap; gap:6px; }
+  .readout-metric{
+    display:inline-flex; align-items:baseline; gap:4px;
+    background:var(--surface-subtle);
+    border:1px solid var(--border-subtle);
+    border-radius:999px;
+    padding:3px 10px;
+    font-family:'JetBrains Mono','Inter',-apple-system,monospace; font-feature-settings:'tnum' 1,'cv05' 1; font-variant-numeric:tabular-nums;
+    font-size:11.5px; font-weight:600; color:var(--ink-muted);
+    white-space:nowrap;
+  }
+  .readout-metric strong{ font-size:13px; font-weight:800; color:var(--ink-primary); }
+
+  /* Utilities de superfície/borda a partir dos design tokens — pra componentes
+     JS (calAddEmbalagem() em app.js) que não precisam de uma classe própria. */
+  .bg-surface-subtle{ background:var(--surface-subtle); }
+  .border-subtle{ border-color:var(--border-subtle); }
+
   /* Superfície e fundo do dashboard: gradiente vertical sutil no lugar do
      verde-claro chapado, pra dar profundidade de "mesa de trabalho" atrás
      dos cartões widget. */
   body.field-pattern{
-    background: #EEF2EB !important;
-    background-image: linear-gradient(180deg, #F0F4ED 0%, #E8EEE4 100%) !important;
+    background: #EEF2EB;
+    background-image: linear-gradient(180deg, #F0F4ED 0%, #E8EEE4 100%);
   }
 
   /* Cartão widget de dashboard: moldura padrão pra qualquer bloco que vire
      um "card" solto na grade executiva (Identificação, Parâmetros, Total,
-     Custo do produtor etc.). */
-  .crm-card{
-    background: #FFFFFF !important;
-    border: 1px solid #D8E0D2 !important;
-    border-radius: 12px !important;
-    padding: 18px !important;
-    box-shadow: 0 1px 3px rgba(30,36,32,0.04), 0 6px 16px -4px rgba(30,36,32,0.06) !important;
-    margin-bottom: 16px !important;
+     Custo do produtor etc.). Seletor "section.crm-card" (elemento+classe)
+     garante prioridade sobre utilities do Tailwind sem precisar de !important. */
+  section.crm-card{
+    background: #FFFFFF;
+    border: 1px solid #D8E0D2;
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: 0 1px 3px rgba(30,36,32,0.04), 0 6px 16px -4px rgba(30,36,32,0.06);
+    margin-bottom: 16px;
   }
   .crm-card-header{
     display: flex;
@@ -690,43 +883,45 @@
      (.custos-head/.custo-card-item/.custos-grid), em vez de utilities
      Tailwind soltas — cabeçalho e caixas de custo compartilham as mesmas
      colunas, garantindo alinhamento vertical. Ver renderCustos() em app.js. */
-  .custos-head{
+  div.custos-head{
     display: none;
   }
   @media (min-width: 1024px){
-    .custos-head{
-      display: grid !important;
-      grid-template-columns: 1.5fr 1.05fr 1.05fr 1.15fr 1.15fr !important;
-      gap: 12px !important;
-      align-items: center !important;
-      background: #F1F5ED !important;
-      border-radius: 8px !important;
-      padding: 8px 14px !important;
-      margin-bottom: 8px !important;
+    div.custos-head{
+      display: grid;
+      grid-template-columns: 1.5fr 1.05fr 1.05fr 1.15fr 1.15fr;
+      gap: 12px;
+      align-items: center;
+      background: #F1F5ED;
+      border-radius: 8px;
+      padding: 8px 14px;
+      margin-bottom: 8px;
     }
-    .custos-head > span:nth-child(n+2){
-      text-align: right !important;
+    div.custos-head > span:nth-child(n+2){
+      text-align: right;
     }
   }
 
-  /* Card individual de cada embalagem */
-  .custo-card-item{
-    border: 1px solid #DCE5D8 !important;
-    background: #FFFFFF !important;
-    border-radius: 10px !important;
-    padding: 12px 14px !important;
-    margin-bottom: 8px !important;
-    box-shadow: 0 1px 2px rgba(30,36,32,0.03) !important;
-    transition: all 0.15s ease !important;
+  /* Card individual de cada embalagem. Seletor "div.custo-card-item"
+     (elemento+classe) garante prioridade sobre utilities do Tailwind sem
+     precisar de !important. */
+  div.custo-card-item{
+    border: 1px solid #DCE5D8;
+    background: #FFFFFF;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    box-shadow: 0 1px 2px rgba(30,36,32,0.03);
+    transition: all 0.15s ease;
   }
-  .custo-card-item:hover{
-    border-color: #BCCBB6 !important;
-    box-shadow: 0 3px 8px -2px rgba(30,36,32,0.08) !important;
+  div.custo-card-item:hover{
+    border-color: #BCCBB6;
+    box-shadow: 0 3px 8px -2px rgba(30,36,32,0.08);
   }
   /* variante do card de combo (usa os preços das outras embalagens) */
-  .custo-card-item.is-combo{
-    border: 1px dashed #B5D4F4 !important;
-    background: #F4F9FD !important;
+  div.custo-card-item.is-combo{
+    border: 1px dashed #B5D4F4;
+    background: #F4F9FD;
   }
 
   /* Grade interna dos dados dentro do card */
@@ -741,21 +936,27 @@
       grid-template-columns: 1.5fr 1.05fr 1.05fr 1.15fr 1.15fr !important;
       gap: 12px !important;
     }
-    .custo-card-item [id^="custoVista-"],
-    .custo-card-item [id^="custoVistaAlq-"],
-    .custo-card-item [id^="custoPrazo-"],
-    .custo-card-item [id^="custoPrazoAlq-"]{
-      text-align: right !important;
+    div.custo-card-item [id^="custoVista-"],
+    div.custo-card-item [id^="custoVistaAlq-"],
+    div.custo-card-item [id^="custoPrazo-"],
+    div.custo-card-item [id^="custoPrazoAlq-"]{
+      text-align: right;
     }
   }
-  /* rótulos "Custo à vista"/"Custo a prazo" no celular: mesmo peso e cor
-     nítida dos rótulos .lbl vizinhos (Preço à vista/prazo), que usam classe
-     diferente e ficavam com contraste mais fraco por herdar só a utility
-     text-muted do Tailwind. */
-  #custosList div.text-\[10px\].font-semibold.uppercase.tracking-wide.text-muted.lg\:hidden{
+  /* rótulos "Custo à vista"/"Custo a prazo" no celular: classe própria do
+     componente (sem depender de encadeamento de utilities do Tailwind),
+     mesmo peso e cor nítida dos rótulos .lbl vizinhos (Preço à vista/prazo).
+     Escondido em telas >=1024px, onde a tabela de cabeçalho (.custos-head)
+     já identifica a coluna. */
+  .custo-mobile-label{
+    font-size:10px;
     font-weight:700;
-    color:#1E2420;
+    text-transform:uppercase;
     letter-spacing:.06em;
+    color:#1E2420;
+  }
+  @media (min-width:1024px){
+    .custo-mobile-label{ display:none; }
   }
 
   /* pacotes/embalagens (#packsWrap, montado em JS): cartões métricos
@@ -874,7 +1075,7 @@
     cursor:pointer;
     transition:background .12s, border-color .12s, color .12s;
   }
-  .comp-chip:hover{ background:var(--accent-soft); border-color:var(--accent-line); color:var(--accent); }
+  .comp-chip:hover{ background:var(--accent-soft); border-color:var(--accent-border); color:var(--accent); }
 
   /* corpo do resultado (#compResult-i): badge de NPK, grade de métricas e,
      quando aplicável, o badge de menor custo ou a diferença pra ela. */
@@ -939,7 +1140,7 @@
   /* custo total: a métrica mais importante da grade, com destaque de cor. */
   .comp-metric-box.is-total{
     background:var(--accent-soft);
-    border-color:var(--accent-line);
+    border-color:var(--accent-border);
   }
   .comp-metric-box.is-total .comp-metric-label{ color:var(--accent); }
   .comp-metric-box.is-total .comp-metric-value{ font-size:16px; }
@@ -965,7 +1166,7 @@
   /* botão "+ adicionar formulação": secundário, pontilhado — não compete
      visualmente com os botões de ação principais da ficha. */
   .comp-add-row{
-    border:1.5px dashed var(--accent-line);
+    border:1.5px dashed var(--accent-border);
     border-radius:8px;
     padding:10px;
     color:var(--accent);
@@ -1188,7 +1389,7 @@ tailwind.config = {
           </div>
           <div>
             <label class="lbl" for="cultivar" id="cultivarLabel">Cultivar cotada</label>
-            <input type="text" id="cultivar" class="inp" placeholder="Ex.: BRS 404" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false">
+            <input type="text" id="cultivar" class="inp" placeholder="Ex.: BRS 404" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="cultivarSuggestList">
             <ul id="cultivarSuggestList" class="csel-list hidden" role="listbox"></ul>
             <p id="cultivarPmsHint" class="mt-1.5 hidden text-[11px] text-muted"></p>
           </div>
@@ -1667,9 +1868,22 @@ tailwind.config = {
           <h2 class="crm-card-title">Identificação e Área do Cooperado</h2>
         </div>
         <div class="fld-grid">
-          <div class="fld-wide">
+          <div>
             <label class="lbl" for="calCliente">Cliente</label>
             <input type="text" id="calCliente" class="inp" placeholder="Nome do cliente" autocomplete="off">
+          </div>
+          <div>
+            <div class="area-label-row">
+              <label class="lbl" for="calArea">Área a corrigir</label>
+              <div id="calAreaUnitToggle" class="unit-toggle" role="group" aria-label="Unidade de área">
+                <button type="button" class="unit-toggle-btn is-active" data-unit="alq" aria-pressed="true" title="Alqueire paulista (1 alq = 2,42 ha)">Alqueire</button>
+                <button type="button" class="unit-toggle-btn" data-unit="ha" aria-pressed="false" title="Hectare">Hectare</button>
+              </div>
+            </div>
+            <input type="number" id="calArea" class="inp inp-num" step="0.1" min="0" inputmode="decimal" placeholder="0">
+            <p class="field-note" title="Equivalência automática: 1 alqueire = 2,42 ha">
+              <span class="note-ico" aria-hidden="true"><svg class="ti ti-ruler-2 icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3l4 4l-14 14l-4 -4l14 -14" /><path d="M16 7l-1.5 -1.5" /><path d="M13 10l-1.5 -1.5" /><path d="M10 13l-1.5 -1.5" /><path d="M7 16l-1.5 -1.5" /></svg></span><span id="calAreaHaHint">0 ha</span>
+            </p>
           </div>
           <div>
             <label class="lbl" for="calCultura">Cultura-alvo / V₂ desejado</label>
@@ -1683,21 +1897,11 @@ tailwind.config = {
             </select>
           </div>
           <div>
-            <label class="lbl" for="calV2">Saturação por bases desejada — V₂ (%)</label>
-            <input type="number" id="calV2" class="inp inp-num" step="1" min="0" max="100" inputmode="decimal" placeholder="80" value="80">
-          </div>
-          <div class="fld-wide">
-            <div class="area-label-row">
-              <label class="lbl" for="calArea">Área a corrigir</label>
-              <div id="calAreaUnitToggle" class="unit-toggle" role="group" aria-label="Unidade de área">
-                <button type="button" class="unit-toggle-btn is-active" data-unit="alq" aria-pressed="true" title="Alqueire paulista (1 alq = 2,42 ha)">Alqueire</button>
-                <button type="button" class="unit-toggle-btn" data-unit="ha" aria-pressed="false" title="Hectare">Hectare</button>
-              </div>
+            <label class="lbl" for="calV2">Saturação por bases desejada — V₂</label>
+            <div class="input-group">
+              <input type="number" id="calV2" class="inp inp-num" step="1" min="0" max="100" inputmode="decimal" placeholder="80" value="80">
+              <span class="input-group-addon is-suffix">%</span>
             </div>
-            <input type="number" id="calArea" class="inp inp-num" step="0.1" min="0" inputmode="decimal" placeholder="0">
-            <p class="field-note" title="Equivalência automática: 1 alqueire = 2,42 ha">
-              <span class="note-ico" aria-hidden="true"><svg class="ti ti-ruler-2 icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3l4 4l-14 14l-4 -4l14 -14" /><path d="M16 7l-1.5 -1.5" /><path d="M13 10l-1.5 -1.5" /><path d="M10 13l-1.5 -1.5" /><path d="M7 16l-1.5 -1.5" /></svg></span><span id="calAreaHaHint">0 ha</span>
-            </p>
           </div>
         </div>
       </section>
@@ -1706,37 +1910,55 @@ tailwind.config = {
         <div class="crm-card-header">
           <h2 class="crm-card-title">Laudo de Solo — Camada 0-20 cm (Calagem)</h2>
         </div>
+        <h3 class="cal-subhead">Complexo de troca — cátions e acidez</h3>
         <div class="fld-grid fld-grid-3">
           <div>
-            <label class="lbl" for="calCa020">Ca²⁺ (cmolc/dm³)</label>
-            <input type="number" id="calCa020" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+            <label class="lbl" for="calCa020">Ca²⁺</label>
+            <div class="input-group">
+              <input type="number" id="calCa020" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+              <span class="input-group-addon is-suffix">cmolc/dm³</span>
+            </div>
           </div>
           <div>
-            <label class="lbl" for="calMg020">Mg²⁺ (cmolc/dm³)</label>
-            <input type="number" id="calMg020" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+            <label class="lbl" for="calMg020">Mg²⁺</label>
+            <div class="input-group">
+              <input type="number" id="calMg020" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+              <span class="input-group-addon is-suffix">cmolc/dm³</span>
+            </div>
           </div>
           <div>
             <label class="lbl" for="calK020">K⁺</label>
-            <input type="number" id="calK020" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
-          </div>
-          <div class="fld-wide">
-            <label class="lbl" for="calKUnidade020">Unidade do K⁺</label>
-            <select id="calKUnidade020" class="inp">
-              <option value="cmolc">cmolc/dm³</option>
-              <option value="mgdm3">mg/dm³ (converte ÷ 391)</option>
-            </select>
-          </div>
-          <div>
-            <label class="lbl" for="calAl020">Al³⁺ (cmolc/dm³)</label>
-            <input type="number" id="calAl020" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+            <div class="input-group">
+              <input type="number" id="calK020" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+              <select id="calKUnidade020" aria-label="Unidade do K⁺">
+                <option value="cmolc">cmolc/dm³</option>
+                <option value="mgdm3">mg/dm³</option>
+              </select>
+            </div>
           </div>
           <div>
-            <label class="lbl" for="calHAl020">H+Al (cmolc/dm³)</label>
-            <input type="number" id="calHAl020" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+            <label class="lbl" for="calAl020">Al³⁺</label>
+            <div class="input-group">
+              <input type="number" id="calAl020" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+              <span class="input-group-addon is-suffix">cmolc/dm³</span>
+            </div>
           </div>
           <div>
-            <label class="lbl" for="calPrnt">PRNT do calcário (%)</label>
-            <input type="number" id="calPrnt" class="inp inp-num" step="1" min="1" max="100" inputmode="decimal" placeholder="80" value="80">
+            <label class="lbl" for="calHAl020">H+Al</label>
+            <div class="input-group">
+              <input type="number" id="calHAl020" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+              <span class="input-group-addon is-suffix">cmolc/dm³</span>
+            </div>
+          </div>
+        </div>
+        <h3 class="cal-subhead mt-4">Parâmetros agronômicos de aplicação</h3>
+        <div class="fld-grid fld-grid-4">
+          <div>
+            <label class="lbl" for="calPrnt">PRNT do calcário</label>
+            <div class="input-group">
+              <input type="number" id="calPrnt" class="inp inp-num" step="1" min="1" max="100" inputmode="decimal" placeholder="80" value="80">
+              <span class="input-group-addon is-suffix">%</span>
+            </div>
           </div>
           <div>
             <label class="lbl" for="calManejo">Sistema de manejo</label>
@@ -1747,17 +1969,27 @@ tailwind.config = {
             </select>
           </div>
           <div>
-            <label class="lbl" for="calProfundidade">Profundidade (cm)</label>
-            <input type="number" id="calProfundidade" class="inp inp-num" step="1" min="0" inputmode="decimal" placeholder="10" value="10">
+            <label class="lbl" for="calProfundidade">Profundidade</label>
+            <div class="input-group">
+              <input type="number" id="calProfundidade" class="inp inp-num" step="1" min="0" inputmode="decimal" placeholder="10" value="10">
+              <span class="input-group-addon is-suffix">cm</span>
+            </div>
           </div>
-          <div class="fld-wide">
-            <label class="lbl" for="calAreaAplicadaPct">Área efetivamente aplicada (%)</label>
-            <input type="number" id="calAreaAplicadaPct" class="inp inp-num" step="1" min="1" max="100" inputmode="decimal" placeholder="100" value="100">
+          <div>
+            <label class="lbl" for="calAreaAplicadaPct">Área efetivamente aplicada</label>
+            <div class="input-group">
+              <input type="number" id="calAreaAplicadaPct" class="inp inp-num" step="1" min="1" max="100" inputmode="decimal" placeholder="100" value="100">
+              <span class="input-group-addon is-suffix">%</span>
+            </div>
           </div>
         </div>
         <div class="readout mt-3">
           <span class="text-[11px] font-semibold uppercase tracking-wide text-muted"><svg class="ti ti-flask icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3l6 0" /><path d="M10 9l4 0" /><path d="M10 3v6l-4 11a.7 .7 0 0 0 .5 1h11a.7 .7 0 0 0 .5 -1l-4 -11v-6" /></svg> Leitura instantânea</span>
-          <span class="font-mono text-[13px] font-bold text-ink">SB <span id="calReadoutSB">0,00</span> · CTC(T) <span id="calReadoutCtc020">0,00</span> · V₁ <span id="calReadoutV1">0,00%</span></span>
+          <span class="readout-metrics">
+            <span class="readout-metric">SB <strong id="calReadoutSB">0,00</strong></span>
+            <span class="readout-metric">CTC(T) <strong id="calReadoutCtc020">0,00</strong></span>
+            <span class="readout-metric">V₁ <strong id="calReadoutV1">0,00%</strong></span>
+          </span>
         </div>
         <p class="mt-2 text-[11px] leading-snug text-muted">H+Al pode vir direto do laudo ou ser estimado pelo Índice SMP conforme a tabela do laboratório — informe aqui o valor já em cmolc/dm³.</p>
       </section>
@@ -1768,28 +2000,46 @@ tailwind.config = {
         </div>
         <div class="fld-grid fld-grid-3">
           <div>
-            <label class="lbl" for="calArgila2040">Argila (%)</label>
-            <input type="number" id="calArgila2040" class="inp inp-num" step="1" min="0" max="100" inputmode="decimal" placeholder="0">
+            <label class="lbl" for="calArgila2040">Argila</label>
+            <div class="input-group">
+              <input type="number" id="calArgila2040" class="inp inp-num" step="1" min="0" max="100" inputmode="decimal" placeholder="0">
+              <span class="input-group-addon is-suffix">%</span>
+            </div>
           </div>
           <div>
-            <label class="lbl" for="calAl2040">Al³⁺ (cmolc/dm³)</label>
-            <input type="number" id="calAl2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+            <label class="lbl" for="calCa2040">Ca²⁺</label>
+            <div class="input-group">
+              <input type="number" id="calCa2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+              <span class="input-group-addon is-suffix">cmolc/dm³</span>
+            </div>
           </div>
           <div>
-            <label class="lbl" for="calCa2040">Ca²⁺ (cmolc/dm³)</label>
-            <input type="number" id="calCa2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+            <label class="lbl" for="calMg2040">Mg²⁺</label>
+            <div class="input-group">
+              <input type="number" id="calMg2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+              <span class="input-group-addon is-suffix">cmolc/dm³</span>
+            </div>
           </div>
           <div>
-            <label class="lbl" for="calMg2040">Mg²⁺ (cmolc/dm³)</label>
-            <input type="number" id="calMg2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+            <label class="lbl" for="calK2040">K⁺</label>
+            <div class="input-group">
+              <input type="number" id="calK2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+              <span class="input-group-addon is-suffix">cmolc/dm³</span>
+            </div>
           </div>
           <div>
-            <label class="lbl" for="calK2040">K⁺ (cmolc/dm³)</label>
-            <input type="number" id="calK2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+            <label class="lbl" for="calAl2040">Al³⁺</label>
+            <div class="input-group">
+              <input type="number" id="calAl2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+              <span class="input-group-addon is-suffix">cmolc/dm³</span>
+            </div>
           </div>
           <div>
-            <label class="lbl" for="calHAl2040">H+Al (cmolc/dm³)</label>
-            <input type="number" id="calHAl2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+            <label class="lbl" for="calHAl2040">H+Al</label>
+            <div class="input-group">
+              <input type="number" id="calHAl2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
+              <span class="input-group-addon is-suffix">cmolc/dm³</span>
+            </div>
           </div>
         </div>
         <div class="mt-3">
@@ -1801,7 +2051,10 @@ tailwind.config = {
         </div>
         <div class="readout mt-3">
           <span class="text-[11px] font-semibold uppercase tracking-wide text-muted"><svg class="ti ti-triangle-square-circle icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M15 3l6 9l-6 9h-6" /></svg> Leitura instantânea (subsolo)</span>
-          <span class="font-mono text-[13px] font-bold text-ink">V% <span id="calReadoutV2040">0,00%</span> · m% <span id="calReadoutM2040">0,00%</span></span>
+          <span class="readout-metrics">
+            <span class="readout-metric">V₂₀₋₄₀ <strong id="calReadoutV2040">0,00%</strong></span>
+            <span class="readout-metric">m% <strong id="calReadoutM2040">0,00%</strong></span>
+          </span>
         </div>
       </section>
 
@@ -1810,7 +2063,12 @@ tailwind.config = {
       <!-- Coluna 2 (desktop): diagnóstico executivo, KPIs e custos -->
       <div class="mt-6 lg:mt-0 lg:min-h-0 lg:w-[56%] lg:overflow-y-auto lg:p-6">
 
-      <section id="calSemaforoBox" class="grid gap-2.5"></section>
+      <section class="crm-card">
+        <div class="crm-card-header">
+          <h2 class="crm-card-title"><span aria-hidden="true"><svg class="ti ti-activity icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l3 8l4 -16l3 8h4" /></svg></span>Diagnóstico Agronômico do Perfil de Solo</h2>
+        </div>
+        <div id="calSemaforoBox" class="grid gap-2.5"></div>
+      </section>
 
       <section class="crm-card mt-4">
         <div class="crm-card-header">
@@ -1826,9 +2084,9 @@ tailwind.config = {
           <span class="font-mono text-[16px] font-bold text-ink"><span id="calNcTotal">0,00</span> toneladas</span>
         </div>
         <div class="mt-3 rounded-lg border border-line bg-white px-3 py-2.5">
-          <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">🧪 Corretivo recomendado</div>
-          <div class="mt-1 text-[14px] font-bold text-ink"><span id="calTipoCalcario">—</span></div>
-          <div class="mt-0.5 text-[10.5px] text-muted" id="calFaixaMgo"></div>
+          <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">Corretivo recomendado</div>
+          <div class="mt-1.5 cal-tipo-tag"><span id="calTipoCalcario">—</span></div>
+          <div class="mt-1.5 text-[10.5px] text-muted" id="calFaixaMgo"></div>
         </div>
         <div id="calAlertBox" class="alerts-box hidden mt-3"></div>
       </section>
@@ -1848,48 +2106,57 @@ tailwind.config = {
         </div>
         <div class="mt-3 rounded-lg border border-line bg-white px-3 py-2.5">
           <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">Aporte de nutrientes</div>
-          <div class="mt-1 text-[12.5px] text-ink">Enxofre (S-SO₄²⁻): <strong class="font-mono tabular-nums" id="calNgEnxofre">0,00</strong> kg/ha &nbsp;·&nbsp; Cálcio (Ca²⁺): <strong class="font-mono tabular-nums" id="calNgCalcio">0,00</strong> kg/ha</div>
+          <div class="comp-metric-grid mt-2">
+            <div class="comp-metric-box">
+              <div class="comp-metric-label">Enxofre (S-SO₄²⁻)</div>
+              <div class="comp-metric-value"><span id="calNgEnxofre">0,00</span> <span class="text-[10.5px] font-normal text-muted">kg/ha</span></div>
+            </div>
+            <div class="comp-metric-box">
+              <div class="comp-metric-label">Cálcio (Ca²⁺)</div>
+              <div class="comp-metric-value"><span id="calNgCalcio">0,00</span> <span class="text-[10.5px] font-normal text-muted">kg/ha</span></div>
+            </div>
+          </div>
         </div>
       </section>
 
-      <section class="mt-4 rounded-lg border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3.5">
-        <h3 class="mb-3 flex items-center gap-2 text-[13px] font-extrabold">
-          <span aria-hidden="true"><svg class="ti ti-truck icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M5 17h-2v-11a1 1 0 0 1 1 -1h9v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5" /></svg></span>Logística de cargas e embalagens
-        </h3>
+      <section class="crm-card mt-4">
+        <div class="crm-card-header">
+          <h2 class="crm-card-title"><span aria-hidden="true"><svg class="ti ti-truck icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M5 17h-2v-11a1 1 0 0 1 1 -1h9v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5" /></svg></span>Logística de cargas e embalagens</h2>
+        </div>
         <div id="calLogisticaWrap" class="grid grid-cols-2 gap-2.5 lg:grid-cols-4"></div>
       </section>
 
-      <section class="mt-4 rounded-lg border border-line bg-canvas/70 p-4 sm:p-5 lg:p-3.5">
-        <h3 class="mb-3 flex items-center gap-2 text-[13px] font-extrabold">
-          <span aria-hidden="true"><svg class="ti ti-coin icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M14.8 9a2 2 0 0 0 -1.8 -1h-2a2 2 0 1 0 0 4h2a2 2 0 1 1 0 4h-2a2 2 0 0 1 -1.8 -1" /><path d="M12 7v10" /></svg></span>Investimento e custos do produtor
-        </h3>
+      <section class="crm-card mt-4">
+        <div class="crm-card-header">
+          <h2 class="crm-card-title"><span aria-hidden="true"><svg class="ti ti-coin icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M14.8 9a2 2 0 0 0 -1.8 -1h-2a2 2 0 1 0 0 4h2a2 2 0 1 1 0 4h-2a2 2 0 0 1 -1.8 -1" /><path d="M12 7v10" /></svg></span>Investimento e custos do produtor</h2>
+        </div>
         <div class="fld-grid fld-grid-3">
           <div>
             <label class="lbl" for="calPrecoCalcarioVista">Calcário — à vista (R$/t)</label>
-            <div class="relative">
-              <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[13px] font-semibold text-muted">R$</span>
+            <div class="input-group">
+              <span class="input-group-addon is-prefix">R$</span>
               <input type="number" id="calPrecoCalcarioVista" class="inp inp-num inp-money" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
             </div>
           </div>
           <div>
             <label class="lbl" for="calPrecoCalcarioPrazo">Calcário — a prazo (R$/t)</label>
-            <div class="relative">
-              <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[13px] font-semibold text-muted">R$</span>
+            <div class="input-group">
+              <span class="input-group-addon is-prefix">R$</span>
               <input type="number" id="calPrecoCalcarioPrazo" class="inp inp-num inp-money" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
             </div>
           </div>
           <div></div>
           <div>
             <label class="lbl" for="calPrecoGessoVista">Gesso — à vista (R$/t)</label>
-            <div class="relative">
-              <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[13px] font-semibold text-muted">R$</span>
+            <div class="input-group">
+              <span class="input-group-addon is-prefix">R$</span>
               <input type="number" id="calPrecoGessoVista" class="inp inp-num inp-money" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
             </div>
           </div>
           <div>
             <label class="lbl" for="calPrecoGessoPrazo">Gesso — a prazo (R$/t)</label>
-            <div class="relative">
-              <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[13px] font-semibold text-muted">R$</span>
+            <div class="input-group">
+              <span class="input-group-addon is-prefix">R$</span>
               <input type="number" id="calPrecoGessoPrazo" class="inp inp-num inp-money" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
             </div>
           </div>
@@ -2580,9 +2847,24 @@ function enhanceSelect(selectEl){
   btn.appendChild(labelSpan);
 
   const list = document.createElement("ul");
-  list.className = "csel-list hidden";
   list.setAttribute("role", "listbox");
   list.tabIndex = -1;
+  list.id = (selectEl.id || ("csel" + Math.random().toString(36).slice(2))) + "-list";
+
+  // Popover API (Chrome/Edge 114+, Firefox 125+, Safari 17+): a lista renderiza
+  // na top layer do navegador, escapando de qualquer ancestral com overflow
+  // clipado sem precisar reposicioná-la a cada scroll nem movê-la pro <body>
+  // manualmente — o próprio navegador cuida do "fixed" e do estado inicial
+  // oculto. Onde não há suporte, cai pro fallback abaixo (portar a lista pro
+  // <body> só enquanto aberta, controlado pela classe .hidden — comportamento
+  // que já existia antes desta função ganhar suporte a Popover).
+  const supportsPopover = typeof HTMLElement !== "undefined" && "popover" in HTMLElement.prototype;
+  if(supportsPopover){
+    list.className = "csel-list";
+    list.popover = "manual";
+  } else {
+    list.className = "csel-list hidden";
+  }
 
   selectEl.classList.add("csel-native");
   selectEl.tabIndex = -1;
@@ -2595,9 +2877,10 @@ function enhanceSelect(selectEl){
   function render(){
     const opts = Array.from(selectEl.options);
     list.innerHTML = "";
-    opts.forEach((opt) => {
+    opts.forEach((opt, i) => {
       const li = document.createElement("li");
       const selecionada = opt.value === selectEl.value;
+      li.id = list.id + "-opt-" + i;
       li.className = "csel-option" + (selecionada ? " is-selected" : "");
       li.textContent = opt.textContent;
       li.setAttribute("role", "option");
@@ -2618,26 +2901,41 @@ function enhanceSelect(selectEl){
     Array.from(list.children).forEach((li, i) => li.classList.toggle("is-active", i === activeIndex));
     const activeLi = list.children[activeIndex];
     if(activeLi) activeLi.scrollIntoView({ block: "nearest" });
+    // aria-activedescendant no elemento com foco real (o botão — a lista
+    // nunca recebe foco de verdade) descreve pro leitor de tela qual opção
+    // está ativa sem precisar mover o foco pra dentro do <ul>.
+    if(activeLi) btn.setAttribute("aria-activedescendant", activeLi.id);
+    else btn.removeAttribute("aria-activedescendant");
   }
-  // A lista abre "flutuando" fixa na tela (portada pro <body>) em vez de
-  // ficar posicionada dentro da coluna rolável: um elemento absoluto que
-  // ultrapassa a borda inferior de um ancestral com overflow-y:auto conta
-  // no scrollHeight dele mesmo sem ser cortado — isso fazia a barra de
-  // rolagem da coluna aparecer só de abrir o seletor (ex.: Espaçamento no
-  // Milho). Fixando fora da coluna, a lista nunca mexe no scroll dela.
   function positionList(){
     const rect = btn.getBoundingClientRect();
-    list.style.left = rect.left + "px";
-    list.style.width = rect.width + "px";
+    const minW = Math.min(window.innerWidth - 16, Math.max(rect.width, 280));
+    list.style.width = minW + "px";
+    const leftPos = Math.min(Math.max(8, rect.left), window.innerWidth - minW - 8);
+    list.style.left = leftPos + "px";
     const espacoAbaixo = window.innerHeight - rect.bottom;
     const abrePraCima = espacoAbaixo < list.offsetHeight + 6 && rect.top > list.offsetHeight + 6;
     list.style.top = abrePraCima ? (rect.top - list.offsetHeight - 6) + "px" : (rect.bottom + 6) + "px";
   }
+  function isOpen(){
+    return supportsPopover ? list.matches(":popover-open") : !list.classList.contains("hidden");
+  }
+  // Fecha a lista na primeira rolagem detectada, em vez de perseguir o botão
+  // pela tela a cada evento de scroll: um listener contínuo de scroll aqui
+  // forçava getBoundingClientRect() (reflow síncrono) em toda rolagem,
+  // travando o scroll no celular. { once:true } já remove o próprio listener
+  // sozinho; close() também remove por segurança, caso a lista já tenha sido
+  // fechada por outro caminho (Escape, clique fora, seleção de item) antes.
+  function closeOnScroll(){ close(); }
   function open(){
-    document.body.appendChild(list);
-    list.style.position = "fixed";
-    list.style.right = "auto";
-    list.classList.remove("hidden");
+    if(supportsPopover){
+      list.showPopover();
+    } else {
+      document.body.appendChild(list);
+      list.style.position = "fixed";
+      list.style.right = "auto";
+      list.classList.remove("hidden");
+    }
     positionList();
     btn.setAttribute("aria-expanded", "true");
     wrap.classList.add("is-open");
@@ -2645,33 +2943,39 @@ function enhanceSelect(selectEl){
     activeIndex = selecionada ? Array.from(list.children).indexOf(selecionada) : 0;
     updateActive();
     document.addEventListener("click", onOutsideClick);
-    window.addEventListener("scroll", positionList, true);
+    window.addEventListener("scroll", closeOnScroll, { capture: true, once: true, passive: true });
     window.addEventListener("resize", positionList);
   }
   function close(){
-    list.classList.add("hidden");
-    btn.setAttribute("aria-expanded", "false");
-    wrap.classList.remove("is-open");
-    document.removeEventListener("click", onOutsideClick);
-    window.removeEventListener("scroll", positionList, true);
-    window.removeEventListener("resize", positionList);
-    wrap.appendChild(list);
-    list.style.position = "";
+    if(!isOpen()) return;
+    if(supportsPopover){
+      list.hidePopover();
+    } else {
+      list.classList.add("hidden");
+      wrap.appendChild(list);
+      list.style.position = "";
+      list.style.right = "";
+    }
     list.style.left = "";
     list.style.top = "";
     list.style.width = "";
-    list.style.right = "";
+    btn.setAttribute("aria-expanded", "false");
+    btn.removeAttribute("aria-activedescendant");
+    wrap.classList.remove("is-open");
+    document.removeEventListener("click", onOutsideClick);
+    window.removeEventListener("scroll", closeOnScroll, true);
+    window.removeEventListener("resize", positionList);
   }
   function onOutsideClick(e){
     if(!wrap.contains(e.target)) close();
   }
 
   btn.addEventListener("click", () => {
-    if(list.classList.contains("hidden")) open(); else close();
+    if(isOpen()) close(); else open();
   });
   btn.addEventListener("keydown", (e) => {
     const opts = Array.from(list.children);
-    if(list.classList.contains("hidden")){
+    if(!isOpen()){
       if(["ArrowDown","ArrowUp","Enter"," "].includes(e.key)){ e.preventDefault(); open(); }
       return;
     }
@@ -2741,6 +3045,15 @@ const cultivarPmsHint = $("cultivarPmsHint");
 const cultivarWrapOriginal = cultivarList.parentNode;
 let cultivarActiveIndex = -1;
 
+// Mesmo suporte a Popover API do enhanceSelect() acima (ver comentário lá):
+// quando disponível, a lista renderiza na top layer sem precisar ser movida
+// pro <body> nem reposicionada a cada scroll.
+const cultivarSupportsPopover = typeof HTMLElement !== "undefined" && "popover" in HTMLElement.prototype;
+if(cultivarSupportsPopover){
+  cultivarList.classList.remove("hidden");
+  cultivarList.popover = "manual";
+}
+
 function cultivarCatalogo(){
   return currentCrop !== "adubacao" ? (CULTIVARES[currentCrop] || []) : [];
 }
@@ -2752,16 +3065,28 @@ function posicionarCultivarList(){
   cultivarList.style.top = (rect.bottom + 6) + "px";
 }
 
+function cultivarListaAberta(){
+  return cultivarSupportsPopover ? cultivarList.matches(":popover-open") : !cultivarList.classList.contains("hidden");
+}
+// Mesma lógica de enhanceSelect(): fecha na primeira rolagem detectada em vez
+// de perseguir o campo pela tela a cada evento de scroll (reflow síncrono).
+function fecharCultivarListOnScroll(){ fecharCultivarList(); }
 function fecharCultivarList(){
-  cultivarList.classList.add("hidden");
+  if(!cultivarListaAberta()){ cultivarActiveIndex = -1; return; }
+  if(cultivarSupportsPopover){
+    cultivarList.hidePopover();
+  } else {
+    cultivarList.classList.add("hidden");
+    cultivarWrapOriginal.appendChild(cultivarList);
+    cultivarList.style.position = "";
+  }
   cultivarActiveIndex = -1;
   cultivarInput.setAttribute("aria-expanded", "false");
-  cultivarWrapOriginal.appendChild(cultivarList);
-  cultivarList.style.position = "";
+  cultivarInput.removeAttribute("aria-activedescendant");
   cultivarList.style.left = "";
   cultivarList.style.top = "";
   cultivarList.style.width = "";
-  window.removeEventListener("scroll", posicionarCultivarList, true);
+  window.removeEventListener("scroll", fecharCultivarListOnScroll, true);
   window.removeEventListener("resize", posicionarCultivarList);
   document.removeEventListener("click", onCultivarOutsideClick);
 }
@@ -2769,9 +3094,18 @@ function onCultivarOutsideClick(e){
   if(!cultivarInput.contains(e.target) && !cultivarList.contains(e.target)) fecharCultivarList();
 }
 function atualizarCultivarAtivo(opts){
-  opts.forEach((li, i) => li.classList.toggle("is-active", i === cultivarActiveIndex));
+  opts.forEach((li, i) => {
+    const ativo = i === cultivarActiveIndex;
+    li.classList.toggle("is-active", ativo);
+    li.setAttribute("aria-selected", ativo ? "true" : "false");
+  });
   const ativo = opts[cultivarActiveIndex];
-  if(ativo) ativo.scrollIntoView({ block: "nearest" });
+  if(ativo){
+    ativo.scrollIntoView({ block: "nearest" });
+    cultivarInput.setAttribute("aria-activedescendant", ativo.id);
+  } else {
+    cultivarInput.removeAttribute("aria-activedescendant");
+  }
 }
 function selecionarCultivar(item){
   cultivarInput.value = item.nome;
@@ -2798,19 +3132,28 @@ function renderCultivarSugestoes(){
   cultivarList.innerHTML = "";
   bateram.forEach((item, i) => {
     const li = document.createElement("li");
-    li.className = "csel-option" + (i === cultivarActiveIndex ? " is-active" : "");
+    const ativo = i === cultivarActiveIndex;
+    li.id = "cultivarSuggestList-opt-" + i;
+    li.className = "csel-option" + (ativo ? " is-active" : "");
     li.textContent = item.nome;
     li.setAttribute("role", "option");
+    li.setAttribute("aria-selected", ativo ? "true" : "false");
     li.addEventListener("click", () => selecionarCultivar(item));
     cultivarList.appendChild(li);
   });
 
-  document.body.appendChild(cultivarList);
-  cultivarList.style.position = "fixed";
-  cultivarList.classList.remove("hidden");
+  if(cultivarSupportsPopover){
+    if(!cultivarList.matches(":popover-open")) cultivarList.showPopover();
+  } else {
+    document.body.appendChild(cultivarList);
+    cultivarList.style.position = "fixed";
+    cultivarList.classList.remove("hidden");
+  }
   cultivarInput.setAttribute("aria-expanded", "true");
   posicionarCultivarList();
-  window.addEventListener("scroll", posicionarCultivarList, true);
+  const ativo = cultivarList.children[cultivarActiveIndex];
+  cultivarInput.setAttribute("aria-activedescendant", ativo ? ativo.id : "");
+  window.addEventListener("scroll", fecharCultivarListOnScroll, { capture: true, once: true, passive: true });
   window.addEventListener("resize", posicionarCultivarList);
   document.addEventListener("click", onCultivarOutsideClick);
 }
@@ -2822,12 +3165,13 @@ cultivarInput.addEventListener("input", () => {
   mostrarPmsCultivar(exato);
 });
 cultivarInput.addEventListener("keydown", (e) => {
-  if(cultivarList.classList.contains("hidden")) return;
+  if(!cultivarListaAberta()) return;
   const opts = Array.from(cultivarList.children);
   if(e.key === "ArrowDown"){ e.preventDefault(); cultivarActiveIndex = Math.min(cultivarActiveIndex + 1, opts.length - 1); atualizarCultivarAtivo(opts); }
   else if(e.key === "ArrowUp"){ e.preventDefault(); cultivarActiveIndex = Math.max(cultivarActiveIndex - 1, 0); atualizarCultivarAtivo(opts); }
   else if(e.key === "Enter"){ if(cultivarActiveIndex >= 0){ e.preventDefault(); opts[cultivarActiveIndex].click(); } }
   else if(e.key === "Escape"){ fecharCultivarList(); }
+  else if(e.key === "Tab"){ fecharCultivarList(); }
 });
 
 // espaçamentos padrão; cada cultura pode ter a própria lista (ex.: trigo só 0,17)
@@ -2982,10 +3326,7 @@ function selectCrop(crop){
   const saved = cropState[crop];
   if(saved && saved.variant) cropVariant[crop] = saved.variant;
   const c = getConfig(crop);
-  document.documentElement.style.setProperty("--accent", c.accent);
-  document.documentElement.style.setProperty("--accent-soft", hexToSoft(c.accent));
-  document.documentElement.style.setProperty("--accent-light", c.accentLight || c.accent);
-  document.documentElement.style.setProperty("--accent-line", hexToRgba(c.accent, .30));
+  applyAccentVars(c.accent, c.accentLight);
   $("cropIcon").innerHTML = iconSvg(c.icon, "icon-inline");
   $("cropLabelText").textContent = "Total — " + c.nome;
   $("custosCropNome").textContent = "· " + c.nome;
@@ -3100,6 +3441,21 @@ function hexToRgba(hex, alpha){
 }
 function hexToSoft(hex){
   return hexToRgba(hex, 0.10);
+}
+function hexToSurface(hex){
+  return hexToRgba(hex, 0.05);
+}
+// Design tokens dinâmicos por cultura (ver :root em styles.css): centraliza
+// aqui a atualização das 5 CSS custom properties de accent, chamada tanto por
+// selectCrop() quanto pelo botão de Calagem & Gessagem em setView() — evita
+// os dois lugares divergirem entre si.
+function applyAccentVars(hex, hoverHex){
+  const root = document.documentElement.style;
+  root.setProperty("--accent", hex);
+  root.setProperty("--accent-soft", hexToSoft(hex));
+  root.setProperty("--accent-surface", hexToSurface(hex));
+  root.setProperty("--accent-border", hexToRgba(hex, .30));
+  root.setProperty("--accent-hover", hoverHex || hex);
 }
 
 function calc(){
@@ -3523,12 +3879,12 @@ function renderCustos(unidades){
             usa os preços acima
           </div>
           <div>
-            <div class="text-[10px] font-semibold uppercase tracking-wide text-muted lg:hidden">Custo à vista</div>
+            <div class="custo-mobile-label">Custo à vista</div>
             <div class="whitespace-nowrap font-mono text-[14px] font-bold tabular-nums text-ink" id="custoVista-${i}">R$ 0,00</div>
             <div class="whitespace-nowrap text-[10.5px] text-muted" id="custoVistaAlq-${i}">R$ 0,00 / alqueire</div>
           </div>
           <div>
-            <div class="text-[10px] font-semibold uppercase tracking-wide text-muted lg:hidden" id="custoPrazoRot-${i}">Custo a prazo</div>
+            <div class="custo-mobile-label" id="custoPrazoRot-${i}">Custo a prazo</div>
             <div class="whitespace-nowrap font-mono text-[14px] font-bold tabular-nums text-ink" id="custoPrazo-${i}">R$ 0,00</div>
             <div class="whitespace-nowrap text-[10.5px] text-muted" id="custoPrazoAlq-${i}">R$ 0,00 / alqueire</div>
           </div>
@@ -3549,27 +3905,27 @@ function renderCustos(unidades){
 
           <div>
             <label class="lbl lg:hidden" for="precoVista-${i}">Preço à vista</label>
-            <div class="relative">
-              <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[13px] font-semibold text-muted">R$</span>
+            <div class="input-group">
+              <span class="input-group-addon is-prefix">R$</span>
               <input type="number" id="precoVista-${i}" class="inp inp-num inp-money" step="0.01" min="0" inputmode="decimal"
                      placeholder="0,00" data-custo="${key}" data-tipo="vista" value="${p.vista || ""}">
             </div>
           </div>
           <div>
             <label class="lbl lg:hidden" for="precoPrazo-${i}">Preço a prazo</label>
-            <div class="relative">
-              <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[13px] font-semibold text-muted">R$</span>
+            <div class="input-group">
+              <span class="input-group-addon is-prefix">R$</span>
               <input type="number" id="precoPrazo-${i}" class="inp inp-num inp-money" step="0.01" min="0" inputmode="decimal"
                      placeholder="0,00" data-custo="${key}" data-tipo="prazo" value="${p.prazo || ""}">
             </div>
           </div>
           <div>
-            <div class="text-[10px] font-semibold uppercase tracking-wide text-muted lg:hidden">Custo à vista</div>
+            <div class="custo-mobile-label">Custo à vista</div>
             <div class="whitespace-nowrap font-mono text-[14px] font-bold tabular-nums text-ink" id="custoVista-${i}">R$ 0,00</div>
             <div class="whitespace-nowrap text-[10.5px] text-muted" id="custoVistaAlq-${i}">R$ 0,00 / alqueire</div>
           </div>
           <div>
-            <div class="text-[10px] font-semibold uppercase tracking-wide text-muted lg:hidden" id="custoPrazoRot-${i}">Custo a prazo</div>
+            <div class="custo-mobile-label" id="custoPrazoRot-${i}">Custo a prazo</div>
             <div class="whitespace-nowrap font-mono text-[14px] font-bold tabular-nums text-ink" id="custoPrazo-${i}">R$ 0,00</div>
             <div class="whitespace-nowrap text-[10.5px] text-muted" id="custoPrazoAlq-${i}">R$ 0,00 / alqueire</div>
           </div>
@@ -3715,8 +4071,8 @@ function renderComparador(){
         </div>
         <div>
           <label class="lbl" for="compPreco-${i}">Preço por kg</label>
-          <div class="relative">
-            <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[13px] font-semibold text-muted">R$</span>
+          <div class="input-group">
+            <span class="input-group-addon is-prefix">R$</span>
             <input type="number" id="compPreco-${i}" class="inp inp-num inp-money" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
           </div>
         </div>
@@ -4888,19 +5244,13 @@ function setView(view){
 
   if(view === "calagem"){
     emCalagem = true;
-    document.documentElement.style.setProperty("--accent", "#8C6D46");
-    document.documentElement.style.setProperty("--accent-soft", hexToSoft("#8C6D46"));
-    document.documentElement.style.setProperty("--accent-light", "#D2A97A");
-    document.documentElement.style.setProperty("--accent-line", hexToRgba("#8C6D46", .30));
+    applyAccentVars("#8C6D46", "#D2A97A");
   } else if(emCalagem){
     // reaplica as variáveis de accent da cultura corrente sem tocar em nenhum campo
     // (chamar selectCrop() de novo aqui apagaria digitação ainda não salva na aba)
     emCalagem = false;
     const c = getConfig(currentCrop);
-    document.documentElement.style.setProperty("--accent", c.accent);
-    document.documentElement.style.setProperty("--accent-soft", hexToSoft(c.accent));
-    document.documentElement.style.setProperty("--accent-light", c.accentLight || c.accent);
-    document.documentElement.style.setProperty("--accent-line", hexToRgba(c.accent, .30));
+    applyAccentVars(c.accent, c.accentLight);
   }
 }
 viewBtnCalc.addEventListener("click", () => setView("calc"));
@@ -5070,15 +5420,17 @@ calAreaUnitButtons.forEach(btn => {
 
 // Cultura-alvo -> V₂ sugerido (editável); "Personalizado" deixa o campo livre.
 $("calCultura").addEventListener("change", () => {
-  const opt = $("calCultura").selectedOptions[0];
-  const v2 = opt.dataset.v2;
+  const sel = $("calCultura");
+  const opt = sel.selectedOptions?.[0] || sel.options[sel.selectedIndex] || sel.querySelector(`option[value="${sel.value}"]`);
+  const v2 = opt?.dataset?.v2;
   if(v2) $("calV2").value = v2;
   calcCalagem();
 });
 // Sistema de manejo -> profundidade sugerida (editável); "Personalizado" deixa o campo livre.
 $("calManejo").addEventListener("change", () => {
-  const opt = $("calManejo").selectedOptions[0];
-  const prof = opt.dataset.prof;
+  const sel = $("calManejo");
+  const opt = sel.selectedOptions?.[0] || sel.options[sel.selectedIndex] || sel.querySelector(`option[value="${sel.value}"]`);
+  const prof = opt?.dataset?.prof;
   if(prof) $("calProfundidade").value = prof;
   calcCalagem();
 });
@@ -5094,13 +5446,26 @@ $("calArea").addEventListener("input", calcCalagem);
 $("calKUnidade020").addEventListener("change", calcCalagem);
 $("calMetodoGessagem").addEventListener("change", calcCalagem);
 
+// Selects da aba Calagem & Gessagem com o mesmo componente customizado usado
+// em Espaçamento/Transpasse — os listeners de "change" acima continuam
+// disparando normalmente, já que enhanceSelect() só troca a aparência e
+// redispara "change" no <select> nativo por baixo (ver enhanceSelect()).
+enhanceSelect($("calCultura"));
+enhanceSelect($("calKUnidade020"));
+// marca o wrap como compacto: o K⁺ embute o seletor de unidade dentro do
+// próprio .input-group (ver .csel-compact em styles.css), no lugar do
+// <select> de largura total usado nos outros 3 selects desta aba.
+$("calKUnidade020").closest(".csel").classList.add("csel-compact");
+enhanceSelect($("calManejo"));
+enhanceSelect($("calMetodoGessagem"));
+
 // toneladas de calcário/gesso -> quantidade de embalagens (Big Bag 1.000 kg,
 // sacaria de 50 kg) e de cargas a granel (referência: bitrem médio, 34 t)
 const CAL_CARGA_GRANEL_T = 35; // carreta/bitrem médio
 function calAddEmbalagem(wrap, produto, label, toneladas, tamanhoT){
   const exato = toneladas / tamanhoT;
   const div = document.createElement("div");
-  div.className = "rounded-xl border border-ink/[.08] bg-white/80 px-3 py-2.5";
+  div.className = "rounded-lg border border-line bg-white px-3 py-2.5";
   div.innerHTML =
     `<div class="text-[10px] font-semibold uppercase tracking-wide text-muted">${produto} · ${label}</div>` +
     `<div class="pack-value mt-0.5 font-mono tabular-nums text-ink">${fmtDec(exato)}</div>` +
@@ -5129,36 +5494,40 @@ function calRenderCustoCard(wrap, produto, totalT, precoVista, precoPrazo, areaA
   const { vista, prazo } = calCustoProduto(totalT, precoVista, precoPrazo);
   const areaHa = alqParaHa(areaAlq);
   const div = document.createElement("div");
-  div.className = "rounded-lg border border-line bg-white px-3 py-2.5";
+  div.className = "custo-card-item";
   div.innerHTML = `
-    <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-      <div class="text-[11px] font-bold text-ink">${produto} <span class="font-mono text-[10.5px] font-normal text-muted">(${fmtDec(totalT)} t)</span></div>
-      <div class="flex flex-wrap gap-x-3 gap-y-1" style="text-align:right">
-        <div>
-          <div class="text-[9px] font-semibold uppercase tracking-wide text-muted">à vista</div>
-          <div class="font-mono text-[13px] font-bold tabular-nums text-ink">${fmtMoeda(vista)}</div>
-        </div>
-        <div>
-          <div class="text-[9px] font-semibold uppercase tracking-wide text-muted">a prazo</div>
-          <div class="font-mono text-[13px] font-bold tabular-nums text-ink">${fmtMoeda(prazo)}</div>
-        </div>
-        <div>
-          <div class="text-[9px] font-semibold uppercase tracking-wide text-muted">por alqueire</div>
-          <div class="font-mono text-[11.5px] text-muted">${areaAlq ? fmtMoeda(vista / areaAlq) : "—"}</div>
-        </div>
-        <div>
-          <div class="text-[9px] font-semibold uppercase tracking-wide text-muted">por hectare</div>
-          <div class="font-mono text-[11.5px] text-muted">${areaHa ? fmtMoeda(vista / areaHa) : "—"}</div>
-        </div>
+    <div class="custos-grid">
+      <div>
+        <span class="text-[13px] font-extrabold text-ink lg:leading-tight">${produto}</span>
+        <div class="mt-0.5"><span class="whitespace-nowrap font-mono text-[11px] text-muted">${fmtDec(totalT)} t</span></div>
+      </div>
+      <div>
+        <div class="custo-mobile-label">Custo à vista</div>
+        <div class="whitespace-nowrap font-mono text-[14px] font-bold tabular-nums text-ink">${fmtMoeda(vista)}</div>
+      </div>
+      <div>
+        <div class="custo-mobile-label">Custo a prazo</div>
+        <div class="whitespace-nowrap font-mono text-[14px] font-bold tabular-nums text-ink">${fmtMoeda(prazo)}</div>
+      </div>
+      <div>
+        <div class="custo-mobile-label">Por alqueire</div>
+        <div class="whitespace-nowrap font-mono text-[11.5px] text-muted">${areaAlq ? fmtMoeda(vista / areaAlq) : "—"}</div>
+      </div>
+      <div>
+        <div class="custo-mobile-label">Por hectare</div>
+        <div class="whitespace-nowrap font-mono text-[11.5px] text-muted">${areaHa ? fmtMoeda(vista / areaHa) : "—"}</div>
       </div>
     </div>`;
   wrap.appendChild(div);
 }
 
+const SEMAFORO_ICON_OK = '<path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 12l2 2l4 -4" /><path d="M21 12a9 9 0 1 1 -18 0a9 9 0 0 1 18 0" />';
 function calSemaforoItem(status, texto){
-  const emoji = status === "ok" ? "🟢" : status === "atencao" ? "🟡" : "🔴";
   const classe = status === "ok" ? "semaforo-ok" : status === "atencao" ? "semaforo-atencao" : "semaforo-alerta";
-  return `<div class="semaforo-item ${classe}"><span class="semaforo-emoji" aria-hidden="true">${emoji}</span><span>${texto}</span></div>`;
+  const paths = status === "ok" ? SEMAFORO_ICON_OK : status === "atencao" ? ALERT_META.warn.paths : ALERT_META.error.paths;
+  return `<div class="semaforo-item ${classe}">` +
+    `<span class="status-icon-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${paths}</svg></span>` +
+    `<span>${texto}</span></div>`;
 }
 
 // guarda o último resultado calculado — reaproveitado por coletarResumoCalagem() na exportação (PDF/PNG)

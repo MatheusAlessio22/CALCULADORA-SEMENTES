@@ -150,9 +150,24 @@ function enhanceSelect(selectEl){
   btn.appendChild(labelSpan);
 
   const list = document.createElement("ul");
-  list.className = "csel-list hidden";
   list.setAttribute("role", "listbox");
   list.tabIndex = -1;
+  list.id = (selectEl.id || ("csel" + Math.random().toString(36).slice(2))) + "-list";
+
+  // Popover API (Chrome/Edge 114+, Firefox 125+, Safari 17+): a lista renderiza
+  // na top layer do navegador, escapando de qualquer ancestral com overflow
+  // clipado sem precisar reposicioná-la a cada scroll nem movê-la pro <body>
+  // manualmente — o próprio navegador cuida do "fixed" e do estado inicial
+  // oculto. Onde não há suporte, cai pro fallback abaixo (portar a lista pro
+  // <body> só enquanto aberta, controlado pela classe .hidden — comportamento
+  // que já existia antes desta função ganhar suporte a Popover).
+  const supportsPopover = typeof HTMLElement !== "undefined" && "popover" in HTMLElement.prototype;
+  if(supportsPopover){
+    list.className = "csel-list";
+    list.popover = "manual";
+  } else {
+    list.className = "csel-list hidden";
+  }
 
   selectEl.classList.add("csel-native");
   selectEl.tabIndex = -1;
@@ -165,9 +180,10 @@ function enhanceSelect(selectEl){
   function render(){
     const opts = Array.from(selectEl.options);
     list.innerHTML = "";
-    opts.forEach((opt) => {
+    opts.forEach((opt, i) => {
       const li = document.createElement("li");
       const selecionada = opt.value === selectEl.value;
+      li.id = list.id + "-opt-" + i;
       li.className = "csel-option" + (selecionada ? " is-selected" : "");
       li.textContent = opt.textContent;
       li.setAttribute("role", "option");
@@ -188,26 +204,41 @@ function enhanceSelect(selectEl){
     Array.from(list.children).forEach((li, i) => li.classList.toggle("is-active", i === activeIndex));
     const activeLi = list.children[activeIndex];
     if(activeLi) activeLi.scrollIntoView({ block: "nearest" });
+    // aria-activedescendant no elemento com foco real (o botão — a lista
+    // nunca recebe foco de verdade) descreve pro leitor de tela qual opção
+    // está ativa sem precisar mover o foco pra dentro do <ul>.
+    if(activeLi) btn.setAttribute("aria-activedescendant", activeLi.id);
+    else btn.removeAttribute("aria-activedescendant");
   }
-  // A lista abre "flutuando" fixa na tela (portada pro <body>) em vez de
-  // ficar posicionada dentro da coluna rolável: um elemento absoluto que
-  // ultrapassa a borda inferior de um ancestral com overflow-y:auto conta
-  // no scrollHeight dele mesmo sem ser cortado — isso fazia a barra de
-  // rolagem da coluna aparecer só de abrir o seletor (ex.: Espaçamento no
-  // Milho). Fixando fora da coluna, a lista nunca mexe no scroll dela.
   function positionList(){
     const rect = btn.getBoundingClientRect();
-    list.style.left = rect.left + "px";
-    list.style.width = rect.width + "px";
+    const minW = Math.min(window.innerWidth - 16, Math.max(rect.width, 280));
+    list.style.width = minW + "px";
+    const leftPos = Math.min(Math.max(8, rect.left), window.innerWidth - minW - 8);
+    list.style.left = leftPos + "px";
     const espacoAbaixo = window.innerHeight - rect.bottom;
     const abrePraCima = espacoAbaixo < list.offsetHeight + 6 && rect.top > list.offsetHeight + 6;
     list.style.top = abrePraCima ? (rect.top - list.offsetHeight - 6) + "px" : (rect.bottom + 6) + "px";
   }
+  function isOpen(){
+    return supportsPopover ? list.matches(":popover-open") : !list.classList.contains("hidden");
+  }
+  // Fecha a lista na primeira rolagem detectada, em vez de perseguir o botão
+  // pela tela a cada evento de scroll: um listener contínuo de scroll aqui
+  // forçava getBoundingClientRect() (reflow síncrono) em toda rolagem,
+  // travando o scroll no celular. { once:true } já remove o próprio listener
+  // sozinho; close() também remove por segurança, caso a lista já tenha sido
+  // fechada por outro caminho (Escape, clique fora, seleção de item) antes.
+  function closeOnScroll(){ close(); }
   function open(){
-    document.body.appendChild(list);
-    list.style.position = "fixed";
-    list.style.right = "auto";
-    list.classList.remove("hidden");
+    if(supportsPopover){
+      list.showPopover();
+    } else {
+      document.body.appendChild(list);
+      list.style.position = "fixed";
+      list.style.right = "auto";
+      list.classList.remove("hidden");
+    }
     positionList();
     btn.setAttribute("aria-expanded", "true");
     wrap.classList.add("is-open");
@@ -215,33 +246,39 @@ function enhanceSelect(selectEl){
     activeIndex = selecionada ? Array.from(list.children).indexOf(selecionada) : 0;
     updateActive();
     document.addEventListener("click", onOutsideClick);
-    window.addEventListener("scroll", positionList, true);
+    window.addEventListener("scroll", closeOnScroll, { capture: true, once: true, passive: true });
     window.addEventListener("resize", positionList);
   }
   function close(){
-    list.classList.add("hidden");
-    btn.setAttribute("aria-expanded", "false");
-    wrap.classList.remove("is-open");
-    document.removeEventListener("click", onOutsideClick);
-    window.removeEventListener("scroll", positionList, true);
-    window.removeEventListener("resize", positionList);
-    wrap.appendChild(list);
-    list.style.position = "";
+    if(!isOpen()) return;
+    if(supportsPopover){
+      list.hidePopover();
+    } else {
+      list.classList.add("hidden");
+      wrap.appendChild(list);
+      list.style.position = "";
+      list.style.right = "";
+    }
     list.style.left = "";
     list.style.top = "";
     list.style.width = "";
-    list.style.right = "";
+    btn.setAttribute("aria-expanded", "false");
+    btn.removeAttribute("aria-activedescendant");
+    wrap.classList.remove("is-open");
+    document.removeEventListener("click", onOutsideClick);
+    window.removeEventListener("scroll", closeOnScroll, true);
+    window.removeEventListener("resize", positionList);
   }
   function onOutsideClick(e){
     if(!wrap.contains(e.target)) close();
   }
 
   btn.addEventListener("click", () => {
-    if(list.classList.contains("hidden")) open(); else close();
+    if(isOpen()) close(); else open();
   });
   btn.addEventListener("keydown", (e) => {
     const opts = Array.from(list.children);
-    if(list.classList.contains("hidden")){
+    if(!isOpen()){
       if(["ArrowDown","ArrowUp","Enter"," "].includes(e.key)){ e.preventDefault(); open(); }
       return;
     }
@@ -311,6 +348,15 @@ const cultivarPmsHint = $("cultivarPmsHint");
 const cultivarWrapOriginal = cultivarList.parentNode;
 let cultivarActiveIndex = -1;
 
+// Mesmo suporte a Popover API do enhanceSelect() acima (ver comentário lá):
+// quando disponível, a lista renderiza na top layer sem precisar ser movida
+// pro <body> nem reposicionada a cada scroll.
+const cultivarSupportsPopover = typeof HTMLElement !== "undefined" && "popover" in HTMLElement.prototype;
+if(cultivarSupportsPopover){
+  cultivarList.classList.remove("hidden");
+  cultivarList.popover = "manual";
+}
+
 function cultivarCatalogo(){
   return currentCrop !== "adubacao" ? (CULTIVARES[currentCrop] || []) : [];
 }
@@ -322,16 +368,28 @@ function posicionarCultivarList(){
   cultivarList.style.top = (rect.bottom + 6) + "px";
 }
 
+function cultivarListaAberta(){
+  return cultivarSupportsPopover ? cultivarList.matches(":popover-open") : !cultivarList.classList.contains("hidden");
+}
+// Mesma lógica de enhanceSelect(): fecha na primeira rolagem detectada em vez
+// de perseguir o campo pela tela a cada evento de scroll (reflow síncrono).
+function fecharCultivarListOnScroll(){ fecharCultivarList(); }
 function fecharCultivarList(){
-  cultivarList.classList.add("hidden");
+  if(!cultivarListaAberta()){ cultivarActiveIndex = -1; return; }
+  if(cultivarSupportsPopover){
+    cultivarList.hidePopover();
+  } else {
+    cultivarList.classList.add("hidden");
+    cultivarWrapOriginal.appendChild(cultivarList);
+    cultivarList.style.position = "";
+  }
   cultivarActiveIndex = -1;
   cultivarInput.setAttribute("aria-expanded", "false");
-  cultivarWrapOriginal.appendChild(cultivarList);
-  cultivarList.style.position = "";
+  cultivarInput.removeAttribute("aria-activedescendant");
   cultivarList.style.left = "";
   cultivarList.style.top = "";
   cultivarList.style.width = "";
-  window.removeEventListener("scroll", posicionarCultivarList, true);
+  window.removeEventListener("scroll", fecharCultivarListOnScroll, true);
   window.removeEventListener("resize", posicionarCultivarList);
   document.removeEventListener("click", onCultivarOutsideClick);
 }
@@ -339,9 +397,18 @@ function onCultivarOutsideClick(e){
   if(!cultivarInput.contains(e.target) && !cultivarList.contains(e.target)) fecharCultivarList();
 }
 function atualizarCultivarAtivo(opts){
-  opts.forEach((li, i) => li.classList.toggle("is-active", i === cultivarActiveIndex));
+  opts.forEach((li, i) => {
+    const ativo = i === cultivarActiveIndex;
+    li.classList.toggle("is-active", ativo);
+    li.setAttribute("aria-selected", ativo ? "true" : "false");
+  });
   const ativo = opts[cultivarActiveIndex];
-  if(ativo) ativo.scrollIntoView({ block: "nearest" });
+  if(ativo){
+    ativo.scrollIntoView({ block: "nearest" });
+    cultivarInput.setAttribute("aria-activedescendant", ativo.id);
+  } else {
+    cultivarInput.removeAttribute("aria-activedescendant");
+  }
 }
 function selecionarCultivar(item){
   cultivarInput.value = item.nome;
@@ -368,19 +435,28 @@ function renderCultivarSugestoes(){
   cultivarList.innerHTML = "";
   bateram.forEach((item, i) => {
     const li = document.createElement("li");
-    li.className = "csel-option" + (i === cultivarActiveIndex ? " is-active" : "");
+    const ativo = i === cultivarActiveIndex;
+    li.id = "cultivarSuggestList-opt-" + i;
+    li.className = "csel-option" + (ativo ? " is-active" : "");
     li.textContent = item.nome;
     li.setAttribute("role", "option");
+    li.setAttribute("aria-selected", ativo ? "true" : "false");
     li.addEventListener("click", () => selecionarCultivar(item));
     cultivarList.appendChild(li);
   });
 
-  document.body.appendChild(cultivarList);
-  cultivarList.style.position = "fixed";
-  cultivarList.classList.remove("hidden");
+  if(cultivarSupportsPopover){
+    if(!cultivarList.matches(":popover-open")) cultivarList.showPopover();
+  } else {
+    document.body.appendChild(cultivarList);
+    cultivarList.style.position = "fixed";
+    cultivarList.classList.remove("hidden");
+  }
   cultivarInput.setAttribute("aria-expanded", "true");
   posicionarCultivarList();
-  window.addEventListener("scroll", posicionarCultivarList, true);
+  const ativo = cultivarList.children[cultivarActiveIndex];
+  cultivarInput.setAttribute("aria-activedescendant", ativo ? ativo.id : "");
+  window.addEventListener("scroll", fecharCultivarListOnScroll, { capture: true, once: true, passive: true });
   window.addEventListener("resize", posicionarCultivarList);
   document.addEventListener("click", onCultivarOutsideClick);
 }
@@ -392,12 +468,13 @@ cultivarInput.addEventListener("input", () => {
   mostrarPmsCultivar(exato);
 });
 cultivarInput.addEventListener("keydown", (e) => {
-  if(cultivarList.classList.contains("hidden")) return;
+  if(!cultivarListaAberta()) return;
   const opts = Array.from(cultivarList.children);
   if(e.key === "ArrowDown"){ e.preventDefault(); cultivarActiveIndex = Math.min(cultivarActiveIndex + 1, opts.length - 1); atualizarCultivarAtivo(opts); }
   else if(e.key === "ArrowUp"){ e.preventDefault(); cultivarActiveIndex = Math.max(cultivarActiveIndex - 1, 0); atualizarCultivarAtivo(opts); }
   else if(e.key === "Enter"){ if(cultivarActiveIndex >= 0){ e.preventDefault(); opts[cultivarActiveIndex].click(); } }
   else if(e.key === "Escape"){ fecharCultivarList(); }
+  else if(e.key === "Tab"){ fecharCultivarList(); }
 });
 
 // espaçamentos padrão; cada cultura pode ter a própria lista (ex.: trigo só 0,17)
@@ -552,10 +629,7 @@ function selectCrop(crop){
   const saved = cropState[crop];
   if(saved && saved.variant) cropVariant[crop] = saved.variant;
   const c = getConfig(crop);
-  document.documentElement.style.setProperty("--accent", c.accent);
-  document.documentElement.style.setProperty("--accent-soft", hexToSoft(c.accent));
-  document.documentElement.style.setProperty("--accent-light", c.accentLight || c.accent);
-  document.documentElement.style.setProperty("--accent-line", hexToRgba(c.accent, .30));
+  applyAccentVars(c.accent, c.accentLight);
   $("cropIcon").innerHTML = iconSvg(c.icon, "icon-inline");
   $("cropLabelText").textContent = "Total — " + c.nome;
   $("custosCropNome").textContent = "· " + c.nome;
@@ -670,6 +744,21 @@ function hexToRgba(hex, alpha){
 }
 function hexToSoft(hex){
   return hexToRgba(hex, 0.10);
+}
+function hexToSurface(hex){
+  return hexToRgba(hex, 0.05);
+}
+// Design tokens dinâmicos por cultura (ver :root em styles.css): centraliza
+// aqui a atualização das 5 CSS custom properties de accent, chamada tanto por
+// selectCrop() quanto pelo botão de Calagem & Gessagem em setView() — evita
+// os dois lugares divergirem entre si.
+function applyAccentVars(hex, hoverHex){
+  const root = document.documentElement.style;
+  root.setProperty("--accent", hex);
+  root.setProperty("--accent-soft", hexToSoft(hex));
+  root.setProperty("--accent-surface", hexToSurface(hex));
+  root.setProperty("--accent-border", hexToRgba(hex, .30));
+  root.setProperty("--accent-hover", hoverHex || hex);
 }
 
 function calc(){
@@ -1093,12 +1182,12 @@ function renderCustos(unidades){
             usa os preços acima
           </div>
           <div>
-            <div class="text-[10px] font-semibold uppercase tracking-wide text-muted lg:hidden">Custo à vista</div>
+            <div class="custo-mobile-label">Custo à vista</div>
             <div class="whitespace-nowrap font-mono text-[14px] font-bold tabular-nums text-ink" id="custoVista-${i}">R$ 0,00</div>
             <div class="whitespace-nowrap text-[10.5px] text-muted" id="custoVistaAlq-${i}">R$ 0,00 / alqueire</div>
           </div>
           <div>
-            <div class="text-[10px] font-semibold uppercase tracking-wide text-muted lg:hidden" id="custoPrazoRot-${i}">Custo a prazo</div>
+            <div class="custo-mobile-label" id="custoPrazoRot-${i}">Custo a prazo</div>
             <div class="whitespace-nowrap font-mono text-[14px] font-bold tabular-nums text-ink" id="custoPrazo-${i}">R$ 0,00</div>
             <div class="whitespace-nowrap text-[10.5px] text-muted" id="custoPrazoAlq-${i}">R$ 0,00 / alqueire</div>
           </div>
@@ -1119,27 +1208,27 @@ function renderCustos(unidades){
 
           <div>
             <label class="lbl lg:hidden" for="precoVista-${i}">Preço à vista</label>
-            <div class="relative">
-              <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[13px] font-semibold text-muted">R$</span>
+            <div class="input-group">
+              <span class="input-group-addon is-prefix">R$</span>
               <input type="number" id="precoVista-${i}" class="inp inp-num inp-money" step="0.01" min="0" inputmode="decimal"
                      placeholder="0,00" data-custo="${key}" data-tipo="vista" value="${p.vista || ""}">
             </div>
           </div>
           <div>
             <label class="lbl lg:hidden" for="precoPrazo-${i}">Preço a prazo</label>
-            <div class="relative">
-              <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[13px] font-semibold text-muted">R$</span>
+            <div class="input-group">
+              <span class="input-group-addon is-prefix">R$</span>
               <input type="number" id="precoPrazo-${i}" class="inp inp-num inp-money" step="0.01" min="0" inputmode="decimal"
                      placeholder="0,00" data-custo="${key}" data-tipo="prazo" value="${p.prazo || ""}">
             </div>
           </div>
           <div>
-            <div class="text-[10px] font-semibold uppercase tracking-wide text-muted lg:hidden">Custo à vista</div>
+            <div class="custo-mobile-label">Custo à vista</div>
             <div class="whitespace-nowrap font-mono text-[14px] font-bold tabular-nums text-ink" id="custoVista-${i}">R$ 0,00</div>
             <div class="whitespace-nowrap text-[10.5px] text-muted" id="custoVistaAlq-${i}">R$ 0,00 / alqueire</div>
           </div>
           <div>
-            <div class="text-[10px] font-semibold uppercase tracking-wide text-muted lg:hidden" id="custoPrazoRot-${i}">Custo a prazo</div>
+            <div class="custo-mobile-label" id="custoPrazoRot-${i}">Custo a prazo</div>
             <div class="whitespace-nowrap font-mono text-[14px] font-bold tabular-nums text-ink" id="custoPrazo-${i}">R$ 0,00</div>
             <div class="whitespace-nowrap text-[10.5px] text-muted" id="custoPrazoAlq-${i}">R$ 0,00 / alqueire</div>
           </div>
@@ -1285,8 +1374,8 @@ function renderComparador(){
         </div>
         <div>
           <label class="lbl" for="compPreco-${i}">Preço por kg</label>
-          <div class="relative">
-            <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[13px] font-semibold text-muted">R$</span>
+          <div class="input-group">
+            <span class="input-group-addon is-prefix">R$</span>
             <input type="number" id="compPreco-${i}" class="inp inp-num inp-money" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
           </div>
         </div>
@@ -2458,19 +2547,13 @@ function setView(view){
 
   if(view === "calagem"){
     emCalagem = true;
-    document.documentElement.style.setProperty("--accent", "#8C6D46");
-    document.documentElement.style.setProperty("--accent-soft", hexToSoft("#8C6D46"));
-    document.documentElement.style.setProperty("--accent-light", "#D2A97A");
-    document.documentElement.style.setProperty("--accent-line", hexToRgba("#8C6D46", .30));
+    applyAccentVars("#8C6D46", "#D2A97A");
   } else if(emCalagem){
     // reaplica as variáveis de accent da cultura corrente sem tocar em nenhum campo
     // (chamar selectCrop() de novo aqui apagaria digitação ainda não salva na aba)
     emCalagem = false;
     const c = getConfig(currentCrop);
-    document.documentElement.style.setProperty("--accent", c.accent);
-    document.documentElement.style.setProperty("--accent-soft", hexToSoft(c.accent));
-    document.documentElement.style.setProperty("--accent-light", c.accentLight || c.accent);
-    document.documentElement.style.setProperty("--accent-line", hexToRgba(c.accent, .30));
+    applyAccentVars(c.accent, c.accentLight);
   }
 }
 viewBtnCalc.addEventListener("click", () => setView("calc"));
@@ -2640,15 +2723,17 @@ calAreaUnitButtons.forEach(btn => {
 
 // Cultura-alvo -> V₂ sugerido (editável); "Personalizado" deixa o campo livre.
 $("calCultura").addEventListener("change", () => {
-  const opt = $("calCultura").selectedOptions[0];
-  const v2 = opt.dataset.v2;
+  const sel = $("calCultura");
+  const opt = sel.selectedOptions?.[0] || sel.options[sel.selectedIndex] || sel.querySelector(`option[value="${sel.value}"]`);
+  const v2 = opt?.dataset?.v2;
   if(v2) $("calV2").value = v2;
   calcCalagem();
 });
 // Sistema de manejo -> profundidade sugerida (editável); "Personalizado" deixa o campo livre.
 $("calManejo").addEventListener("change", () => {
-  const opt = $("calManejo").selectedOptions[0];
-  const prof = opt.dataset.prof;
+  const sel = $("calManejo");
+  const opt = sel.selectedOptions?.[0] || sel.options[sel.selectedIndex] || sel.querySelector(`option[value="${sel.value}"]`);
+  const prof = opt?.dataset?.prof;
   if(prof) $("calProfundidade").value = prof;
   calcCalagem();
 });
@@ -2664,13 +2749,26 @@ $("calArea").addEventListener("input", calcCalagem);
 $("calKUnidade020").addEventListener("change", calcCalagem);
 $("calMetodoGessagem").addEventListener("change", calcCalagem);
 
+// Selects da aba Calagem & Gessagem com o mesmo componente customizado usado
+// em Espaçamento/Transpasse — os listeners de "change" acima continuam
+// disparando normalmente, já que enhanceSelect() só troca a aparência e
+// redispara "change" no <select> nativo por baixo (ver enhanceSelect()).
+enhanceSelect($("calCultura"));
+enhanceSelect($("calKUnidade020"));
+// marca o wrap como compacto: o K⁺ embute o seletor de unidade dentro do
+// próprio .input-group (ver .csel-compact em styles.css), no lugar do
+// <select> de largura total usado nos outros 3 selects desta aba.
+$("calKUnidade020").closest(".csel").classList.add("csel-compact");
+enhanceSelect($("calManejo"));
+enhanceSelect($("calMetodoGessagem"));
+
 // toneladas de calcário/gesso -> quantidade de embalagens (Big Bag 1.000 kg,
 // sacaria de 50 kg) e de cargas a granel (referência: bitrem médio, 34 t)
 const CAL_CARGA_GRANEL_T = 35; // carreta/bitrem médio
 function calAddEmbalagem(wrap, produto, label, toneladas, tamanhoT){
   const exato = toneladas / tamanhoT;
   const div = document.createElement("div");
-  div.className = "rounded-xl border border-ink/[.08] bg-white/80 px-3 py-2.5";
+  div.className = "rounded-lg border border-line bg-white px-3 py-2.5";
   div.innerHTML =
     `<div class="text-[10px] font-semibold uppercase tracking-wide text-muted">${produto} · ${label}</div>` +
     `<div class="pack-value mt-0.5 font-mono tabular-nums text-ink">${fmtDec(exato)}</div>` +
@@ -2699,36 +2797,40 @@ function calRenderCustoCard(wrap, produto, totalT, precoVista, precoPrazo, areaA
   const { vista, prazo } = calCustoProduto(totalT, precoVista, precoPrazo);
   const areaHa = alqParaHa(areaAlq);
   const div = document.createElement("div");
-  div.className = "rounded-lg border border-line bg-white px-3 py-2.5";
+  div.className = "custo-card-item";
   div.innerHTML = `
-    <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-      <div class="text-[11px] font-bold text-ink">${produto} <span class="font-mono text-[10.5px] font-normal text-muted">(${fmtDec(totalT)} t)</span></div>
-      <div class="flex flex-wrap gap-x-3 gap-y-1" style="text-align:right">
-        <div>
-          <div class="text-[9px] font-semibold uppercase tracking-wide text-muted">à vista</div>
-          <div class="font-mono text-[13px] font-bold tabular-nums text-ink">${fmtMoeda(vista)}</div>
-        </div>
-        <div>
-          <div class="text-[9px] font-semibold uppercase tracking-wide text-muted">a prazo</div>
-          <div class="font-mono text-[13px] font-bold tabular-nums text-ink">${fmtMoeda(prazo)}</div>
-        </div>
-        <div>
-          <div class="text-[9px] font-semibold uppercase tracking-wide text-muted">por alqueire</div>
-          <div class="font-mono text-[11.5px] text-muted">${areaAlq ? fmtMoeda(vista / areaAlq) : "—"}</div>
-        </div>
-        <div>
-          <div class="text-[9px] font-semibold uppercase tracking-wide text-muted">por hectare</div>
-          <div class="font-mono text-[11.5px] text-muted">${areaHa ? fmtMoeda(vista / areaHa) : "—"}</div>
-        </div>
+    <div class="custos-grid">
+      <div>
+        <span class="text-[13px] font-extrabold text-ink lg:leading-tight">${produto}</span>
+        <div class="mt-0.5"><span class="whitespace-nowrap font-mono text-[11px] text-muted">${fmtDec(totalT)} t</span></div>
+      </div>
+      <div>
+        <div class="custo-mobile-label">Custo à vista</div>
+        <div class="whitespace-nowrap font-mono text-[14px] font-bold tabular-nums text-ink">${fmtMoeda(vista)}</div>
+      </div>
+      <div>
+        <div class="custo-mobile-label">Custo a prazo</div>
+        <div class="whitespace-nowrap font-mono text-[14px] font-bold tabular-nums text-ink">${fmtMoeda(prazo)}</div>
+      </div>
+      <div>
+        <div class="custo-mobile-label">Por alqueire</div>
+        <div class="whitespace-nowrap font-mono text-[11.5px] text-muted">${areaAlq ? fmtMoeda(vista / areaAlq) : "—"}</div>
+      </div>
+      <div>
+        <div class="custo-mobile-label">Por hectare</div>
+        <div class="whitespace-nowrap font-mono text-[11.5px] text-muted">${areaHa ? fmtMoeda(vista / areaHa) : "—"}</div>
       </div>
     </div>`;
   wrap.appendChild(div);
 }
 
+const SEMAFORO_ICON_OK = '<path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 12l2 2l4 -4" /><path d="M21 12a9 9 0 1 1 -18 0a9 9 0 0 1 18 0" />';
 function calSemaforoItem(status, texto){
-  const emoji = status === "ok" ? "🟢" : status === "atencao" ? "🟡" : "🔴";
   const classe = status === "ok" ? "semaforo-ok" : status === "atencao" ? "semaforo-atencao" : "semaforo-alerta";
-  return `<div class="semaforo-item ${classe}"><span class="semaforo-emoji" aria-hidden="true">${emoji}</span><span>${texto}</span></div>`;
+  const paths = status === "ok" ? SEMAFORO_ICON_OK : status === "atencao" ? ALERT_META.warn.paths : ALERT_META.error.paths;
+  return `<div class="semaforo-item ${classe}">` +
+    `<span class="status-icon-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${paths}</svg></span>` +
+    `<span>${texto}</span></div>`;
 }
 
 // guarda o último resultado calculado — reaproveitado por coletarResumoCalagem() na exportação (PDF/PNG)

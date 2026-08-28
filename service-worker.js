@@ -5,10 +5,10 @@
 // plano sempre que a rede responder — assim a próxima abertura já vem com a
 // versão mais nova, sem travar a atual esperando a rede.
 //
-// Pra publicar uma atualização: mude CACHE_VERSION (ex.: v1 -> v2). Isso cria
+// Pra publicar uma atualização: mude CACHE_NAME (ex.: v1 -> v2). Isso cria
 // um cache novo, o "activate" apaga o antigo, e os clientes pegam a versão
 // nova na próxima abertura.
-const CACHE_VERSION = "coasul-calc-v10";
+const CACHE_NAME = 'cache-v1787846468902';
 
 const APP_SHELL = [
   "./",
@@ -32,7 +32,7 @@ const APP_SHELL = [
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_VERSION).then((cache) => cache.addAll(APP_SHELL))
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
   );
   self.skipWaiting();
 });
@@ -40,7 +40,7 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_VERSION).map((k) => caches.delete(k)))
+      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
     )
   );
   self.clients.claim();
@@ -55,7 +55,7 @@ self.addEventListener("fetch", (event) => {
         .then((response) => {
           if (response && response.ok) {
             const copy = response.clone();
-            caches.open(CACHE_VERSION).then((cache) => cache.put(event.request, copy));
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
           }
           return response;
         })
