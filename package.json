@@ -5,7 +5,7 @@
   "main": "service-worker.js",
   "scripts": {
     "dev": "serve . -l 5173",
-    "build": "node scripts/validate-standalone.js",
+    "build": "node scripts/bundle-standalone.js && node scripts/validate-standalone.js",
     "lint": "eslint .",
     "format": "prettier --check .",
     "test": "vitest run"
