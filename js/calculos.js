@@ -306,8 +306,7 @@ const Calculos = (function () {
     let calagemTexto =
       `💧 *CALAGEM RECOMENDADA:*\n` +
       `*${r.ncAplicar} t/ha* (Total: *${r.totalCalcario} toneladas*)\n` +
-      `• Corretivo: *${r.tipoCalcario}* (PRNT ${r.prnt}%)\n` +
-      `• Logística: ~${r.cargasCalcario} cargas de carreta (ou ${r.bagsCalcario} big bags)`;
+      `• Corretivo: *${r.tipoCalcario}* (PRNT ${r.prnt}%)`;
     if (r.alertaParcelamento) {
       calagemTexto += `\n⚠️ _Atenção: Dose > 2,5 t/ha em plantio direto superficial — recomenda-se parcelamento anual._`;
     }
@@ -318,10 +317,6 @@ const Calculos = (function () {
       ? `• Aporte: ~${r.enxofre} kg/ha de Enxofre (S) e ~${r.calcio} kg/ha de Cálcio (Ca)`
       : `• _Subsolo sem impedimento químico crítico — gessagem dispensada._`;
     blocos.push(gessagemTexto);
-
-    if (r.custoTotal) {
-      blocos.push(`💰 *Investimento Estimado:*\n• Custo Total: *${r.custoTotal}* (${r.custoPorAlq}/alq · ${r.custoPorHa}/ha)`);
-    }
 
     blocos.push(`──────────────────────\n_Baseado no Manual de Adubação e Calagem para o Estado do Paraná (SBCS-NEPAR)_`);
     return blocos.join("\n\n");

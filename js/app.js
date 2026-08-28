@@ -57,11 +57,10 @@ const {
   montarTextoWhatsApp, montarTextoWhatsAppRegulagem, montarTextoWhatsAppCalagem,
 } = Calculos;
 
-// Unidade em que o campo "Área" está sendo exibido/digitado ("alq" ou "ha") — a
-// unidade canônica usada internamente em todas as fórmulas continua sendo sempre
-// alqueires (ver normalizarAreaParaAlqueires em calculos.js); a alternância aqui é
-// só de exibição, compartilhada entre todas as culturas (não é salva por aba).
-let areaUnit = "alq";
+// Unidade em que o campo "Área" é exibido/digitado — fixa em alqueires em todas
+// as culturas. A unidade canônica usada internamente em todas as fórmulas também
+// é sempre alqueires (ver normalizarAreaParaAlqueires em calculos.js).
+const areaUnit = "alq";
 
 const $ = id => document.getElementById(id);
 
@@ -314,25 +313,6 @@ for(let t=5;t<=10;t++){
 }
 enhanceSelect(transSel);
 enhanceSelect($("espacamento"));
-
-// Alternância de unidade da Área (Alqueire/Hectare): troca só a exibição do campo
-// #area (convertendo o valor já digitado) — o valor canônico usado nas contas
-// continua sempre em alqueires, ver areaAlqDoInput()/normalizarAreaParaAlqueires().
-const areaUnitButtons = Array.from(document.querySelectorAll("#areaUnitToggle .unit-toggle-btn"));
-areaUnitButtons.forEach(btn => {
-  btn.addEventListener("click", () => {
-    if(btn.dataset.unit === areaUnit) return;
-    const areaAlq = areaAlqDoInput();
-    areaUnit = btn.dataset.unit;
-    areaUnitButtons.forEach(b => {
-      const on = b === btn;
-      b.classList.toggle("is-active", on);
-      b.setAttribute("aria-pressed", on ? "true" : "false");
-    });
-    formatarAreaInput(areaAlq);
-    calc();
-  });
-});
 
 // ---------- Busca/sugestão de cultivar (soja, milho, feijão, trigo) ----------
 // Catálogo em js/cultivares.js — ainda vazio, então a lista nunca aparece
@@ -2682,11 +2662,12 @@ calcRegulagemAdubo();
 // verificarNecessidadeGessagem, calcularGessagem, nutrientesGesso) — aqui só lê
 // os campos, chama essas funções e desenha o resultado.
 
-// Área a corrigir: mesmo esquema de alternância alqueire/hectare da aba de
-// Sementes & Adubação (ver areaAlqDoInput/formatarAreaInput acima), só que
-// como uma instância própria — é um campo de área independente, de outra
-// ferramenta, não o mesmo #area da calculadora de cultura.
-let calAreaUnit = "alq";
+// Área a corrigir: mesmo esquema de leitura/escrita da aba de Sementes &
+// Adubação (ver areaAlqDoInput/formatarAreaInput acima), só que como uma
+// instância própria — é um campo de área independente, de outra ferramenta,
+// não o mesmo #area da calculadora de cultura. Unidade de exibição fixa em
+// alqueires em todas as culturas.
+const calAreaUnit = "alq";
 function calAreaAlqDoInput(){
   return normalizarAreaParaAlqueires($("calArea").value, calAreaUnit);
 }
@@ -2705,21 +2686,6 @@ function calFmtAreaRelatorio(areaAlq){
   const alq = fmtDec(areaAlq) + " alq", ha = fmtDec(alqParaHa(areaAlq)) + " ha";
   return calAreaUnit === "ha" ? `${ha} (${alq})` : `${alq} (${ha})`;
 }
-const calAreaUnitButtons = Array.from(document.querySelectorAll("#calAreaUnitToggle .unit-toggle-btn"));
-calAreaUnitButtons.forEach(btn => {
-  btn.addEventListener("click", () => {
-    if(btn.dataset.unit === calAreaUnit) return;
-    const areaAlq = calAreaAlqDoInput();
-    calAreaUnit = btn.dataset.unit;
-    calAreaUnitButtons.forEach(b => {
-      const on = b === btn;
-      b.classList.toggle("is-active", on);
-      b.setAttribute("aria-pressed", on ? "true" : "false");
-    });
-    calFormatarAreaInput(areaAlq);
-    calcCalagem();
-  });
-});
 
 // Cultura-alvo -> V₂ sugerido (editável); "Personalizado" deixa o campo livre.
 $("calCultura").addEventListener("change", () => {
@@ -2742,9 +2708,11 @@ const CAL_INPUT_IDS = [
   "calV2","calProfundidade","calPrnt","calAreaAplicadaPct",
   "calCa020","calMg020","calK020","calAl020","calHAl020",
   "calCa2040","calMg2040","calK2040","calAl2040","calHAl2040","calArgila2040",
-  "calPrecoCalcarioVista","calPrecoCalcarioPrazo","calPrecoGessoVista","calPrecoGessoPrazo",
 ];
-CAL_INPUT_IDS.forEach(id => $(id).addEventListener("input", calcCalagem));
+CAL_INPUT_IDS.forEach(id => {
+  const el = $(id);
+  if(el) el.addEventListener("input", calcCalagem);
+});
 $("calArea").addEventListener("input", calcCalagem);
 $("calKUnidade020").addEventListener("change", calcCalagem);
 $("calMetodoGessagem").addEventListener("change", calcCalagem);
@@ -2755,83 +2723,12 @@ $("calMetodoGessagem").addEventListener("change", calcCalagem);
 // redispara "change" no <select> nativo por baixo (ver enhanceSelect()).
 enhanceSelect($("calCultura"));
 enhanceSelect($("calKUnidade020"));
-// marca o wrap como compacto: o K⁺ embute o seletor de unidade dentro do
-// próprio .input-group (ver .csel-compact em styles.css), no lugar do
-// <select> de largura total usado nos outros 3 selects desta aba.
+// marca o wrap como compacto: o K⁺ mora na própria coluna "Unid." da matriz
+// de solo (ver .csel-compact em styles.css), no lugar do <select> de largura
+// total usado nos outros 3 selects desta aba.
 $("calKUnidade020").closest(".csel").classList.add("csel-compact");
 enhanceSelect($("calManejo"));
 enhanceSelect($("calMetodoGessagem"));
-
-// toneladas de calcário/gesso -> quantidade de embalagens (Big Bag 1.000 kg,
-// sacaria de 50 kg) e de cargas a granel (referência: bitrem médio, 34 t)
-const CAL_CARGA_GRANEL_T = 35; // carreta/bitrem médio
-function calAddEmbalagem(wrap, produto, label, toneladas, tamanhoT){
-  const exato = toneladas / tamanhoT;
-  const div = document.createElement("div");
-  div.className = "rounded-lg border border-line bg-white px-3 py-2.5";
-  div.innerHTML =
-    `<div class="text-[10px] font-semibold uppercase tracking-wide text-muted">${produto} · ${label}</div>` +
-    `<div class="pack-value mt-0.5 font-mono tabular-nums text-ink">${fmtDec(exato)}</div>` +
-    `<div class="mt-0.5 text-[10.5px] text-muted">→ ${Math.ceil(exato).toLocaleString("pt-BR")} un. arredondado</div>`;
-  wrap.appendChild(div);
-}
-function calRenderLogistica(totalCalcarioT, totalGessoT){
-  const wrap = $("calLogisticaWrap");
-  wrap.innerHTML = "";
-  [["Calcário", totalCalcarioT], ["Gesso", totalGessoT]].forEach(([produto, total]) => {
-    if(!(total > 0)) return;
-    calAddEmbalagem(wrap, produto, "Granel — Carreta/Bitrem (~35 t/carga)", total, CAL_CARGA_GRANEL_T);
-    calAddEmbalagem(wrap, produto, "Big Bag 1.000 kg", total, 1);
-    calAddEmbalagem(wrap, produto, "Sacaria 50 kg", total, 0.05);
-  });
-}
-
-// custo total/por área de um produto a partir do preço por tonelada digitado
-function calCustoProduto(totalT, precoVista, precoPrazo){
-  const vista = calcularCusto(totalT, precoVista);
-  const prazo = calcularCusto(totalT, precoPrazo);
-  return { vista, prazo };
-}
-function calRenderCustoCard(wrap, produto, totalT, precoVista, precoPrazo, areaAlq){
-  if(!(totalT > 0)) return;
-  const { vista, prazo } = calCustoProduto(totalT, precoVista, precoPrazo);
-  const areaHa = alqParaHa(areaAlq);
-  const div = document.createElement("div");
-  div.className = "custo-card-item";
-  div.innerHTML = `
-    <div class="custos-grid">
-      <div>
-        <span class="text-[13px] font-extrabold text-ink lg:leading-tight">${produto}</span>
-        <div class="mt-0.5"><span class="whitespace-nowrap font-mono text-[11px] text-muted">${fmtDec(totalT)} t</span></div>
-      </div>
-      <div>
-        <div class="custo-mobile-label">Custo à vista</div>
-        <div class="whitespace-nowrap font-mono text-[14px] font-bold tabular-nums text-ink">${fmtMoeda(vista)}</div>
-      </div>
-      <div>
-        <div class="custo-mobile-label">Custo a prazo</div>
-        <div class="whitespace-nowrap font-mono text-[14px] font-bold tabular-nums text-ink">${fmtMoeda(prazo)}</div>
-      </div>
-      <div>
-        <div class="custo-mobile-label">Por alqueire</div>
-        <div class="whitespace-nowrap font-mono text-[11.5px] text-muted">${areaAlq ? fmtMoeda(vista / areaAlq) : "—"}</div>
-      </div>
-      <div>
-        <div class="custo-mobile-label">Por hectare</div>
-        <div class="whitespace-nowrap font-mono text-[11.5px] text-muted">${areaHa ? fmtMoeda(vista / areaHa) : "—"}</div>
-      </div>
-    </div>`;
-  wrap.appendChild(div);
-}
-
-const SEMAFORO_ICON_OK = '<path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 12l2 2l4 -4" /><path d="M21 12a9 9 0 1 1 -18 0a9 9 0 0 1 18 0" />';
-function calSemaforoItem(status, texto){
-  const classe = status === "ok" ? "semaforo-ok" : status === "atencao" ? "semaforo-atencao" : "semaforo-alerta";
-  const paths = status === "ok" ? SEMAFORO_ICON_OK : status === "atencao" ? ALERT_META.warn.paths : ALERT_META.error.paths;
-  return `<div class="semaforo-item ${classe}">` +
-    `<span class="status-icon-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${paths}</svg></span>` +
-    `<span>${texto}</span></div>`;
-}
 
 // guarda o último resultado calculado — reaproveitado por coletarResumoCalagem() na exportação (PDF/PNG)
 let calUltimoResultado = null;
@@ -2863,28 +2760,54 @@ function calcCalagem(){
   $("calReadoutSB").textContent = fmtDec(idx020.sb);
   $("calReadoutCtc020").textContent = fmtDec(idx020.ctcPh7);
   $("calReadoutV1").textContent = fmtDec(idx020.v) + "%";
+  $("calReadoutCaMg").textContent = fmtDec(idx020.caMg);
   $("calReadoutV2040").textContent = fmtDec(idx2040.v) + "%";
   $("calReadoutM2040").textContent = fmtDec(idx2040.m) + "%";
 
   const totalCalcarioT = calagem.ncAplicar * areaHa;
   const totalGessoT = gesso.totalTArea;
 
-  // ---- semáforo agronômico ----
-  const semaforo = [];
-  if(idx020.v >= v2 && v2 > 0){
-    semaforo.push(calSemaforoItem("ok", `Saturação por bases adequada (V ${fmtDec(idx020.v)}% ≥ V₂ ${fmtDec(v2)}%) — calagem dispensada.`));
-  } else if(v2 > 0){
-    semaforo.push(calSemaforoItem("alerta", `Acidez elevada (V ${fmtDec(idx020.v)}% < V₂ ${fmtDec(v2)}%) — calagem necessária.`));
-  }
-  semaforo.push(calSemaforoItem("ok", `🧪 Corretivo indicado: Calcário ${tipoCalcario.tipo} (${tipoCalcario.faixaMgO}), pela relação Ca:Mg e teor de Mg da camada 0-20 cm.`));
-  if(gessagem.necessaria){
-    semaforo.push(calSemaforoItem("atencao", "⚡ Condição de subsolo favorável à gessagem — impedimento químico em profundidade, ver motivos abaixo."));
-  } else {
-    semaforo.push(calSemaforoItem("ok", "⚡ Subsolo (20-40 cm) sem critérios que indiquem gessagem."));
-  }
-  $("calSemaforoBox").innerHTML = semaforo.join("");
+  // ---- gráfico técnico de perfil e balanço da CTC (substitui o antigo semáforo
+  // em texto): barra de V1 x meta V2, ocupação de Ca/Mg/K/H+Al na CTC pH 7,0 e
+  // micro-medidor de impedimento químico do subsolo — tudo a partir dos mesmos
+  // índices já calculados acima (idx020/idx2040/tipoCalcario), sem fórmula nova.
+  const clampPct = (n) => Math.max(0, Math.min(100, n));
+  $("calGraficoV1Pin").style.left = clampPct(idx020.v) + "%";
+  $("calGraficoV2Line").style.left = clampPct(v2) + "%";
+  $("calGraficoV1Tag").textContent = fmtDec(idx020.v) + "%";
+  $("calGraficoV2Tag").textContent = fmtDec(v2) + "%";
+
+  const pctHAl020 = idx020.ctcPh7 > 0 ? (v("calHAl020") / idx020.ctcPh7) * 100 : 0;
+  $("calGraficoSegCa").style.width = clampPct(idx020.pctCa) + "%";
+  $("calGraficoSegMg").style.width = clampPct(idx020.pctMg) + "%";
+  $("calGraficoSegK").style.width = clampPct(idx020.pctK) + "%";
+  $("calGraficoSegHAl").style.width = clampPct(pctHAl020) + "%";
+  $("calGraficoPctCa").textContent = fmtDec(idx020.pctCa) + "%";
+  $("calGraficoPctMg").textContent = fmtDec(idx020.pctMg) + "%";
+  $("calGraficoPctK").textContent = fmtDec(idx020.pctK) + "%";
+  $("calGraficoPctHAl").textContent = fmtDec(pctHAl020) + "%";
+
+  const caMgFaixa = idx020.caMg > 4 ? "Alto" : idx020.caMg < 2 ? "Baixo" : "Equilibrado";
+  $("calGraficoCaMgBadge").textContent = `Ca:Mg ${fmtDec(idx020.caMg)}:1 — ${caMgFaixa}`;
+  $("calGraficoCorretivoBadge").textContent = `Calcário ${tipoCalcario.tipo} indicado (${tipoCalcario.faixaMgO})`;
+
+  const al2040Gauge = v("calAl2040");
+  const impedimentoSub = idx2040.m > 20 || al2040Gauge > 0.3;
+  const subGaugeFill = $("calGraficoSubGaugeFill");
+  subGaugeFill.style.width = clampPct(idx2040.m) + "%";
+  subGaugeFill.classList.toggle("is-alerta", impedimentoSub);
+  subGaugeFill.classList.toggle("is-ok", !impedimentoSub);
+  $("calGraficoSubGaugeLabel").textContent = fmtDec(idx2040.m) + "%";
+  $("calGraficoSubGaugeAlLabel").textContent = fmtDec(al2040Gauge);
+  const subGaugeStatus = $("calGraficoSubGaugeStatus");
+  subGaugeStatus.textContent = impedimentoSub ? "Impedimento em profundidade" : "Sem impedimento";
+  subGaugeStatus.classList.toggle("ctc-badge-warn", impedimentoSub);
+  subGaugeStatus.classList.toggle("ctc-badge-ok", !impedimentoSub);
 
   // ---- calagem ----
+  $("calNcV1Read").textContent = fmtDec(idx020.v) + "%";
+  $("calNcV2Read").textContent = fmtDec(v2) + "%";
+  $("calNcPrntRead").textContent = fmtDec(prnt) + "%";
   $("calNcBase").textContent = fmtDec(calagem.ncBase);
   $("calNcAplicar").textContent = fmtDec(calagem.ncAplicar);
   $("calNcTotal").textContent = fmtDec(totalCalcarioT);
@@ -2915,13 +2838,6 @@ function calcCalagem(){
     const meta = ALERT_META.info;
     gessoBox.innerHTML = `<div class="alert-item alert-info"><svg class="ti ti-${meta.icon} alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${meta.paths}</svg><span class="alert-text">Nenhum dos 4 critérios do subsolo foi disparado — gessagem dispensada pelos dados informados.</span></div>`;
   }
-
-  // ---- logística e custos ----
-  calRenderLogistica(totalCalcarioT, totalGessoT);
-  const custosWrap = $("calCustosWrap");
-  custosWrap.innerHTML = "";
-  calRenderCustoCard(custosWrap, "Calcário", totalCalcarioT, $("calPrecoCalcarioVista").value, $("calPrecoCalcarioPrazo").value, areaAlq);
-  calRenderCustoCard(custosWrap, "Gesso", totalGessoT, $("calPrecoGessoVista").value, $("calPrecoGessoPrazo").value, areaAlq);
 
   // ---- memória de cálculo ----
   const dadosMemoria = { idx020, idx2040, al2040: v("calAl2040"), v2, prnt, profundidade, areaAplicadaPct, calagem, tipoCalcario, gessagem, metodoGessagem, gesso, nutrientes, areaAlq, areaHa, totalCalcarioT, totalGessoT };
@@ -2982,18 +2898,305 @@ calMemoriaToggle.addEventListener("click", () => {
   }
 });
 
+// ---- Anexar e interpretar laudo de solo (PDF/foto) via IA multimodal ----
+// Fluxo: usuário anexa o laudo (ou cola um texto/JSON já pronto) -> a chave
+// Gemini fica só no localStorage deste aparelho -> a IA devolve um JSON com
+// os teores -> preenchemos os inputs da matriz técnica (com pulso visual de
+// confirmação) e chamamos calcCalagem() de novo pra recalcular tudo na hora.
+// Sem chave/rede o app continua 100% funcional: o campo de colar texto/JSON
+// não depende de nenhuma chamada de rede.
+const LAUDO_GEMINI_KEY_STORAGE = "gemini_api_key";
+const LAUDO_GEMINI_MODEL = "gemini-2.0-flash";
+const LAUDO_TIPOS_ACEITOS = [".pdf", ".png", ".jpg", ".jpeg", ".webp"];
+const LAUDO_PROMPT = `Você é um agrônomo especialista em interpretar laudos de análise de solo (boletins de laboratório brasileiros).
+Analise o documento anexado (PDF ou foto de um laudo de solo) e devolva APENAS um JSON válido, sem markdown e sem texto fora do JSON, no formato exato abaixo:
+{
+  "cliente": "nome do produtor/cooperado, ou null se não constar",
+  "camada_0_20": { "ca": number|null, "mg": number|null, "k": number|null, "k_unidade": "cmolc"|"mgdm3", "al": number|null, "h_al": number|null, "p": number|null, "ph": number|null, "argila_pct": number|null },
+  "camada_20_40": { "ca": number|null, "mg": number|null, "k": number|null, "k_unidade": "cmolc"|"mgdm3", "al": number|null, "h_al": number|null, "argila_pct": number|null }
+}
+Regras: use ponto decimal (nunca vírgula); todos os valores de Ca, Mg, Al e H+Al em cmolc/dm³; se o K estiver em mg/dm³ no laudo, informe "k_unidade":"mgdm3" e mantenha o valor em mg/dm³ (não converta); se o laudo trouxer só a camada 0-20 cm, devolva "camada_20_40" com todos os campos null; nunca invente valores — o que não constar no laudo deve ser null.`;
+
+const laudoModal = $("laudoModal");
+let laudoArquivoSelecionado = null; // { file, mimeType }
+let laudoInterpretando = false;
+
+function configurarPainelColapsavel(toggleEl, panelEl){
+  toggleEl.addEventListener("click", () => {
+    const abrindo = toggleEl.getAttribute("aria-expanded") !== "true";
+    toggleEl.setAttribute("aria-expanded", abrindo ? "true" : "false");
+    if(abrindo){
+      panelEl.classList.add("is-open");
+      panelEl.style.maxHeight = panelEl.scrollHeight + "px";
+    } else {
+      panelEl.style.maxHeight = panelEl.scrollHeight + "px";
+      requestAnimationFrame(() => {
+        panelEl.classList.remove("is-open");
+        panelEl.style.maxHeight = "0px";
+      });
+    }
+  });
+}
+configurarPainelColapsavel($("laudoApiKeyToggle"), $("laudoApiKeyPanel"));
+configurarPainelColapsavel($("laudoPasteToggle"), $("laudoPastePanel"));
+
+function laudoFormatarTamanho(bytes){
+  if(bytes < 1024) return bytes + " B";
+  if(bytes < 1024 * 1024) return Math.round(bytes / 1024) + " KB";
+  return (bytes / 1024 / 1024).toFixed(1) + " MB";
+}
+
+function laudoResetarEstado(){
+  laudoArquivoSelecionado = null;
+  $("laudoFileInput").value = "";
+  $("laudoCameraInput").value = "";
+  $("laudoPasteText").value = "";
+  show($("laudoFilePreview"), false);
+  show($("laudoDropzone"), true);
+  show($("laudoLoadingState"), false);
+}
+
+function abrirModalLaudo(){
+  laudoResetarEstado();
+  $("laudoApiKeyInput").value = localStorage.getItem(LAUDO_GEMINI_KEY_STORAGE) || "";
+  laudoModal.classList.remove("hidden");
+}
+function fecharModalLaudo(){
+  if(laudoInterpretando) return;
+  laudoModal.classList.add("hidden");
+}
+
+$("btnAnexarLaudo").addEventListener("click", abrirModalLaudo);
+$("laudoModalClose").addEventListener("click", fecharModalLaudo);
+$("laudoModalCancel").addEventListener("click", fecharModalLaudo);
+laudoModal.addEventListener("click", e => { if(e.target === laudoModal) fecharModalLaudo(); });
+document.addEventListener("keydown", e => {
+  if(e.key === "Escape" && !laudoModal.classList.contains("hidden")) fecharModalLaudo();
+});
+
+$("laudoApiKeyInput").addEventListener("change", () => {
+  const chave = $("laudoApiKeyInput").value.trim();
+  if(chave) localStorage.setItem(LAUDO_GEMINI_KEY_STORAGE, chave);
+  else localStorage.removeItem(LAUDO_GEMINI_KEY_STORAGE);
+});
+
+function laudoValidarArquivo(file){
+  const ext = "." + (file.name.split(".").pop() || "").toLowerCase();
+  return LAUDO_TIPOS_ACEITOS.includes(ext);
+}
+function laudoSelecionarArquivo(file){
+  if(!file) return;
+  if(!laudoValidarArquivo(file)){
+    mostrarToast("Formato não suportado — use PDF, PNG, JPG ou WEBP.");
+    return;
+  }
+  laudoArquivoSelecionado = { file, mimeType: file.type || "application/pdf" };
+  $("laudoFileName").textContent = file.name;
+  $("laudoFileSize").textContent = laudoFormatarTamanho(file.size);
+  show($("laudoFilePreview"), true);
+  show($("laudoDropzone"), false);
+}
+
+const laudoDropzone = $("laudoDropzone");
+laudoDropzone.addEventListener("click", () => $("laudoFileInput").click());
+laudoDropzone.addEventListener("keydown", e => {
+  if(e.key === "Enter" || e.key === " "){ e.preventDefault(); $("laudoFileInput").click(); }
+});
+$("laudoFileInput").addEventListener("change", e => laudoSelecionarArquivo(e.target.files[0]));
+$("btnLaudoCamera").addEventListener("click", () => $("laudoCameraInput").click());
+$("laudoCameraInput").addEventListener("change", e => laudoSelecionarArquivo(e.target.files[0]));
+
+["dragenter", "dragover"].forEach(evt => laudoDropzone.addEventListener(evt, e => {
+  e.preventDefault(); e.stopPropagation();
+  laudoDropzone.classList.add("is-dragover");
+}));
+["dragleave", "drop"].forEach(evt => laudoDropzone.addEventListener(evt, e => {
+  e.preventDefault(); e.stopPropagation();
+  laudoDropzone.classList.remove("is-dragover");
+}));
+laudoDropzone.addEventListener("drop", e => {
+  const file = e.dataTransfer?.files?.[0];
+  if(file) laudoSelecionarArquivo(file);
+});
+
+$("laudoFileRemove").addEventListener("click", e => {
+  e.stopPropagation();
+  laudoArquivoSelecionado = null;
+  $("laudoFileInput").value = "";
+  $("laudoCameraInput").value = "";
+  show($("laudoFilePreview"), false);
+  show($("laudoDropzone"), true);
+});
+
+function laudoLerArquivoComoBase64(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(",")[1] || "");
+    reader.onerror = () => reject(reader.error || new Error("Falha ao ler o arquivo."));
+    reader.readAsDataURL(file);
+  });
+}
+
+function laudoExtrairJson(texto){
+  let limpo = String(texto).trim();
+  limpo = limpo.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "");
+  const inicio = limpo.indexOf("{");
+  const fim = limpo.lastIndexOf("}");
+  if(inicio === -1 || fim === -1 || fim < inicio){
+    throw new Error("Não encontrei um JSON válido no texto.");
+  }
+  return JSON.parse(limpo.slice(inicio, fim + 1));
+}
+
+async function laudoChamarGemini(apiKey, base64, mimeType){
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${LAUDO_GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const body = {
+    contents: [{
+      parts: [
+        { text: LAUDO_PROMPT },
+        { inline_data: { mime_type: mimeType, data: base64 } },
+      ],
+    }],
+    generationConfig: { temperature: 0.1, responseMimeType: "application/json" },
+  };
+  const resposta = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if(!resposta.ok){
+    const detalhe = await resposta.text().catch(() => "");
+    throw new Error(`Falha na API Gemini (${resposta.status}). ${detalhe.slice(0, 160)}`);
+  }
+  const dados = await resposta.json();
+  const texto = dados?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if(!texto) throw new Error("A IA não devolveu nenhum conteúdo interpretável.");
+  return laudoExtrairJson(texto);
+}
+
+// Mapa parâmetro do JSON da IA -> id do input na matriz técnica (só os campos
+// que a calculadora realmente usa em calcCalagem(); "p", "ph" e a argila da
+// camada 0-20 não têm campo próprio na ficha e ficam de fora do preenchimento).
+const LAUDO_CAMPOS_020 = { ca: "calCa020", mg: "calMg020", k: "calK020", al: "calAl020", h_al: "calHAl020" };
+const LAUDO_CAMPOS_2040 = { ca: "calCa2040", mg: "calMg2040", k: "calK2040", al: "calAl2040", h_al: "calHAl2040", argila_pct: "calArgila2040" };
+
+function laudoAplicarPulso(el){
+  el.classList.remove("input-pulse-success");
+  void el.offsetWidth; // força reflow pra reiniciar a animação, mesmo se já rodou antes nesta mesma sessão
+  el.classList.add("input-pulse-success");
+}
+function laudoNumeroValido(v){
+  return v !== null && v !== undefined && v !== "" && !Number.isNaN(Number(v));
+}
+
+function laudoPreencherCampos(dados){
+  let preenchidos = 0;
+  const c020 = dados?.camada_0_20 || {};
+  const c2040 = dados?.camada_20_40 || {};
+
+  Object.entries(LAUDO_CAMPOS_020).forEach(([chave, id]) => {
+    if(!laudoNumeroValido(c020[chave])) return;
+    const el = $(id);
+    el.value = Number(c020[chave]);
+    laudoAplicarPulso(el);
+    preenchidos++;
+  });
+  if(c020.k_unidade === "cmolc" || c020.k_unidade === "mgdm3"){
+    const select = $("calKUnidade020");
+    select.value = c020.k_unidade;
+    const gatilho = select.closest(".csel")?.querySelector(".csel-trigger");
+    laudoAplicarPulso(gatilho || select);
+    preenchidos++;
+  }
+
+  Object.entries(LAUDO_CAMPOS_2040).forEach(([chave, id]) => {
+    if(!laudoNumeroValido(c2040[chave])) return;
+    const el = $(id);
+    el.value = Number(c2040[chave]);
+    laudoAplicarPulso(el);
+    preenchidos++;
+  });
+
+  if(typeof dados?.cliente === "string" && dados.cliente.trim() && !$("calCliente").value.trim()){
+    const el = $("calCliente");
+    el.value = dados.cliente.trim();
+    laudoAplicarPulso(el);
+    preenchidos++;
+  }
+
+  calcCalagem();
+  return preenchidos;
+}
+
+function laudoMostrarCarregando(ativo){
+  show($("laudoLoadingState"), ativo);
+  show($("laudoDropzone"), !ativo && !laudoArquivoSelecionado);
+  show($("laudoFilePreview"), !ativo && !!laudoArquivoSelecionado);
+  $("laudoModalInterpretar").disabled = ativo;
+  $("laudoModalCancel").disabled = ativo;
+}
+function laudoAtualizarEtapa(texto){
+  $("laudoLoadingText").textContent = texto;
+}
+
+$("laudoModalInterpretar").addEventListener("click", async () => {
+  if(laudoInterpretando) return;
+
+  const textoColado = $("laudoPasteText").value.trim();
+  if(textoColado){
+    try {
+      const dados = laudoExtrairJson(textoColado);
+      const n = laudoPreencherCampos(dados);
+      fecharModalLaudoForcado();
+      mostrarToast(n > 0 ? `✅ Laudo interpretado com sucesso! ${n} parâmetros preenchidos.` : "Nenhum parâmetro reconhecido no texto colado.");
+    } catch(e){
+      mostrarToast("Não consegui interpretar o texto/JSON colado — confira o formato.");
+    }
+    return;
+  }
+
+  if(!laudoArquivoSelecionado){
+    mostrarToast("Anexe um arquivo (PDF ou foto) ou cole o texto/JSON extraído.");
+    return;
+  }
+
+  const apiKey = $("laudoApiKeyInput").value.trim();
+  if(!apiKey){
+    mostrarToast("Informe sua chave da API Gemini, ou use a opção de colar texto/JSON.");
+    if($("laudoApiKeyToggle").getAttribute("aria-expanded") !== "true") $("laudoApiKeyToggle").click();
+    return;
+  }
+  localStorage.setItem(LAUDO_GEMINI_KEY_STORAGE, apiKey);
+
+  laudoInterpretando = true;
+  laudoMostrarCarregando(true);
+  try {
+    laudoAtualizarEtapa("Lendo documento...");
+    const base64 = await laudoLerArquivoComoBase64(laudoArquivoSelecionado.file);
+    laudoAtualizarEtapa("Identificando teores químicos...");
+    const dados = await laudoChamarGemini(apiKey, base64, laudoArquivoSelecionado.mimeType);
+    laudoAtualizarEtapa("Preenchendo matriz...");
+    const n = laudoPreencherCampos(dados);
+    laudoInterpretando = false;
+    fecharModalLaudoForcado();
+    mostrarToast(n > 0 ? `✅ Laudo interpretado com sucesso! ${n} parâmetros preenchidos.` : "A IA não localizou parâmetros reconhecíveis neste laudo.");
+  } catch(e){
+    laudoInterpretando = false;
+    laudoMostrarCarregando(false);
+    mostrarToast("Erro ao interpretar o laudo: " + (e?.message || "falha desconhecida") + ". Tente colar o texto/JSON manualmente.");
+  }
+});
+
+function fecharModalLaudoForcado(){
+  laudoInterpretando = false;
+  laudoModal.classList.add("hidden");
+}
+
 // ---- Exportar a ficha de Calagem & Gessagem (PDF via impressão do navegador, PNG via canvas) ----
 function coletarResumoCalagem(){
   const agora = new Date();
   const d = calUltimoResultado || {};
-  const num = id => { const val = $(id).value.trim(); return val === "" ? "—" : val.replace(".", ","); };
-
-  // custo total (calcário + gesso) na área — mesma conta de calRenderCustoCard,
-  // só que somando os dois produtos pro resumo exportado/WhatsApp
-  const custoCalcario = calCustoProduto(d.totalCalcarioT || 0, $("calPrecoCalcarioVista").value, $("calPrecoCalcarioPrazo").value);
-  const custoGesso = calCustoProduto(d.totalGessoT || 0, $("calPrecoGessoVista").value, $("calPrecoGessoPrazo").value);
-  const custoTotalVista = custoCalcario.vista + custoGesso.vista;
-  const areaHa = d.areaAlq ? alqParaHa(d.areaAlq) : 0;
+  const num = id => { const el = $(id); const val = el ? el.value.trim() : ""; return val === "" ? "—" : val.replace(".", ","); };
 
   // versão curta do rótulo da cultura-alvo pro texto do WhatsApp — a option
   // completa já traz "— descrição (V₂ X%)" embutido, o que duplicaria o
@@ -3025,8 +3228,6 @@ function coletarResumoCalagem(){
     tipoCalcario: d.tipoCalcario ? ("Calcário " + d.tipoCalcario.tipo) : "—",
     faixaMgo: d.tipoCalcario ? d.tipoCalcario.faixaMgO : "",
     alertaParcelamento: !!(d.calagem && d.calagem.alertaParcelamento),
-    cargasCalcario: d.totalCalcarioT ? Math.ceil(d.totalCalcarioT / CAL_CARGA_GRANEL_T) : 0,
-    bagsCalcario: d.totalCalcarioT ? Math.ceil(d.totalCalcarioT / 1) : 0,
     gessagemNecessaria: !!(d.gessagem && d.gessagem.necessaria),
     gessagemMotivos: d.gessagem ? d.gessagem.motivos : [],
     metodoGessagem: $("calMetodoGessagem").selectedOptions[0].textContent,
@@ -3034,9 +3235,6 @@ function coletarResumoCalagem(){
     totalGesso: d.totalGessoT !== undefined ? fmtDec(d.totalGessoT) : "0,00",
     enxofre: d.nutrientes ? fmtDec(d.nutrientes.enxofreKgHa) : "0,00",
     calcio: d.nutrientes ? fmtDec(d.nutrientes.calcioKgHa) : "0,00",
-    custoTotal: custoTotalVista > 0 ? fmtMoeda(custoTotalVista) : "",
-    custoPorAlq: (custoTotalVista > 0 && d.areaAlq) ? fmtMoeda(custoTotalVista / d.areaAlq) : "",
-    custoPorHa: (custoTotalVista > 0 && areaHa) ? fmtMoeda(custoTotalVista / areaHa) : "",
     data: agora.toLocaleDateString("pt-BR"),
     ref: gerarCodigoRef(agora),
     horaGeracao: agora.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"}),

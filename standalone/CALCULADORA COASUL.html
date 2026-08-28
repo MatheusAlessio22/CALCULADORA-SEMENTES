@@ -331,50 +331,6 @@
     box-shadow:0 1px 2px rgba(30,36,32,.08), 0 4px 10px -6px rgba(30,36,32,.4);
   }
 
-  /* alternância de unidade da Área (Alqueire/Hectare): pílula discreta ao lado
-     do rótulo do campo, mesma linguagem visual do segmented control acima. */
-  .area-label-row{
-    display:flex; align-items:center; justify-content:space-between; gap:8px;
-    margin-bottom:6px;
-  }
-  .area-label-row .lbl{ margin-bottom:0; }
-  .unit-toggle{
-    display:inline-flex; gap:2px;
-    background:#EEF2E9; border-radius:999px; padding:2px;
-  }
-  .unit-toggle-btn{
-    border:0; background:transparent; cursor:pointer;
-    font-size:10.5px; font-weight:700; letter-spacing:.02em;
-    padding:4px 9px; border-radius:999px; color:#4B554F;
-    transition:background .15s, color .15s, box-shadow .15s;
-    white-space:nowrap;
-  }
-  .unit-toggle-btn.is-active{
-    background:#fff; color:var(--accent);
-    box-shadow:0 1px 2px rgba(30,36,32,.08), 0 4px 10px -6px rgba(30,36,32,.4);
-  }
-
-  /* Semáforo agronômico (aba Calagem & Gessagem): reaproveita a paleta semântica
-     dos alertas (info/âmbar/vermelho), com um badge circular de ícone SVG no
-     lugar do emoji cru (ver calSemaforoItem() em app.js). */
-  .semaforo-item{
-    display:flex; align-items:flex-start; gap:10px;
-    border-radius:12px; padding:12px 14px;
-    font-size:12.5px; font-weight:600; line-height:1.45;
-  }
-  .status-icon-badge{
-    display:flex; align-items:center; justify-content:center;
-    width:22px; height:22px; flex:none;
-    border-radius:999px;
-    color:#fff;
-  }
-  .status-icon-badge svg{ width:13px; height:13px; }
-  .semaforo-ok .status-icon-badge{ background:#1E5C2E; box-shadow:0 0 0 3px rgba(30,92,46,.16); }
-  .semaforo-atencao .status-icon-badge{ background:#8A5A00; box-shadow:0 0 0 3px rgba(138,90,0,.16); }
-  .semaforo-alerta .status-icon-badge{ background:#9C2B22; box-shadow:0 0 0 3px rgba(156,43,34,.16); }
-  .semaforo-ok{ background:#E9F5E7; color:#1E5C2E; }
-  .semaforo-alerta{ background:#FBE8E7; color:#9C2B22; }
-  .semaforo-atencao{ background:#FCF3DC; color:#8A5A00; }
 
   /* Tag do corretivo indicado (Calcário Dolomítico/Calcítico/Magnesiano, ver
      determinarTipoCalcario() em app.js): pastilha na cor da cultura ativa, no
@@ -609,24 +565,26 @@
     border-radius:999px; background:var(--accent);
   }
 
-  /* Seletor compacto de unidade embutido num .input-group (K⁺ cmolc/mg em
-     Calagem & Gessagem): o wrap .csel entra como segundo item flex do
-     input-group, com largura de conteúdo (não 100%) — a lista que abre
-     continua com a largura confortável padrão (min 280px, ver positionList
-     em app.js), só o "gatilho" fechado é que fica compacto. */
-  .input-group > .csel.csel-compact{ flex:none; width:auto; }
-  .input-group > .csel.csel-compact button.csel-trigger{
-    width:auto; min-width:0; height:100%;
-    background-color:#F4F6F2;
-    border-left:1px solid var(--border-subtle);
-    padding:0 22px 0 10px;
-    font-size:11px; font-weight:700; color:#4B554F;
-    background-size:12px; background-position:right 7px center;
+  /* Seletor compacto de unidade do K⁺ (Calagem & Gessagem): mora na própria
+     coluna "Unid." da matriz de solo (ver .sm-unit-select), não mais embutido
+     no campo de 0-20 cm — assim os inputs de Ca/Mg/K/Al/H+Al ficam todos
+     visualmente idênticos entre si, e a unidade tem sua própria célula, como
+     as outras linhas da tabela. A lista que abre continua com a largura
+     confortável padrão (min 280px, ver positionList em app.js), só o
+     "gatilho" fechado é que fica compacto o bastante pra coluna estreita. */
+  .soil-matrix .csel.csel-compact{ width:100%; }
+  .soil-matrix .csel.csel-compact button.csel-trigger{
+    width:100%; min-height:34px;
+    border:1.5px solid var(--border-subtle); border-radius:8px;
+    background-color:var(--surface);
+    padding:6px 24px 6px 8px;
+    font-size:10px; font-weight:700; color:#4B554F;
+    background-size:13px; background-position:right 7px center;
   }
-  .input-group > .csel.csel-compact .csel-label{
-    max-width:60px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  .soil-matrix .csel.csel-compact button.csel-trigger:hover{ border-color:var(--border-strong); }
+  .soil-matrix .csel.csel-compact .csel-label{
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
-  .input-group > .csel.csel-compact.is-open button.csel-trigger{ background-color:#fff; }
 
   #pmsBox[open] > summary > span:last-child{visibility:hidden;}
   #pmsBox > summary::-webkit-details-marker{display:none;}
@@ -753,22 +711,50 @@
      align-items:start mantém os inputs começando na MESMA altura mesmo
      quando um dos campos tem nota embaixo — era isso que deixava a linha
      da identificação torta. */
+  /* Grade dos blocos de entrada (Identificação, parâmetros, laudos, regulagem).
+     min-width:0 nos filhos impede que elementos com texto longo (ex.: dropdown de culturas)
+     distorçam ou esmaguem colunas irmãs no CSS Grid. */
   .fld-grid{
     display:grid;
     grid-template-columns:1fr;
     align-items:start;
-    gap:16px;
+    gap:14px;
+  }
+  .fld-grid > *,
+  .fld-grid-2 > *,
+  .fld-grid-3 > *,
+  .fld-grid-4 > *{
+    min-width:0;
+  }
+  .fld-col-full{
+    grid-column:1 / -1;
+  }
+  .fld-grid-2{
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0,1fr));
+    align-items:start;
+    gap:12px;
+  }
+  .fld-grid-3{
+    display:grid;
+    grid-template-columns:repeat(3, minmax(0,1fr));
+    align-items:start;
+    gap:12px;
+  }
+  .fld-grid-4{
+    display:grid;
+    grid-template-columns:repeat(4, minmax(0,1fr));
+    align-items:start;
+    gap:12px;
   }
   @media (min-width:640px){
-    .fld-grid{grid-template-columns:1fr 1fr; gap:14px;}
+    .fld-grid{grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px;}
     .fld-grid > .fld-wide{grid-column:1 / -1;}
   }
   @media (min-width:1024px){
     .fld-grid{gap:12px;}
     .fld-grid > .fld-wide{grid-column:auto;}
     .fld-grid-id{grid-template-columns:1.1fr 1.1fr .95fr;}
-    .fld-grid-3{grid-template-columns:repeat(3, minmax(0,1fr));}
-    .fld-grid-4{grid-template-columns:repeat(4, minmax(0,1fr));}
   }
 
   /* Subtítulo interno de card (ex.: "Complexo de troca" / "Parâmetros
@@ -777,13 +763,20 @@
      aninhado — mesma família tipográfica de .lbl, só que como rótulo de
      seção (não de campo). */
   .cal-subhead{
+    display:flex;
+    align-items:center;
+    gap:6px;
     font-size:10.5px;
     font-weight:700;
     text-transform:uppercase;
     letter-spacing:.06em;
     color:#6B7A70;
-    margin-bottom:10px;
+    margin-top:14px;
+    margin-bottom:8px;
   }
+  /* primeiro subtítulo do card não herda o respiro de topo — quem separa do
+     cabeçalho do card é o padding do próprio .crm-card. */
+  .cal-subhead:first-of-type{ margin-top:0; }
 
   /* nota discreta abaixo de um campo (ex.: a conversão alqueire → hectare).
      Fica fora do fluxo de altura dos outros campos, então não desalinha nada. */
@@ -813,9 +806,10 @@
     justify-content:space-between;
     gap:8px;
     border:1px solid #DFE5D6;
-    border-radius:12px;
-    background:rgba(244,247,240,.7);
-    padding:10px 14px;
+    border-radius:10px;
+    background:#F4F7F0;
+    padding:10px 12px;
+    margin-top:12px;
   }
   @media (min-width:1024px){ .readout{padding:7px 12px;} }
 
@@ -835,6 +829,164 @@
   }
   .readout-metric strong{ font-size:13px; font-weight:800; color:var(--ink-primary); }
 
+  /* Matriz técnica de solo (boletim de laboratório): uma linha por parâmetro
+     químico, com as camadas 0-20 cm (calagem) e 20-40 cm (gessagem) lado a
+     lado, no lugar de dois cards separados repetindo os mesmos rótulos.
+     overflow-x:auto no wrap é só rede de segurança em telas muito estreitas —
+     as colunas já cabem em 375px sem precisar rolar. */
+  .soil-matrix-wrap{ overflow-x:auto; }
+  .soil-matrix{ width:100%; border-collapse:collapse; }
+  .soil-matrix col.sm-c-param{ width:20%; }
+  .soil-matrix col.sm-c-unit{ width:17%; }
+  .soil-matrix thead th{
+    padding:0 6px 8px;
+    text-align:left;
+    font-size:10px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    color:#6B7A70;
+    border-bottom:1px solid #DCE3D6;
+  }
+  .soil-matrix thead th:first-child{ padding-left:0; }
+  .soil-matrix thead th:last-child{ padding-right:0; }
+  .soil-matrix-sub{
+    display:block;
+    margin-top:1px;
+    font-size:9px;
+    font-weight:600;
+    letter-spacing:.02em;
+    text-transform:none;
+    color:#8A968D;
+  }
+  .soil-matrix tbody td{
+    padding:7px 6px;
+    border-bottom:1px solid #EEF2E9;
+    vertical-align:middle;
+  }
+  .soil-matrix tbody tr:last-child td{ border-bottom:0; }
+  .soil-matrix tbody td:first-child{
+    padding-left:0;
+    font-size:12.5px;
+    font-weight:700;
+    color:#1E2420;
+    white-space:nowrap;
+  }
+  .soil-matrix td.sm-unit{
+    padding-right:0;
+    text-align:right;
+    font-size:10px;
+    color:#6B7A70;
+    line-height:1.2;
+  }
+  .soil-matrix td.sm-dash{ text-align:center; color:#B7C0B2; font-size:13px; }
+
+  /* Painel lado a lado de dosagem (Calcário + Gesso): dois crm-card dentro de
+     uma grade de 2 colunas a partir de 640px — no celular seguem empilhados,
+     como já eram antes de virarem "twin". */
+  .twin-kpi-grid{ display:grid; grid-template-columns:1fr; gap:16px; margin-bottom:16px; }
+  .twin-kpi-grid > .crm-card{ margin-bottom:0; }
+  @media (min-width:640px){
+    .twin-kpi-grid{ grid-template-columns:repeat(2, minmax(0,1fr)); }
+  }
+
+  /* Grade compacta de 4 campos (Manejo/Profundidade/Área aplicada/PRNT, em
+     Calagem & Gessagem): 2 colunas no celular, 4 a partir do tablet — não usa
+     .fld-grid-4 direto porque essa classe é fixa em 4 colunas em qualquer
+     largura, o que esmagaria os campos no celular. */
+  .cal-manejo-grid{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px; }
+  .cal-manejo-grid > *{ min-width:0; }
+  @media (min-width:640px){
+    .cal-manejo-grid{ grid-template-columns:repeat(4, minmax(0,1fr)); }
+  }
+
+  /* Linha "Cultura-alvo + V₂": a cultura ganha o dobro do espaço do V₂ (que é
+     só um número curto) — minmax(0,Nfr) evita que o texto longo das opções
+     esmague a coluna, o rótulo só trunca com reticências dentro do próprio
+     botão do seletor (ver .csel-trigger .csel-label). */
+  .cal-cultura-row{ display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr); gap:12px; align-items:start; }
+
+  /* Gráfico técnico de perfil e balanço da CTC (substitui os antigos banners
+     de "parecer" em texto): barras/pinos 100% CSS, sem SVG/canvas/libs
+     externas — cada elemento é só posicionado via style.left/width no JS
+     (calcCalagem()), a partir dos mesmos índices que já alimentam o resto da
+     aba (idx020/idx2040/tipoCalcario). */
+  .ctc-vbar{ position:relative; height:16px; margin:8px 4px 6px; }
+  .ctc-vbar-track{
+    position:absolute; inset:0;
+    border-radius:999px;
+    border:1px solid #E1E6DC;
+    background: linear-gradient(to right,
+      #F6D9D6 0%, #F6D9D6 50%,
+      #FBEAC4 50%, #FBEAC4 65%,
+      #DCEBD3 65%, #DCEBD3 100%);
+  }
+  .ctc-vbar-target{
+    position:absolute; top:-3px; bottom:-3px; width:2px;
+    background: repeating-linear-gradient(to bottom, #4B554F 0 4px, transparent 4px 8px);
+    transform:translateX(-1px);
+    transition:left .2s ease;
+  }
+  .ctc-vbar-pin{
+    position:absolute; top:50%; width:14px; height:14px;
+    background:var(--accent); border:2px solid #fff;
+    border-radius:50%; box-shadow:0 1px 3px rgba(30,36,32,.35);
+    transform:translate(-50%,-50%);
+    transition:left .2s ease;
+  }
+  .ctc-vbar-scale{
+    display:flex; justify-content:space-between;
+    font-size:9.5px; font-weight:600; color:#8A968D;
+    font-family:'JetBrains Mono','Inter',-apple-system,monospace; font-feature-settings:'tnum' 1,'cv05' 1;
+  }
+
+  .ctc-stack{
+    display:flex; height:16px; border-radius:999px; overflow:hidden;
+    border:1px solid #E1E6DC; margin:12px 0 8px;
+  }
+  .ctc-stack-seg{ height:100%; transition:width .2s ease; }
+  .ctc-seg-ca{ background:#5C8A26; }
+  .ctc-seg-mg{ background:#0678A8; }
+  .ctc-seg-k{ background:#D99A1E; }
+  .ctc-seg-hal{ background:#C42A2E; }
+
+  .ctc-legend{ display:flex; flex-wrap:wrap; gap:7px 14px; }
+  .ctc-legend-item{
+    display:inline-flex; align-items:center; gap:5px;
+    font-size:11px; font-weight:600; color:#4B554F;
+  }
+  .ctc-legend-item strong{
+    font-family:'JetBrains Mono','Inter',-apple-system,monospace; font-feature-settings:'tnum' 1,'cv05' 1;
+    color:var(--ink-primary); font-weight:800;
+  }
+  .ctc-legend-dot{ width:8px; height:8px; border-radius:50%; flex:none; }
+  .ctc-legend-dot.ctc-dot-v1{ background:var(--accent); }
+  .ctc-legend-dot.ctc-dot-v2{ background:#4B554F; }
+  .ctc-legend-dot.ctc-dot-ca{ background:#5C8A26; }
+  .ctc-legend-dot.ctc-dot-mg{ background:#0678A8; }
+  .ctc-legend-dot.ctc-dot-k{ background:#D99A1E; }
+  .ctc-legend-dot.ctc-dot-hal{ background:#C42A2E; }
+
+  .ctc-badges{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .ctc-badge{
+    display:inline-flex; align-items:center; gap:5px;
+    padding:5px 10px; border-radius:999px;
+    background:var(--surface-subtle); border:1px solid var(--border-subtle);
+    font-size:11px; font-weight:700; color:#4B554F; white-space:nowrap;
+  }
+  .ctc-badge-accent{ background:var(--accent-soft); border-color:var(--accent-border); color:var(--accent); }
+  .ctc-badge-ok{ background:#E9F5E7; border-color:#CFE6C8; color:#1E5C2E; }
+  .ctc-badge-warn{ background:#FBE8E7; border-color:#F3C7C4; color:#9C2B22; }
+
+  .ctc-subgauge-track{
+    position:relative; height:10px; border-radius:999px;
+    background:#EEF2E9; border:1px solid #E1E6DC; overflow:hidden;
+    margin:8px 0;
+  }
+  .ctc-subgauge-fill{ height:100%; border-radius:999px 0 0 999px; transition:width .2s ease, background .2s ease; background:#5C8A26; }
+  .ctc-subgauge-fill.is-ok{ background:#5C8A26; }
+  .ctc-subgauge-fill.is-alerta{ background:#9C2B22; }
+
   /* Utilities de superfície/borda a partir dos design tokens — pra componentes
      JS (calAddEmbalagem() em app.js) que não precisam de uma classe própria. */
   .bg-surface-subtle{ background:var(--surface-subtle); }
@@ -848,35 +1000,67 @@
     background-image: linear-gradient(180deg, #F0F4ED 0%, #E8EEE4 100%);
   }
 
+  /* Colunas roláveis no desktop (Sementes e Calagem, cada uma com metade da
+     tela em lg:overflow-y-auto): scrollbar-gutter reserva o espaço da barra
+     de rolagem sempre, pra ela não roubar do padding quando o conteúdo cresce
+     e o card parar de colar na barra. Seletor de duas classes (elemento
+     Tailwind "lg:overflow-y-auto" + "lg:p-6") tem mais especificidade que
+     qualquer utility isolada do Tailwind, então ganha sem precisar de
+     !important — mesmo com o bloco compilado do Tailwind vindo depois no
+     arquivo. */
+  @media (min-width: 1024px){
+    .lg\:overflow-y-auto.lg\:p-6{
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-gutter: stable;
+      padding: 20px 22px;
+    }
+  }
+
   /* Cartão widget de dashboard: moldura padrão pra qualquer bloco que vire
      um "card" solto na grade executiva (Identificação, Parâmetros, Total,
      Custo do produtor etc.). Seletor "section.crm-card" (elemento+classe)
-     garante prioridade sobre utilities do Tailwind sem precisar de !important. */
+     garante prioridade sobre utilities do Tailwind sem precisar de !important.
+     margin-bottom fixo é o único responsável pelo ritmo vertical entre cards
+     consecutivos — não depender de mt-3/mt-4/mt-5 soltos no HTML. */
   section.crm-card{
     background: #FFFFFF;
-    border: 1px solid #D8E0D2;
+    border: 1px solid #DCE3D6;
     border-radius: 12px;
-    padding: 18px;
-    box-shadow: 0 1px 3px rgba(30,36,32,0.04), 0 6px 16px -4px rgba(30,36,32,0.06);
+    padding: 16px 18px;
+    box-shadow: 0 1px 3px rgba(30,36,32,0.03);
     margin-bottom: 16px;
+    transition: border-color .15s ease, box-shadow .15s ease;
   }
   .crm-card-header{
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 10px;
     padding-bottom: 10px;
     margin-bottom: 14px;
-    border-bottom: 1px solid #EEF2EB;
+    border-bottom: 1px solid #EEF2E9;
   }
   .crm-card-title{
-    font-size: 11px;
+    margin: 0;
+    font-size: 11.5px;
     font-weight: 700;
+    line-height: 1.2;
     text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: #4B554F;
+    letter-spacing: 0.06em;
+    color: #374151;
     display: flex;
     align-items: center;
     gap: 6px;
+  }
+  /* Ícones de título herdam a cor da cultura ativa (--accent) em vez do
+     tamanho relativo de .icon-inline (1em) — mais legíveis ao lado de um
+     rótulo tão pequeno (11.5px). */
+  .crm-card-title svg{
+    width: 15px;
+    height: 15px;
+    color: var(--accent);
+    flex-shrink: 0;
   }
 
   /* Tabela de custos (#custosList, montada em JS): grade oficial dedicada
@@ -1123,12 +1307,13 @@
   }
   .comp-nutrient-pct{ font-weight:600; color:#4B554F; }
 
-  .comp-metric-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .comp-metric-grid{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px; margin-top:10px; }
   .comp-metric-box{
     background:#F4F6F2;
     border-radius:8px;
     padding:8px 10px;
     border:1px solid #E1E8DC;
+    min-width:0;
   }
   .comp-metric-label{ font-size:10px; font-weight:700; text-transform:uppercase; color:#4B554F; letter-spacing:.05em; }
   .comp-metric-value{
@@ -1248,6 +1433,126 @@
     animation:wa-toast-in .18s ease-out;
   }
   @keyframes wa-toast-in{ from{ opacity:0; transform:translate(-50%, 6px); } to{ opacity:1; transform:translate(-50%, 0); } }
+
+  /* Botão interativo de anexar laudo de solo no cabeçalho da matriz */
+  .btn-attach-soil{
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--accent);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.15);
+    box-shadow: 0 1px 3px rgba(30,36,32,0.08);
+    cursor: pointer;
+    transition: all .15s ease;
+    white-space: nowrap;
+  }
+  .btn-attach-soil:hover{
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px -2px rgba(30,36,32,0.15);
+  }
+  .btn-attach-soil:active{
+    transform: translateY(0);
+  }
+
+  /* Dropzone do modal de laudo */
+  .laudo-dropzone{
+    position: relative;
+    border: 2px dashed #BCCBB6;
+    background: #F8FAF6;
+    transition: all .2s ease;
+  }
+  .laudo-dropzone.is-dragover{
+    border-color: var(--accent);
+    background: #EEF5EA;
+    transform: scale(1.01);
+  }
+
+  /* Spinner de carregamento para IA */
+  .laudo-spinner{
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(92,138,38,0.2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: laudo-spin 0.8s linear infinite;
+  }
+  @keyframes laudo-spin{
+    to{ transform: rotate(360deg); }
+  }
+
+  /* Animação de destaque de campo preenchido pela IA */
+  .input-pulse-success{
+    animation: inputPulseSuccess 2s ease-out;
+  }
+  @keyframes inputPulseSuccess{
+    0%{
+      background-color: #DCFCE7 !important;
+      border-color: #22C55E !important;
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25) !important;
+      color: #14532D !important;
+    }
+    70%{
+      background-color: #F0FDF4 !important;
+      border-color: #86EFAC !important;
+    }
+    100%{
+      background-color: inherit;
+      border-color: inherit;
+      box-shadow: inherit;
+      color: inherit;
+    }
+  }
+
+  /* Corpo do modal de laudo: empilha dropzone, botão de câmera, preview do
+     arquivo, estado de carregamento e os dois blocos colapsáveis com respiro
+     vertical entre eles (sem depender de utility Tailwind não compilada). */
+  .laudo-modal-body{ display:flex; flex-direction:column; gap:12px; }
+
+  .laudo-camera-btn{
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    width:100%; border-radius:10px; border:1px solid var(--border-subtle);
+    background:#fff; padding:10px 14px; font-size:12.5px; font-weight:700;
+    color:var(--ink-primary); cursor:pointer; transition:background .15s ease, border-color .15s ease;
+  }
+  .laudo-camera-btn:hover{ background:var(--surface-subtle); border-color:var(--border-strong); }
+
+  /* Cartão do arquivo selecionado (nome, tamanho e botão de remover) */
+  .laudo-file-card{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    border:1px solid var(--border-subtle); border-radius:10px;
+    background:var(--surface-subtle); padding:10px 12px;
+  }
+  .laudo-file-info{ display:flex; align-items:center; gap:10px; min-width:0; }
+  .laudo-file-text{ min-width:0; }
+  .laudo-file-name{
+    font-size:12px; font-weight:700; color:var(--ink-primary);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .laudo-file-size{ font-size:10.5px; color:var(--ink-muted); margin-top:1px; }
+  .laudo-file-remove{
+    flex:none; border-radius:8px; padding:5px; color:var(--ink-muted);
+    background:transparent; border:0; cursor:pointer; transition:background .15s ease, color .15s ease;
+  }
+  .laudo-file-remove:hover{ background:#fff; color:var(--ink-primary); }
+
+  /* Estado de carregamento (spinner + texto da etapa atual) */
+  .laudo-loading{ display:flex; flex-direction:column; align-items:center; gap:10px; padding:20px 0; }
+  .laudo-loading-text{ font-size:12.5px; font-weight:700; color:var(--ink-primary); }
+
+  /* Blocos colapsáveis do modal (chave da API / colar texto) reaproveitam
+     .mem-toggle/.mem-panel da memória de cálculo, só um pouco mais compactos. */
+  .laudo-collapsible-toggle{ padding:8px 12px; font-size:11.5px; font-weight:700; }
+  .laudo-collapsible-body{ display:flex; flex-direction:column; gap:6px; }
+  .laudo-paste-textarea{ height:100px; }
+
+  #laudoModalInterpretar:disabled,
+  #laudoModalCancel:disabled{ opacity:.6; cursor:not-allowed; }
 
   /* folha de impressão / PDF: só aparece na hora de imprimir */
   #printSheet{display:none;}
@@ -1394,13 +1699,7 @@ tailwind.config = {
             <p id="cultivarPmsHint" class="mt-1.5 hidden text-[11px] text-muted"></p>
           </div>
           <div>
-            <div class="area-label-row">
-              <label class="lbl" for="area">Área</label>
-              <div id="areaUnitToggle" class="unit-toggle" role="group" aria-label="Unidade de área">
-                <button type="button" class="unit-toggle-btn is-active" data-unit="alq" aria-pressed="true" title="Alqueire paulista (1 alq = 2,42 ha)">Alqueire</button>
-                <button type="button" class="unit-toggle-btn" data-unit="ha" aria-pressed="false" title="Hectare">Hectare</button>
-              </div>
-            </div>
+            <label class="lbl" for="area">Área (alqueires)</label>
             <input type="number" id="area" class="inp inp-num" step="0.1" min="0" inputmode="decimal" placeholder="0">
             <p class="field-note" title="Equivalência automática: 1 alqueire = 2,42 ha">
               <span class="note-ico" aria-hidden="true"><svg class="ti ti-ruler-2 icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3l4 4l-14 14l-4 -4l14 -14" /><path d="M16 7l-1.5 -1.5" /><path d="M13 10l-1.5 -1.5" /><path d="M10 13l-1.5 -1.5" /><path d="M7 16l-1.5 -1.5" /></svg></span><span id="areaHaHint">0 ha</span>
@@ -1432,7 +1731,7 @@ tailwind.config = {
             </div>
           </div>
 
-          <div class="readout mt-3">
+          <div class="readout">
             <span class="text-[11px] font-semibold uppercase tracking-wide text-muted"><svg class="ti ti-leaf icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21c.5 -4.5 2.5 -8 7 -10" /><path d="M9 18c6.218 0 10.5 -3.288 11 -12v-2h-4.014c-9 0 -11.986 4 -12 9c0 1 0 3 2 5h3l.014 0" /></svg> População final</span>
             <span class="font-mono text-[13px] font-bold text-ink"><span id="popFinalHa">0</span> plantas/ha · <span id="popFinalAlq">0</span> plantas/alqueire</span>
           </div>
@@ -1860,33 +2159,29 @@ tailwind.config = {
       <div class="p-5 sm:p-7 lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:p-0">
       <div class="lg:flex lg:h-full lg:min-h-0">
 
-      <!-- Coluna 1 (desktop): laudo de solo, área e manejo -->
-      <div class="lg:min-h-0 lg:w-[44%] lg:overflow-y-auto lg:border-r lg:border-line lg:p-6">
+      <!-- Coluna 1 (desktop): identificação, manejo e matriz técnica de solo -->
+      <div class="lg:min-h-0 lg:w-[45%] lg:overflow-y-auto lg:border-r lg:border-line lg:p-6">
 
       <section class="crm-card">
         <div class="crm-card-header">
-          <h2 class="crm-card-title">Identificação e Área do Cooperado</h2>
+          <h2 class="crm-card-title">Identificação, Área e Manejo</h2>
         </div>
-        <div class="fld-grid">
-          <div>
+        <div class="fld-grid-2">
+          <div class="fld-col-full">
             <label class="lbl" for="calCliente">Cliente</label>
-            <input type="text" id="calCliente" class="inp" placeholder="Nome do cliente" autocomplete="off">
+            <input type="text" id="calCliente" class="inp" placeholder="Nome do cooperado / produtor" autocomplete="off">
           </div>
           <div>
-            <div class="area-label-row">
-              <label class="lbl" for="calArea">Área a corrigir</label>
-              <div id="calAreaUnitToggle" class="unit-toggle" role="group" aria-label="Unidade de área">
-                <button type="button" class="unit-toggle-btn is-active" data-unit="alq" aria-pressed="true" title="Alqueire paulista (1 alq = 2,42 ha)">Alqueire</button>
-                <button type="button" class="unit-toggle-btn" data-unit="ha" aria-pressed="false" title="Hectare">Hectare</button>
-              </div>
-            </div>
+            <label class="lbl" for="calArea">Área a corrigir (alqueires)</label>
             <input type="number" id="calArea" class="inp inp-num" step="0.1" min="0" inputmode="decimal" placeholder="0">
             <p class="field-note" title="Equivalência automática: 1 alqueire = 2,42 ha">
               <span class="note-ico" aria-hidden="true"><svg class="ti ti-ruler-2 icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3l4 4l-14 14l-4 -4l14 -14" /><path d="M16 7l-1.5 -1.5" /><path d="M13 10l-1.5 -1.5" /><path d="M10 13l-1.5 -1.5" /><path d="M7 16l-1.5 -1.5" /></svg></span><span id="calAreaHaHint">0 ha</span>
             </p>
           </div>
+        </div>
+        <div class="cal-cultura-row mt-2">
           <div>
-            <label class="lbl" for="calCultura">Cultura-alvo / V₂ desejado</label>
+            <label class="lbl" for="calCultura">Cultura-alvo / V₂ sugerido</label>
             <select id="calCultura" class="inp">
               <option value="coasul" data-v2="80" selected>Padrão Sudoeste do Paraná — solo argiloso da região (V₂ 80%)</option>
               <option value="graos" data-v2="65">Soja/Milho/Trigo/Cevada/Girassol (V₂ 65%)</option>
@@ -1897,75 +2192,20 @@ tailwind.config = {
             </select>
           </div>
           <div>
-            <label class="lbl" for="calV2">Saturação por bases desejada — V₂</label>
+            <label class="lbl" for="calV2">V₂ desejada</label>
             <div class="input-group">
               <input type="number" id="calV2" class="inp inp-num" step="1" min="0" max="100" inputmode="decimal" placeholder="80" value="80">
               <span class="input-group-addon is-suffix">%</span>
             </div>
           </div>
         </div>
-      </section>
-
-      <section class="crm-card mt-4">
-        <div class="crm-card-header">
-          <h2 class="crm-card-title">Laudo de Solo — Camada 0-20 cm (Calagem)</h2>
-        </div>
-        <h3 class="cal-subhead">Complexo de troca — cátions e acidez</h3>
-        <div class="fld-grid fld-grid-3">
-          <div>
-            <label class="lbl" for="calCa020">Ca²⁺</label>
-            <div class="input-group">
-              <input type="number" id="calCa020" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
-              <span class="input-group-addon is-suffix">cmolc/dm³</span>
-            </div>
-          </div>
-          <div>
-            <label class="lbl" for="calMg020">Mg²⁺</label>
-            <div class="input-group">
-              <input type="number" id="calMg020" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
-              <span class="input-group-addon is-suffix">cmolc/dm³</span>
-            </div>
-          </div>
-          <div>
-            <label class="lbl" for="calK020">K⁺</label>
-            <div class="input-group">
-              <input type="number" id="calK020" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
-              <select id="calKUnidade020" aria-label="Unidade do K⁺">
-                <option value="cmolc">cmolc/dm³</option>
-                <option value="mgdm3">mg/dm³</option>
-              </select>
-            </div>
-          </div>
-          <div>
-            <label class="lbl" for="calAl020">Al³⁺</label>
-            <div class="input-group">
-              <input type="number" id="calAl020" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
-              <span class="input-group-addon is-suffix">cmolc/dm³</span>
-            </div>
-          </div>
-          <div>
-            <label class="lbl" for="calHAl020">H+Al</label>
-            <div class="input-group">
-              <input type="number" id="calHAl020" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
-              <span class="input-group-addon is-suffix">cmolc/dm³</span>
-            </div>
-          </div>
-        </div>
-        <h3 class="cal-subhead mt-4">Parâmetros agronômicos de aplicação</h3>
-        <div class="fld-grid fld-grid-4">
-          <div>
-            <label class="lbl" for="calPrnt">PRNT do calcário</label>
-            <div class="input-group">
-              <input type="number" id="calPrnt" class="inp inp-num" step="1" min="1" max="100" inputmode="decimal" placeholder="80" value="80">
-              <span class="input-group-addon is-suffix">%</span>
-            </div>
-          </div>
+        <div class="cal-manejo-grid mt-2">
           <div>
             <label class="lbl" for="calManejo">Sistema de manejo</label>
             <select id="calManejo" class="inp">
               <option value="pd" data-prof="10">Plantio direto (0-10 cm, f=0,5)</option>
               <option value="conv" data-prof="20">Convencional (0-20 cm, f=1,0)</option>
-              <option value="manual" data-prof="">Personalizado (profundidade manual)</option>
+              <option value="manual" data-prof="">Personalizado (prof. manual)</option>
             </select>
           </div>
           <div>
@@ -1976,81 +2216,111 @@ tailwind.config = {
             </div>
           </div>
           <div>
-            <label class="lbl" for="calAreaAplicadaPct">Área efetivamente aplicada</label>
+            <label class="lbl" for="calAreaAplicadaPct">Área aplicada</label>
             <div class="input-group">
               <input type="number" id="calAreaAplicadaPct" class="inp inp-num" step="1" min="1" max="100" inputmode="decimal" placeholder="100" value="100">
               <span class="input-group-addon is-suffix">%</span>
             </div>
           </div>
-        </div>
-        <div class="readout mt-3">
-          <span class="text-[11px] font-semibold uppercase tracking-wide text-muted"><svg class="ti ti-flask icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3l6 0" /><path d="M10 9l4 0" /><path d="M10 3v6l-4 11a.7 .7 0 0 0 .5 1h11a.7 .7 0 0 0 .5 -1l-4 -11v-6" /></svg> Leitura instantânea</span>
-          <span class="readout-metrics">
-            <span class="readout-metric">SB <strong id="calReadoutSB">0,00</strong></span>
-            <span class="readout-metric">CTC(T) <strong id="calReadoutCtc020">0,00</strong></span>
-            <span class="readout-metric">V₁ <strong id="calReadoutV1">0,00%</strong></span>
-          </span>
-        </div>
-        <p class="mt-2 text-[11px] leading-snug text-muted">H+Al pode vir direto do laudo ou ser estimado pelo Índice SMP conforme a tabela do laboratório — informe aqui o valor já em cmolc/dm³.</p>
-      </section>
-
-      <section class="crm-card mt-4">
-        <div class="crm-card-header">
-          <h2 class="crm-card-title">Laudo de Subsolo — Camada 20-40 cm (Gessagem)</h2>
-        </div>
-        <div class="fld-grid fld-grid-3">
           <div>
-            <label class="lbl" for="calArgila2040">Argila</label>
+            <label class="lbl" for="calPrnt">PRNT do calcário</label>
             <div class="input-group">
-              <input type="number" id="calArgila2040" class="inp inp-num" step="1" min="0" max="100" inputmode="decimal" placeholder="0">
+              <input type="number" id="calPrnt" class="inp inp-num" step="1" min="1" max="100" inputmode="decimal" placeholder="80" value="80">
               <span class="input-group-addon is-suffix">%</span>
             </div>
           </div>
-          <div>
-            <label class="lbl" for="calCa2040">Ca²⁺</label>
-            <div class="input-group">
-              <input type="number" id="calCa2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
-              <span class="input-group-addon is-suffix">cmolc/dm³</span>
-            </div>
-          </div>
-          <div>
-            <label class="lbl" for="calMg2040">Mg²⁺</label>
-            <div class="input-group">
-              <input type="number" id="calMg2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
-              <span class="input-group-addon is-suffix">cmolc/dm³</span>
-            </div>
-          </div>
-          <div>
-            <label class="lbl" for="calK2040">K⁺</label>
-            <div class="input-group">
-              <input type="number" id="calK2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
-              <span class="input-group-addon is-suffix">cmolc/dm³</span>
-            </div>
-          </div>
-          <div>
-            <label class="lbl" for="calAl2040">Al³⁺</label>
-            <div class="input-group">
-              <input type="number" id="calAl2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
-              <span class="input-group-addon is-suffix">cmolc/dm³</span>
-            </div>
-          </div>
-          <div>
-            <label class="lbl" for="calHAl2040">H+Al</label>
-            <div class="input-group">
-              <input type="number" id="calHAl2040" class="inp inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0">
-              <span class="input-group-addon is-suffix">cmolc/dm³</span>
-            </div>
-          </div>
         </div>
-        <div class="mt-3">
+        <div class="mt-2">
           <label class="lbl" for="calMetodoGessagem">Método de cálculo da dose de gesso (NG)</label>
           <select id="calMetodoGessagem" class="inp">
             <option value="argila">Teor de argila do subsolo (padrão PR/Embrapa Soja)</option>
             <option value="saturacaoCa">Elevação da saturação por Ca no subsolo (CTC/Ca)</option>
           </select>
         </div>
-        <div class="readout mt-3">
-          <span class="text-[11px] font-semibold uppercase tracking-wide text-muted"><svg class="ti ti-triangle-square-circle icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M15 3l6 9l-6 9h-6" /></svg> Leitura instantânea (subsolo)</span>
+      </section>
+
+
+      <section class="crm-card">
+        <div class="crm-card-header flex-wrap gap-x-3 gap-y-2">
+          <h2 class="crm-card-title">Matriz Técnica de Solo — Boletim de Laboratório</h2>
+          <button type="button" id="btnAnexarLaudo" class="btn-attach-soil">
+            <svg class="h-4 w-4 icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 7l-6.5 6.5a1.5 1.5 0 0 0 3 3l6.5 -6.5a3 3 0 0 0 -6 -6l-6.5 6.5a4.5 4.5 0 0 0 9 9l6.5 -6.5" /></svg>
+            Anexar Laudo (PDF / Foto)
+          </button>
+        </div>
+        <div class="soil-matrix-wrap">
+          <table class="soil-matrix">
+            <colgroup>
+              <col class="sm-c-param">
+              <col>
+              <col>
+              <col class="sm-c-unit">
+            </colgroup>
+            <thead>
+              <tr>
+                <th scope="col">Parâmetro</th>
+                <th scope="col">0–20 cm<span class="soil-matrix-sub">Calagem</span></th>
+                <th scope="col">20–40 cm<span class="soil-matrix-sub">Gessagem</span></th>
+                <th scope="col">Unid.</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Ca²⁺</td>
+                <td><input type="number" id="calCa020" class="inp inp-sm inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0"></td>
+                <td><input type="number" id="calCa2040" class="inp inp-sm inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0"></td>
+                <td class="sm-unit">cmolc/dm³</td>
+              </tr>
+              <tr>
+                <td>Mg²⁺</td>
+                <td><input type="number" id="calMg020" class="inp inp-sm inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0"></td>
+                <td><input type="number" id="calMg2040" class="inp inp-sm inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0"></td>
+                <td class="sm-unit">cmolc/dm³</td>
+              </tr>
+              <tr>
+                <td>K⁺</td>
+                <td><input type="number" id="calK020" class="inp inp-sm inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0"></td>
+                <td><input type="number" id="calK2040" class="inp inp-sm inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0"></td>
+                <td class="sm-unit-select">
+                  <select id="calKUnidade020" aria-label="Unidade do K⁺">
+                    <option value="cmolc">cmolc/dm³</option>
+                    <option value="mgdm3">mg/dm³</option>
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <td>Al³⁺</td>
+                <td><input type="number" id="calAl020" class="inp inp-sm inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0"></td>
+                <td><input type="number" id="calAl2040" class="inp inp-sm inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0"></td>
+                <td class="sm-unit">cmolc/dm³</td>
+              </tr>
+              <tr>
+                <td>H+Al</td>
+                <td><input type="number" id="calHAl020" class="inp inp-sm inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0"></td>
+                <td><input type="number" id="calHAl2040" class="inp inp-sm inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0"></td>
+                <td class="sm-unit">cmolc/dm³</td>
+              </tr>
+              <tr>
+                <td>Argila</td>
+                <td class="sm-unit sm-dash" aria-hidden="true">—</td>
+                <td><input type="number" id="calArgila2040" class="inp inp-sm inp-num" step="1" min="0" max="100" inputmode="decimal" placeholder="0"></td>
+                <td class="sm-unit">%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="mt-2 text-[11px] leading-snug text-muted">H+Al pode vir direto do laudo ou ser estimado pelo Índice SMP conforme a tabela do laboratório — informe aqui o valor já em cmolc/dm³.</p>
+        <div class="readout">
+          <span class="text-[11px] font-semibold uppercase tracking-wide text-muted"><svg class="ti ti-flask icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3l6 0" /><path d="M10 9l4 0" /><path d="M10 3v6l-4 11a.7 .7 0 0 0 .5 1h11a.7 .7 0 0 0 .5 -1l-4 -11v-6" /></svg> Leitura instantânea — 0-20 cm</span>
+          <span class="readout-metrics">
+            <span class="readout-metric">SB <strong id="calReadoutSB">0,00</strong></span>
+            <span class="readout-metric">CTC(T) <strong id="calReadoutCtc020">0,00</strong></span>
+            <span class="readout-metric">V₁ <strong id="calReadoutV1">0,00%</strong></span>
+            <span class="readout-metric">Ca:Mg <strong id="calReadoutCaMg">0,00</strong></span>
+          </span>
+        </div>
+        <div class="readout">
+          <span class="text-[11px] font-semibold uppercase tracking-wide text-muted"><svg class="ti ti-triangle-square-circle icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M15 3l6 9l-6 9h-6" /></svg> Leitura instantânea — subsolo 20-40 cm</span>
           <span class="readout-metrics">
             <span class="readout-metric">V₂₀₋₄₀ <strong id="calReadoutV2040">0,00%</strong></span>
             <span class="readout-metric">m% <strong id="calReadoutM2040">0,00%</strong></span>
@@ -2061,16 +2331,57 @@ tailwind.config = {
       </div>
 
       <!-- Coluna 2 (desktop): diagnóstico executivo, KPIs e custos -->
-      <div class="mt-6 lg:mt-0 lg:min-h-0 lg:w-[56%] lg:overflow-y-auto lg:p-6">
+      <div class="mt-6 lg:mt-0 lg:min-h-0 lg:w-[55%] lg:overflow-y-auto lg:p-6">
 
       <section class="crm-card">
         <div class="crm-card-header">
-          <h2 class="crm-card-title"><span aria-hidden="true"><svg class="ti ti-activity icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l3 8l4 -16l3 8h4" /></svg></span>Diagnóstico Agronômico do Perfil de Solo</h2>
+          <h2 class="crm-card-title"><span aria-hidden="true"><svg class="ti ti-activity icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l3 8l4 -16l3 8h4" /></svg></span>Gráfico Técnico de Perfil e Balanço da CTC</h2>
         </div>
-        <div id="calSemaforoBox" class="grid gap-2.5"></div>
+        <div id="calGraficoSolo">
+          <h3 class="cal-subhead">Saturação por bases — atual x meta (0-20 cm)</h3>
+          <div class="ctc-vbar">
+            <div class="ctc-vbar-track"></div>
+            <div class="ctc-vbar-target" id="calGraficoV2Line" style="left:0%"></div>
+            <div class="ctc-vbar-pin" id="calGraficoV1Pin" style="left:0%"></div>
+          </div>
+          <div class="ctc-vbar-scale"><span>0</span><span>50</span><span>65</span><span>80</span><span>100%</span></div>
+          <div class="ctc-legend">
+            <span class="ctc-legend-item"><span class="ctc-legend-dot ctc-dot-v1" aria-hidden="true"></span>V₁ atual <strong id="calGraficoV1Tag">0,00%</strong></span>
+            <span class="ctc-legend-item"><span class="ctc-legend-dot ctc-dot-v2" aria-hidden="true"></span>V₂ meta <strong id="calGraficoV2Tag">0,00%</strong></span>
+          </div>
+
+          <h3 class="cal-subhead">Ocupação da CTC por cátion (0-20 cm)</h3>
+          <div class="ctc-stack" id="calGraficoCtcStack">
+            <div class="ctc-stack-seg ctc-seg-ca" id="calGraficoSegCa" style="width:0%"></div>
+            <div class="ctc-stack-seg ctc-seg-mg" id="calGraficoSegMg" style="width:0%"></div>
+            <div class="ctc-stack-seg ctc-seg-k" id="calGraficoSegK" style="width:0%"></div>
+            <div class="ctc-stack-seg ctc-seg-hal" id="calGraficoSegHAl" style="width:0%"></div>
+          </div>
+          <div class="ctc-legend">
+            <span class="ctc-legend-item"><span class="ctc-legend-dot ctc-dot-ca" aria-hidden="true"></span>Ca <strong id="calGraficoPctCa">0%</strong></span>
+            <span class="ctc-legend-item"><span class="ctc-legend-dot ctc-dot-mg" aria-hidden="true"></span>Mg <strong id="calGraficoPctMg">0%</strong></span>
+            <span class="ctc-legend-item"><span class="ctc-legend-dot ctc-dot-k" aria-hidden="true"></span>K <strong id="calGraficoPctK">0%</strong></span>
+            <span class="ctc-legend-item"><span class="ctc-legend-dot ctc-dot-hal" aria-hidden="true"></span>H+Al <strong id="calGraficoPctHAl">0%</strong></span>
+          </div>
+          <div class="ctc-badges">
+            <span class="ctc-badge" id="calGraficoCaMgBadge">Ca:Mg — 0,00:1</span>
+            <span class="ctc-badge ctc-badge-accent" id="calGraficoCorretivoBadge">—</span>
+          </div>
+
+          <h3 class="cal-subhead">Impedimento químico do subsolo (20-40 cm)</h3>
+          <div class="ctc-subgauge-track">
+            <div class="ctc-subgauge-fill" id="calGraficoSubGaugeFill" style="width:0%"></div>
+          </div>
+          <div class="ctc-legend">
+            <span class="ctc-legend-item">m% subsolo <strong id="calGraficoSubGaugeLabel">0,00%</strong></span>
+            <span class="ctc-legend-item">Al³⁺ <strong id="calGraficoSubGaugeAlLabel">0,00</strong></span>
+            <span class="ctc-badge" id="calGraficoSubGaugeStatus">—</span>
+          </div>
+        </div>
       </section>
 
-      <section class="crm-card mt-4">
+      <div class="twin-kpi-grid">
+      <section class="crm-card">
         <div class="crm-card-header">
           <h2 class="crm-card-title"><span aria-hidden="true"><svg class="ti ti-droplet icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.502 19.423c-3.32 -3.319 -3.32 -8.704 0 -12.023l4.498 -4.5l4.498 4.5c3.32 3.319 3.32 8.704 0 12.023a6.364 6.364 0 0 1 -8.996 0z" /></svg></span>Dosagem de Calcário</h2>
         </div>
@@ -2078,8 +2389,8 @@ tailwind.config = {
           <span id="calNcAplicar">0,00</span>
           <span class="text-[14px] font-normal text-muted">t/ha</span>
         </p>
-        <p class="mt-1.5 text-[11px] text-muted">dose base (NC) <span id="calNcBase" class="font-mono font-semibold text-ink">0,00</span> t/ha, ajustada por profundidade e área aplicada</p>
-        <div class="readout mt-3">
+        <p class="mt-1.5 text-[11px] text-muted">V₁ <span id="calNcV1Read" class="font-mono font-semibold text-ink">0,00%</span> → V₂ <span id="calNcV2Read" class="font-mono font-semibold text-ink">0,00%</span> · PRNT <span id="calNcPrntRead" class="font-mono font-semibold text-ink">0%</span> · dose base (NC) <span id="calNcBase" class="font-mono font-semibold text-ink">0,00</span> t/ha</p>
+        <div class="readout">
           <span class="text-[11px] font-semibold uppercase tracking-wide text-muted">Total na área informada</span>
           <span class="font-mono text-[16px] font-bold text-ink"><span id="calNcTotal">0,00</span> toneladas</span>
         </div>
@@ -2091,7 +2402,7 @@ tailwind.config = {
         <div id="calAlertBox" class="alerts-box hidden mt-3"></div>
       </section>
 
-      <section class="crm-card mt-4">
+      <section class="crm-card">
         <div class="crm-card-header">
           <h2 class="crm-card-title"><span aria-hidden="true"><svg class="ti ti-triangle-square-circle icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M15 3l6 9l-6 9h-6" /></svg></span>Dosagem de Gesso Agrícola</h2>
         </div>
@@ -2100,69 +2411,25 @@ tailwind.config = {
           <span class="text-[14px] font-normal text-muted">kg/ha</span>
         </p>
         <div id="calGessoNecessariaBox" class="mt-2"></div>
-        <div class="readout mt-3">
+        <div class="readout">
           <span class="text-[11px] font-semibold uppercase tracking-wide text-muted">Total na área informada</span>
           <span class="font-mono text-[16px] font-bold text-ink"><span id="calNgTotal">0,00</span> t</span>
         </div>
         <div class="mt-3 rounded-lg border border-line bg-white px-3 py-2.5">
           <div class="text-[10px] font-semibold uppercase tracking-wide text-muted">Aporte de nutrientes</div>
-          <div class="comp-metric-grid mt-2">
+          <div class="comp-metric-grid">
             <div class="comp-metric-box">
-              <div class="comp-metric-label">Enxofre (S-SO₄²⁻)</div>
+              <div class="comp-metric-label">Enxofre (S-SO<sub>4</sub><sup>2-</sup>)</div>
               <div class="comp-metric-value"><span id="calNgEnxofre">0,00</span> <span class="text-[10.5px] font-normal text-muted">kg/ha</span></div>
             </div>
             <div class="comp-metric-box">
-              <div class="comp-metric-label">Cálcio (Ca²⁺)</div>
+              <div class="comp-metric-label">Cálcio (Ca<sup>2+</sup>)</div>
               <div class="comp-metric-value"><span id="calNgCalcio">0,00</span> <span class="text-[10.5px] font-normal text-muted">kg/ha</span></div>
             </div>
           </div>
         </div>
       </section>
-
-      <section class="crm-card mt-4">
-        <div class="crm-card-header">
-          <h2 class="crm-card-title"><span aria-hidden="true"><svg class="ti ti-truck icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M5 17h-2v-11a1 1 0 0 1 1 -1h9v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5" /></svg></span>Logística de cargas e embalagens</h2>
-        </div>
-        <div id="calLogisticaWrap" class="grid grid-cols-2 gap-2.5 lg:grid-cols-4"></div>
-      </section>
-
-      <section class="crm-card mt-4">
-        <div class="crm-card-header">
-          <h2 class="crm-card-title"><span aria-hidden="true"><svg class="ti ti-coin icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M14.8 9a2 2 0 0 0 -1.8 -1h-2a2 2 0 1 0 0 4h2a2 2 0 1 1 0 4h-2a2 2 0 0 1 -1.8 -1" /><path d="M12 7v10" /></svg></span>Investimento e custos do produtor</h2>
-        </div>
-        <div class="fld-grid fld-grid-3">
-          <div>
-            <label class="lbl" for="calPrecoCalcarioVista">Calcário — à vista (R$/t)</label>
-            <div class="input-group">
-              <span class="input-group-addon is-prefix">R$</span>
-              <input type="number" id="calPrecoCalcarioVista" class="inp inp-num inp-money" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
-            </div>
-          </div>
-          <div>
-            <label class="lbl" for="calPrecoCalcarioPrazo">Calcário — a prazo (R$/t)</label>
-            <div class="input-group">
-              <span class="input-group-addon is-prefix">R$</span>
-              <input type="number" id="calPrecoCalcarioPrazo" class="inp inp-num inp-money" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
-            </div>
-          </div>
-          <div></div>
-          <div>
-            <label class="lbl" for="calPrecoGessoVista">Gesso — à vista (R$/t)</label>
-            <div class="input-group">
-              <span class="input-group-addon is-prefix">R$</span>
-              <input type="number" id="calPrecoGessoVista" class="inp inp-num inp-money" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
-            </div>
-          </div>
-          <div>
-            <label class="lbl" for="calPrecoGessoPrazo">Gesso — a prazo (R$/t)</label>
-            <div class="input-group">
-              <span class="input-group-addon is-prefix">R$</span>
-              <input type="number" id="calPrecoGessoPrazo" class="inp inp-num inp-money" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
-            </div>
-          </div>
-        </div>
-        <div id="calCustosWrap" class="mt-3 grid gap-2"></div>
-      </section>
+      </div>
 
       <section id="calMemoriaBox" class="mt-4">
         <button type="button" id="calMemoriaToggle" class="mem-toggle flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-[13px] font-extrabold text-ink" aria-expanded="false" aria-controls="calMemoriaPanel">
@@ -2217,6 +2484,98 @@ tailwind.config = {
       </button>
       <button type="button" id="modalWaSend" class="flex-1 sm:flex-none rounded-lg px-5 py-2.5 text-[12.5px] font-bold text-white transition hover:brightness-110 active:translate-y-px" style="background:#25D366">
         💬 Abrir no WhatsApp
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Anexar e Interpretar Laudo de Solo -->
+<div id="laudoModal" class="modal-backdrop hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/50 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="modalLaudoTitle">
+  <div class="modal-card w-full max-w-lg rounded-xl bg-white p-5 shadow-xl border border-line flex flex-col max-h-[90vh]">
+    <div class="flex items-center justify-between pb-3 border-b border-line">
+      <div class="flex items-center gap-2">
+        <span class="flex h-8 w-8 items-center justify-center rounded-full" style="background:var(--accent-soft); color:var(--accent)">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 7l-6.5 6.5a1.5 1.5 0 0 0 3 3l6.5 -6.5a3 3 0 0 0 -6 -6l-6.5 6.5a4.5 4.5 0 0 0 9 9l6.5 -6.5" /></svg>
+        </span>
+        <h3 id="modalLaudoTitle" class="text-[15px] font-bold text-ink">Anexar Laudo de Solo</h3>
+      </div>
+      <button type="button" id="laudoModalClose" class="rounded-lg p-1.5 text-muted hover:bg-canvas hover:text-ink transition" aria-label="Fechar modal">
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+
+    <div class="py-3 flex-1 overflow-y-auto">
+      <p class="text-[11px] leading-snug text-muted mb-3">Anexe o PDF ou uma foto do laudo de laboratório — a IA identifica os teores químicos e preenche a matriz técnica automaticamente.</p>
+
+      <div class="laudo-modal-body">
+        <div id="laudoDropzone" class="laudo-dropzone rounded-xl p-5 text-center cursor-pointer" tabindex="0" role="button" aria-label="Selecionar arquivo do laudo">
+          <input type="file" id="laudoFileInput" accept=".pdf,.png,.jpg,.jpeg,.webp" class="hidden">
+          <svg class="h-7 w-7 icon-inline mx-auto" style="color:var(--accent)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" /><path d="M7 9l5 -5l5 5" /><path d="M12 4l0 12" /></svg>
+          <p class="text-[12.5px] font-semibold text-ink mt-2">Arraste o laudo aqui ou clique para selecionar</p>
+          <p class="text-[11px] text-muted mt-1">PDF, PNG, JPG ou WEBP</p>
+        </div>
+
+        <input type="file" id="laudoCameraInput" accept="image/*" capture="environment" class="hidden">
+        <button type="button" id="btnLaudoCamera" class="laudo-camera-btn">
+          <svg class="h-4 w-4 icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h1a2 2 0 0 0 2 -2a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2" /><path d="M12 13m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /></svg>
+          Tirar Foto do Laudo
+        </button>
+
+        <div id="laudoFilePreview" class="laudo-file-card hidden">
+          <div class="laudo-file-info">
+            <svg class="h-5 w-5 icon-inline" style="color:var(--accent); flex:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /></svg>
+            <div class="laudo-file-text">
+              <div id="laudoFileName" class="laudo-file-name"></div>
+              <div id="laudoFileSize" class="laudo-file-size"></div>
+            </div>
+          </div>
+          <button type="button" id="laudoFileRemove" class="laudo-file-remove" aria-label="Remover arquivo">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+
+        <div id="laudoLoadingState" class="laudo-loading hidden">
+          <div class="laudo-spinner"></div>
+          <p id="laudoLoadingText" class="laudo-loading-text">Lendo documento...</p>
+        </div>
+
+        <section>
+          <button type="button" id="laudoApiKeyToggle" class="mem-toggle laudo-collapsible-toggle flex w-full items-center gap-2 rounded-lg text-ink" aria-expanded="false" aria-controls="laudoApiKeyPanel">
+            <svg class="h-4 w-4 icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z" /><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /></svg>
+            Configurar chave da API Gemini (opcional)
+            <svg class="mem-chevron ml-auto h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div id="laudoApiKeyPanel" class="mem-panel">
+            <div class="mem-panel-inner laudo-collapsible-body">
+              <label class="lbl" for="laudoApiKeyInput">Chave da API (Google AI Studio)</label>
+              <input type="password" id="laudoApiKeyInput" class="inp" placeholder="AIza..." autocomplete="off">
+              <p class="text-[10.5px] text-muted">Armazenada apenas neste dispositivo. Necessária só para interpretação automática via IA.</p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <button type="button" id="laudoPasteToggle" class="mem-toggle laudo-collapsible-toggle flex w-full items-center gap-2 rounded-lg text-ink" aria-expanded="false" aria-controls="laudoPastePanel">
+            <svg class="h-4 w-4 icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2" /><path d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z" /><path d="M9 12l6 0" /><path d="M9 16l6 0" /></svg>
+            Colar texto ou JSON extraído (sem IA)
+            <svg class="mem-chevron ml-auto h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div id="laudoPastePanel" class="mem-panel">
+            <div class="mem-panel-inner laudo-collapsible-body">
+              <textarea id="laudoPasteText" class="inp inp-num w-full laudo-paste-textarea p-3 text-[12px] font-mono leading-relaxed bg-[#F7FAF5] border border-line rounded-lg resize-none focus:outline-none" placeholder='Cole aqui o JSON já interpretado, ex.: {"camada_0_20":{"ca":4.2,"mg":1.5,"k":0.3}}'></textarea>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div class="pt-3 border-t border-line flex flex-wrap items-center justify-end gap-2.5">
+      <button type="button" id="laudoModalCancel" class="flex-1 sm:flex-none rounded-lg border border-line bg-white px-4 py-2.5 text-[12.5px] font-bold text-ink hover:bg-canvas transition active:translate-y-px">
+        Cancelar
+      </button>
+      <button type="button" id="laudoModalInterpretar" class="flex-1 sm:flex-none rounded-lg px-5 py-2.5 text-[12.5px] font-bold text-white transition hover:brightness-110 active:translate-y-px" style="background:var(--accent)">
+        <svg class="h-4 w-4 icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 18a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2z" /><path d="M16 6a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2z" /><path d="M8.75 8.75l-3.5 6.5l6.5 -3.5l3.5 -6.5z" /></svg>
+        Interpretar com IA
       </button>
     </div>
   </div>
@@ -2536,8 +2895,7 @@ const Calculos = (function () {
     let calagemTexto =
       `💧 *CALAGEM RECOMENDADA:*\n` +
       `*${r.ncAplicar} t/ha* (Total: *${r.totalCalcario} toneladas*)\n` +
-      `• Corretivo: *${r.tipoCalcario}* (PRNT ${r.prnt}%)\n` +
-      `• Logística: ~${r.cargasCalcario} cargas de carreta (ou ${r.bagsCalcario} big bags)`;
+      `• Corretivo: *${r.tipoCalcario}* (PRNT ${r.prnt}%)`;
     if (r.alertaParcelamento) {
       calagemTexto += `\n⚠️ _Atenção: Dose > 2,5 t/ha em plantio direto superficial — recomenda-se parcelamento anual._`;
     }
@@ -2548,10 +2906,6 @@ const Calculos = (function () {
       ? `• Aporte: ~${r.enxofre} kg/ha de Enxofre (S) e ~${r.calcio} kg/ha de Cálcio (Ca)`
       : `• _Subsolo sem impedimento químico crítico — gessagem dispensada._`;
     blocos.push(gessagemTexto);
-
-    if (r.custoTotal) {
-      blocos.push(`💰 *Investimento Estimado:*\n• Custo Total: *${r.custoTotal}* (${r.custoPorAlq}/alq · ${r.custoPorHa}/ha)`);
-    }
 
     blocos.push(`──────────────────────\n_Baseado no Manual de Adubação e Calagem para o Estado do Paraná (SBCS-NEPAR)_`);
     return blocos.join("\n\n");
@@ -2754,11 +3108,10 @@ const {
   montarTextoWhatsApp, montarTextoWhatsAppRegulagem, montarTextoWhatsAppCalagem,
 } = Calculos;
 
-// Unidade em que o campo "Área" está sendo exibido/digitado ("alq" ou "ha") — a
-// unidade canônica usada internamente em todas as fórmulas continua sendo sempre
-// alqueires (ver normalizarAreaParaAlqueires em calculos.js); a alternância aqui é
-// só de exibição, compartilhada entre todas as culturas (não é salva por aba).
-let areaUnit = "alq";
+// Unidade em que o campo "Área" é exibido/digitado — fixa em alqueires em todas
+// as culturas. A unidade canônica usada internamente em todas as fórmulas também
+// é sempre alqueires (ver normalizarAreaParaAlqueires em calculos.js).
+const areaUnit = "alq";
 
 const $ = id => document.getElementById(id);
 
@@ -3011,25 +3364,6 @@ for(let t=5;t<=10;t++){
 }
 enhanceSelect(transSel);
 enhanceSelect($("espacamento"));
-
-// Alternância de unidade da Área (Alqueire/Hectare): troca só a exibição do campo
-// #area (convertendo o valor já digitado) — o valor canônico usado nas contas
-// continua sempre em alqueires, ver areaAlqDoInput()/normalizarAreaParaAlqueires().
-const areaUnitButtons = Array.from(document.querySelectorAll("#areaUnitToggle .unit-toggle-btn"));
-areaUnitButtons.forEach(btn => {
-  btn.addEventListener("click", () => {
-    if(btn.dataset.unit === areaUnit) return;
-    const areaAlq = areaAlqDoInput();
-    areaUnit = btn.dataset.unit;
-    areaUnitButtons.forEach(b => {
-      const on = b === btn;
-      b.classList.toggle("is-active", on);
-      b.setAttribute("aria-pressed", on ? "true" : "false");
-    });
-    formatarAreaInput(areaAlq);
-    calc();
-  });
-});
 
 // ---------- Busca/sugestão de cultivar (soja, milho, feijão, trigo) ----------
 // Catálogo em js/cultivares.js — ainda vazio, então a lista nunca aparece
@@ -5379,11 +5713,12 @@ calcRegulagemAdubo();
 // verificarNecessidadeGessagem, calcularGessagem, nutrientesGesso) — aqui só lê
 // os campos, chama essas funções e desenha o resultado.
 
-// Área a corrigir: mesmo esquema de alternância alqueire/hectare da aba de
-// Sementes & Adubação (ver areaAlqDoInput/formatarAreaInput acima), só que
-// como uma instância própria — é um campo de área independente, de outra
-// ferramenta, não o mesmo #area da calculadora de cultura.
-let calAreaUnit = "alq";
+// Área a corrigir: mesmo esquema de leitura/escrita da aba de Sementes &
+// Adubação (ver areaAlqDoInput/formatarAreaInput acima), só que como uma
+// instância própria — é um campo de área independente, de outra ferramenta,
+// não o mesmo #area da calculadora de cultura. Unidade de exibição fixa em
+// alqueires em todas as culturas.
+const calAreaUnit = "alq";
 function calAreaAlqDoInput(){
   return normalizarAreaParaAlqueires($("calArea").value, calAreaUnit);
 }
@@ -5402,21 +5737,6 @@ function calFmtAreaRelatorio(areaAlq){
   const alq = fmtDec(areaAlq) + " alq", ha = fmtDec(alqParaHa(areaAlq)) + " ha";
   return calAreaUnit === "ha" ? `${ha} (${alq})` : `${alq} (${ha})`;
 }
-const calAreaUnitButtons = Array.from(document.querySelectorAll("#calAreaUnitToggle .unit-toggle-btn"));
-calAreaUnitButtons.forEach(btn => {
-  btn.addEventListener("click", () => {
-    if(btn.dataset.unit === calAreaUnit) return;
-    const areaAlq = calAreaAlqDoInput();
-    calAreaUnit = btn.dataset.unit;
-    calAreaUnitButtons.forEach(b => {
-      const on = b === btn;
-      b.classList.toggle("is-active", on);
-      b.setAttribute("aria-pressed", on ? "true" : "false");
-    });
-    calFormatarAreaInput(areaAlq);
-    calcCalagem();
-  });
-});
 
 // Cultura-alvo -> V₂ sugerido (editável); "Personalizado" deixa o campo livre.
 $("calCultura").addEventListener("change", () => {
@@ -5439,9 +5759,11 @@ const CAL_INPUT_IDS = [
   "calV2","calProfundidade","calPrnt","calAreaAplicadaPct",
   "calCa020","calMg020","calK020","calAl020","calHAl020",
   "calCa2040","calMg2040","calK2040","calAl2040","calHAl2040","calArgila2040",
-  "calPrecoCalcarioVista","calPrecoCalcarioPrazo","calPrecoGessoVista","calPrecoGessoPrazo",
 ];
-CAL_INPUT_IDS.forEach(id => $(id).addEventListener("input", calcCalagem));
+CAL_INPUT_IDS.forEach(id => {
+  const el = $(id);
+  if(el) el.addEventListener("input", calcCalagem);
+});
 $("calArea").addEventListener("input", calcCalagem);
 $("calKUnidade020").addEventListener("change", calcCalagem);
 $("calMetodoGessagem").addEventListener("change", calcCalagem);
@@ -5452,83 +5774,12 @@ $("calMetodoGessagem").addEventListener("change", calcCalagem);
 // redispara "change" no <select> nativo por baixo (ver enhanceSelect()).
 enhanceSelect($("calCultura"));
 enhanceSelect($("calKUnidade020"));
-// marca o wrap como compacto: o K⁺ embute o seletor de unidade dentro do
-// próprio .input-group (ver .csel-compact em styles.css), no lugar do
-// <select> de largura total usado nos outros 3 selects desta aba.
+// marca o wrap como compacto: o K⁺ mora na própria coluna "Unid." da matriz
+// de solo (ver .csel-compact em styles.css), no lugar do <select> de largura
+// total usado nos outros 3 selects desta aba.
 $("calKUnidade020").closest(".csel").classList.add("csel-compact");
 enhanceSelect($("calManejo"));
 enhanceSelect($("calMetodoGessagem"));
-
-// toneladas de calcário/gesso -> quantidade de embalagens (Big Bag 1.000 kg,
-// sacaria de 50 kg) e de cargas a granel (referência: bitrem médio, 34 t)
-const CAL_CARGA_GRANEL_T = 35; // carreta/bitrem médio
-function calAddEmbalagem(wrap, produto, label, toneladas, tamanhoT){
-  const exato = toneladas / tamanhoT;
-  const div = document.createElement("div");
-  div.className = "rounded-lg border border-line bg-white px-3 py-2.5";
-  div.innerHTML =
-    `<div class="text-[10px] font-semibold uppercase tracking-wide text-muted">${produto} · ${label}</div>` +
-    `<div class="pack-value mt-0.5 font-mono tabular-nums text-ink">${fmtDec(exato)}</div>` +
-    `<div class="mt-0.5 text-[10.5px] text-muted">→ ${Math.ceil(exato).toLocaleString("pt-BR")} un. arredondado</div>`;
-  wrap.appendChild(div);
-}
-function calRenderLogistica(totalCalcarioT, totalGessoT){
-  const wrap = $("calLogisticaWrap");
-  wrap.innerHTML = "";
-  [["Calcário", totalCalcarioT], ["Gesso", totalGessoT]].forEach(([produto, total]) => {
-    if(!(total > 0)) return;
-    calAddEmbalagem(wrap, produto, "Granel — Carreta/Bitrem (~35 t/carga)", total, CAL_CARGA_GRANEL_T);
-    calAddEmbalagem(wrap, produto, "Big Bag 1.000 kg", total, 1);
-    calAddEmbalagem(wrap, produto, "Sacaria 50 kg", total, 0.05);
-  });
-}
-
-// custo total/por área de um produto a partir do preço por tonelada digitado
-function calCustoProduto(totalT, precoVista, precoPrazo){
-  const vista = calcularCusto(totalT, precoVista);
-  const prazo = calcularCusto(totalT, precoPrazo);
-  return { vista, prazo };
-}
-function calRenderCustoCard(wrap, produto, totalT, precoVista, precoPrazo, areaAlq){
-  if(!(totalT > 0)) return;
-  const { vista, prazo } = calCustoProduto(totalT, precoVista, precoPrazo);
-  const areaHa = alqParaHa(areaAlq);
-  const div = document.createElement("div");
-  div.className = "custo-card-item";
-  div.innerHTML = `
-    <div class="custos-grid">
-      <div>
-        <span class="text-[13px] font-extrabold text-ink lg:leading-tight">${produto}</span>
-        <div class="mt-0.5"><span class="whitespace-nowrap font-mono text-[11px] text-muted">${fmtDec(totalT)} t</span></div>
-      </div>
-      <div>
-        <div class="custo-mobile-label">Custo à vista</div>
-        <div class="whitespace-nowrap font-mono text-[14px] font-bold tabular-nums text-ink">${fmtMoeda(vista)}</div>
-      </div>
-      <div>
-        <div class="custo-mobile-label">Custo a prazo</div>
-        <div class="whitespace-nowrap font-mono text-[14px] font-bold tabular-nums text-ink">${fmtMoeda(prazo)}</div>
-      </div>
-      <div>
-        <div class="custo-mobile-label">Por alqueire</div>
-        <div class="whitespace-nowrap font-mono text-[11.5px] text-muted">${areaAlq ? fmtMoeda(vista / areaAlq) : "—"}</div>
-      </div>
-      <div>
-        <div class="custo-mobile-label">Por hectare</div>
-        <div class="whitespace-nowrap font-mono text-[11.5px] text-muted">${areaHa ? fmtMoeda(vista / areaHa) : "—"}</div>
-      </div>
-    </div>`;
-  wrap.appendChild(div);
-}
-
-const SEMAFORO_ICON_OK = '<path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 12l2 2l4 -4" /><path d="M21 12a9 9 0 1 1 -18 0a9 9 0 0 1 18 0" />';
-function calSemaforoItem(status, texto){
-  const classe = status === "ok" ? "semaforo-ok" : status === "atencao" ? "semaforo-atencao" : "semaforo-alerta";
-  const paths = status === "ok" ? SEMAFORO_ICON_OK : status === "atencao" ? ALERT_META.warn.paths : ALERT_META.error.paths;
-  return `<div class="semaforo-item ${classe}">` +
-    `<span class="status-icon-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${paths}</svg></span>` +
-    `<span>${texto}</span></div>`;
-}
 
 // guarda o último resultado calculado — reaproveitado por coletarResumoCalagem() na exportação (PDF/PNG)
 let calUltimoResultado = null;
@@ -5560,28 +5811,54 @@ function calcCalagem(){
   $("calReadoutSB").textContent = fmtDec(idx020.sb);
   $("calReadoutCtc020").textContent = fmtDec(idx020.ctcPh7);
   $("calReadoutV1").textContent = fmtDec(idx020.v) + "%";
+  $("calReadoutCaMg").textContent = fmtDec(idx020.caMg);
   $("calReadoutV2040").textContent = fmtDec(idx2040.v) + "%";
   $("calReadoutM2040").textContent = fmtDec(idx2040.m) + "%";
 
   const totalCalcarioT = calagem.ncAplicar * areaHa;
   const totalGessoT = gesso.totalTArea;
 
-  // ---- semáforo agronômico ----
-  const semaforo = [];
-  if(idx020.v >= v2 && v2 > 0){
-    semaforo.push(calSemaforoItem("ok", `Saturação por bases adequada (V ${fmtDec(idx020.v)}% ≥ V₂ ${fmtDec(v2)}%) — calagem dispensada.`));
-  } else if(v2 > 0){
-    semaforo.push(calSemaforoItem("alerta", `Acidez elevada (V ${fmtDec(idx020.v)}% < V₂ ${fmtDec(v2)}%) — calagem necessária.`));
-  }
-  semaforo.push(calSemaforoItem("ok", `🧪 Corretivo indicado: Calcário ${tipoCalcario.tipo} (${tipoCalcario.faixaMgO}), pela relação Ca:Mg e teor de Mg da camada 0-20 cm.`));
-  if(gessagem.necessaria){
-    semaforo.push(calSemaforoItem("atencao", "⚡ Condição de subsolo favorável à gessagem — impedimento químico em profundidade, ver motivos abaixo."));
-  } else {
-    semaforo.push(calSemaforoItem("ok", "⚡ Subsolo (20-40 cm) sem critérios que indiquem gessagem."));
-  }
-  $("calSemaforoBox").innerHTML = semaforo.join("");
+  // ---- gráfico técnico de perfil e balanço da CTC (substitui o antigo semáforo
+  // em texto): barra de V1 x meta V2, ocupação de Ca/Mg/K/H+Al na CTC pH 7,0 e
+  // micro-medidor de impedimento químico do subsolo — tudo a partir dos mesmos
+  // índices já calculados acima (idx020/idx2040/tipoCalcario), sem fórmula nova.
+  const clampPct = (n) => Math.max(0, Math.min(100, n));
+  $("calGraficoV1Pin").style.left = clampPct(idx020.v) + "%";
+  $("calGraficoV2Line").style.left = clampPct(v2) + "%";
+  $("calGraficoV1Tag").textContent = fmtDec(idx020.v) + "%";
+  $("calGraficoV2Tag").textContent = fmtDec(v2) + "%";
+
+  const pctHAl020 = idx020.ctcPh7 > 0 ? (v("calHAl020") / idx020.ctcPh7) * 100 : 0;
+  $("calGraficoSegCa").style.width = clampPct(idx020.pctCa) + "%";
+  $("calGraficoSegMg").style.width = clampPct(idx020.pctMg) + "%";
+  $("calGraficoSegK").style.width = clampPct(idx020.pctK) + "%";
+  $("calGraficoSegHAl").style.width = clampPct(pctHAl020) + "%";
+  $("calGraficoPctCa").textContent = fmtDec(idx020.pctCa) + "%";
+  $("calGraficoPctMg").textContent = fmtDec(idx020.pctMg) + "%";
+  $("calGraficoPctK").textContent = fmtDec(idx020.pctK) + "%";
+  $("calGraficoPctHAl").textContent = fmtDec(pctHAl020) + "%";
+
+  const caMgFaixa = idx020.caMg > 4 ? "Alto" : idx020.caMg < 2 ? "Baixo" : "Equilibrado";
+  $("calGraficoCaMgBadge").textContent = `Ca:Mg ${fmtDec(idx020.caMg)}:1 — ${caMgFaixa}`;
+  $("calGraficoCorretivoBadge").textContent = `Calcário ${tipoCalcario.tipo} indicado (${tipoCalcario.faixaMgO})`;
+
+  const al2040Gauge = v("calAl2040");
+  const impedimentoSub = idx2040.m > 20 || al2040Gauge > 0.3;
+  const subGaugeFill = $("calGraficoSubGaugeFill");
+  subGaugeFill.style.width = clampPct(idx2040.m) + "%";
+  subGaugeFill.classList.toggle("is-alerta", impedimentoSub);
+  subGaugeFill.classList.toggle("is-ok", !impedimentoSub);
+  $("calGraficoSubGaugeLabel").textContent = fmtDec(idx2040.m) + "%";
+  $("calGraficoSubGaugeAlLabel").textContent = fmtDec(al2040Gauge);
+  const subGaugeStatus = $("calGraficoSubGaugeStatus");
+  subGaugeStatus.textContent = impedimentoSub ? "Impedimento em profundidade" : "Sem impedimento";
+  subGaugeStatus.classList.toggle("ctc-badge-warn", impedimentoSub);
+  subGaugeStatus.classList.toggle("ctc-badge-ok", !impedimentoSub);
 
   // ---- calagem ----
+  $("calNcV1Read").textContent = fmtDec(idx020.v) + "%";
+  $("calNcV2Read").textContent = fmtDec(v2) + "%";
+  $("calNcPrntRead").textContent = fmtDec(prnt) + "%";
   $("calNcBase").textContent = fmtDec(calagem.ncBase);
   $("calNcAplicar").textContent = fmtDec(calagem.ncAplicar);
   $("calNcTotal").textContent = fmtDec(totalCalcarioT);
@@ -5612,13 +5889,6 @@ function calcCalagem(){
     const meta = ALERT_META.info;
     gessoBox.innerHTML = `<div class="alert-item alert-info"><svg class="ti ti-${meta.icon} alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${meta.paths}</svg><span class="alert-text">Nenhum dos 4 critérios do subsolo foi disparado — gessagem dispensada pelos dados informados.</span></div>`;
   }
-
-  // ---- logística e custos ----
-  calRenderLogistica(totalCalcarioT, totalGessoT);
-  const custosWrap = $("calCustosWrap");
-  custosWrap.innerHTML = "";
-  calRenderCustoCard(custosWrap, "Calcário", totalCalcarioT, $("calPrecoCalcarioVista").value, $("calPrecoCalcarioPrazo").value, areaAlq);
-  calRenderCustoCard(custosWrap, "Gesso", totalGessoT, $("calPrecoGessoVista").value, $("calPrecoGessoPrazo").value, areaAlq);
 
   // ---- memória de cálculo ----
   const dadosMemoria = { idx020, idx2040, al2040: v("calAl2040"), v2, prnt, profundidade, areaAplicadaPct, calagem, tipoCalcario, gessagem, metodoGessagem, gesso, nutrientes, areaAlq, areaHa, totalCalcarioT, totalGessoT };
@@ -5679,18 +5949,305 @@ calMemoriaToggle.addEventListener("click", () => {
   }
 });
 
+// ---- Anexar e interpretar laudo de solo (PDF/foto) via IA multimodal ----
+// Fluxo: usuário anexa o laudo (ou cola um texto/JSON já pronto) -> a chave
+// Gemini fica só no localStorage deste aparelho -> a IA devolve um JSON com
+// os teores -> preenchemos os inputs da matriz técnica (com pulso visual de
+// confirmação) e chamamos calcCalagem() de novo pra recalcular tudo na hora.
+// Sem chave/rede o app continua 100% funcional: o campo de colar texto/JSON
+// não depende de nenhuma chamada de rede.
+const LAUDO_GEMINI_KEY_STORAGE = "gemini_api_key";
+const LAUDO_GEMINI_MODEL = "gemini-2.0-flash";
+const LAUDO_TIPOS_ACEITOS = [".pdf", ".png", ".jpg", ".jpeg", ".webp"];
+const LAUDO_PROMPT = `Você é um agrônomo especialista em interpretar laudos de análise de solo (boletins de laboratório brasileiros).
+Analise o documento anexado (PDF ou foto de um laudo de solo) e devolva APENAS um JSON válido, sem markdown e sem texto fora do JSON, no formato exato abaixo:
+{
+  "cliente": "nome do produtor/cooperado, ou null se não constar",
+  "camada_0_20": { "ca": number|null, "mg": number|null, "k": number|null, "k_unidade": "cmolc"|"mgdm3", "al": number|null, "h_al": number|null, "p": number|null, "ph": number|null, "argila_pct": number|null },
+  "camada_20_40": { "ca": number|null, "mg": number|null, "k": number|null, "k_unidade": "cmolc"|"mgdm3", "al": number|null, "h_al": number|null, "argila_pct": number|null }
+}
+Regras: use ponto decimal (nunca vírgula); todos os valores de Ca, Mg, Al e H+Al em cmolc/dm³; se o K estiver em mg/dm³ no laudo, informe "k_unidade":"mgdm3" e mantenha o valor em mg/dm³ (não converta); se o laudo trouxer só a camada 0-20 cm, devolva "camada_20_40" com todos os campos null; nunca invente valores — o que não constar no laudo deve ser null.`;
+
+const laudoModal = $("laudoModal");
+let laudoArquivoSelecionado = null; // { file, mimeType }
+let laudoInterpretando = false;
+
+function configurarPainelColapsavel(toggleEl, panelEl){
+  toggleEl.addEventListener("click", () => {
+    const abrindo = toggleEl.getAttribute("aria-expanded") !== "true";
+    toggleEl.setAttribute("aria-expanded", abrindo ? "true" : "false");
+    if(abrindo){
+      panelEl.classList.add("is-open");
+      panelEl.style.maxHeight = panelEl.scrollHeight + "px";
+    } else {
+      panelEl.style.maxHeight = panelEl.scrollHeight + "px";
+      requestAnimationFrame(() => {
+        panelEl.classList.remove("is-open");
+        panelEl.style.maxHeight = "0px";
+      });
+    }
+  });
+}
+configurarPainelColapsavel($("laudoApiKeyToggle"), $("laudoApiKeyPanel"));
+configurarPainelColapsavel($("laudoPasteToggle"), $("laudoPastePanel"));
+
+function laudoFormatarTamanho(bytes){
+  if(bytes < 1024) return bytes + " B";
+  if(bytes < 1024 * 1024) return Math.round(bytes / 1024) + " KB";
+  return (bytes / 1024 / 1024).toFixed(1) + " MB";
+}
+
+function laudoResetarEstado(){
+  laudoArquivoSelecionado = null;
+  $("laudoFileInput").value = "";
+  $("laudoCameraInput").value = "";
+  $("laudoPasteText").value = "";
+  show($("laudoFilePreview"), false);
+  show($("laudoDropzone"), true);
+  show($("laudoLoadingState"), false);
+}
+
+function abrirModalLaudo(){
+  laudoResetarEstado();
+  $("laudoApiKeyInput").value = localStorage.getItem(LAUDO_GEMINI_KEY_STORAGE) || "";
+  laudoModal.classList.remove("hidden");
+}
+function fecharModalLaudo(){
+  if(laudoInterpretando) return;
+  laudoModal.classList.add("hidden");
+}
+
+$("btnAnexarLaudo").addEventListener("click", abrirModalLaudo);
+$("laudoModalClose").addEventListener("click", fecharModalLaudo);
+$("laudoModalCancel").addEventListener("click", fecharModalLaudo);
+laudoModal.addEventListener("click", e => { if(e.target === laudoModal) fecharModalLaudo(); });
+document.addEventListener("keydown", e => {
+  if(e.key === "Escape" && !laudoModal.classList.contains("hidden")) fecharModalLaudo();
+});
+
+$("laudoApiKeyInput").addEventListener("change", () => {
+  const chave = $("laudoApiKeyInput").value.trim();
+  if(chave) localStorage.setItem(LAUDO_GEMINI_KEY_STORAGE, chave);
+  else localStorage.removeItem(LAUDO_GEMINI_KEY_STORAGE);
+});
+
+function laudoValidarArquivo(file){
+  const ext = "." + (file.name.split(".").pop() || "").toLowerCase();
+  return LAUDO_TIPOS_ACEITOS.includes(ext);
+}
+function laudoSelecionarArquivo(file){
+  if(!file) return;
+  if(!laudoValidarArquivo(file)){
+    mostrarToast("Formato não suportado — use PDF, PNG, JPG ou WEBP.");
+    return;
+  }
+  laudoArquivoSelecionado = { file, mimeType: file.type || "application/pdf" };
+  $("laudoFileName").textContent = file.name;
+  $("laudoFileSize").textContent = laudoFormatarTamanho(file.size);
+  show($("laudoFilePreview"), true);
+  show($("laudoDropzone"), false);
+}
+
+const laudoDropzone = $("laudoDropzone");
+laudoDropzone.addEventListener("click", () => $("laudoFileInput").click());
+laudoDropzone.addEventListener("keydown", e => {
+  if(e.key === "Enter" || e.key === " "){ e.preventDefault(); $("laudoFileInput").click(); }
+});
+$("laudoFileInput").addEventListener("change", e => laudoSelecionarArquivo(e.target.files[0]));
+$("btnLaudoCamera").addEventListener("click", () => $("laudoCameraInput").click());
+$("laudoCameraInput").addEventListener("change", e => laudoSelecionarArquivo(e.target.files[0]));
+
+["dragenter", "dragover"].forEach(evt => laudoDropzone.addEventListener(evt, e => {
+  e.preventDefault(); e.stopPropagation();
+  laudoDropzone.classList.add("is-dragover");
+}));
+["dragleave", "drop"].forEach(evt => laudoDropzone.addEventListener(evt, e => {
+  e.preventDefault(); e.stopPropagation();
+  laudoDropzone.classList.remove("is-dragover");
+}));
+laudoDropzone.addEventListener("drop", e => {
+  const file = e.dataTransfer?.files?.[0];
+  if(file) laudoSelecionarArquivo(file);
+});
+
+$("laudoFileRemove").addEventListener("click", e => {
+  e.stopPropagation();
+  laudoArquivoSelecionado = null;
+  $("laudoFileInput").value = "";
+  $("laudoCameraInput").value = "";
+  show($("laudoFilePreview"), false);
+  show($("laudoDropzone"), true);
+});
+
+function laudoLerArquivoComoBase64(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(",")[1] || "");
+    reader.onerror = () => reject(reader.error || new Error("Falha ao ler o arquivo."));
+    reader.readAsDataURL(file);
+  });
+}
+
+function laudoExtrairJson(texto){
+  let limpo = String(texto).trim();
+  limpo = limpo.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "");
+  const inicio = limpo.indexOf("{");
+  const fim = limpo.lastIndexOf("}");
+  if(inicio === -1 || fim === -1 || fim < inicio){
+    throw new Error("Não encontrei um JSON válido no texto.");
+  }
+  return JSON.parse(limpo.slice(inicio, fim + 1));
+}
+
+async function laudoChamarGemini(apiKey, base64, mimeType){
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${LAUDO_GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const body = {
+    contents: [{
+      parts: [
+        { text: LAUDO_PROMPT },
+        { inline_data: { mime_type: mimeType, data: base64 } },
+      ],
+    }],
+    generationConfig: { temperature: 0.1, responseMimeType: "application/json" },
+  };
+  const resposta = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if(!resposta.ok){
+    const detalhe = await resposta.text().catch(() => "");
+    throw new Error(`Falha na API Gemini (${resposta.status}). ${detalhe.slice(0, 160)}`);
+  }
+  const dados = await resposta.json();
+  const texto = dados?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if(!texto) throw new Error("A IA não devolveu nenhum conteúdo interpretável.");
+  return laudoExtrairJson(texto);
+}
+
+// Mapa parâmetro do JSON da IA -> id do input na matriz técnica (só os campos
+// que a calculadora realmente usa em calcCalagem(); "p", "ph" e a argila da
+// camada 0-20 não têm campo próprio na ficha e ficam de fora do preenchimento).
+const LAUDO_CAMPOS_020 = { ca: "calCa020", mg: "calMg020", k: "calK020", al: "calAl020", h_al: "calHAl020" };
+const LAUDO_CAMPOS_2040 = { ca: "calCa2040", mg: "calMg2040", k: "calK2040", al: "calAl2040", h_al: "calHAl2040", argila_pct: "calArgila2040" };
+
+function laudoAplicarPulso(el){
+  el.classList.remove("input-pulse-success");
+  void el.offsetWidth; // força reflow pra reiniciar a animação, mesmo se já rodou antes nesta mesma sessão
+  el.classList.add("input-pulse-success");
+}
+function laudoNumeroValido(v){
+  return v !== null && v !== undefined && v !== "" && !Number.isNaN(Number(v));
+}
+
+function laudoPreencherCampos(dados){
+  let preenchidos = 0;
+  const c020 = dados?.camada_0_20 || {};
+  const c2040 = dados?.camada_20_40 || {};
+
+  Object.entries(LAUDO_CAMPOS_020).forEach(([chave, id]) => {
+    if(!laudoNumeroValido(c020[chave])) return;
+    const el = $(id);
+    el.value = Number(c020[chave]);
+    laudoAplicarPulso(el);
+    preenchidos++;
+  });
+  if(c020.k_unidade === "cmolc" || c020.k_unidade === "mgdm3"){
+    const select = $("calKUnidade020");
+    select.value = c020.k_unidade;
+    const gatilho = select.closest(".csel")?.querySelector(".csel-trigger");
+    laudoAplicarPulso(gatilho || select);
+    preenchidos++;
+  }
+
+  Object.entries(LAUDO_CAMPOS_2040).forEach(([chave, id]) => {
+    if(!laudoNumeroValido(c2040[chave])) return;
+    const el = $(id);
+    el.value = Number(c2040[chave]);
+    laudoAplicarPulso(el);
+    preenchidos++;
+  });
+
+  if(typeof dados?.cliente === "string" && dados.cliente.trim() && !$("calCliente").value.trim()){
+    const el = $("calCliente");
+    el.value = dados.cliente.trim();
+    laudoAplicarPulso(el);
+    preenchidos++;
+  }
+
+  calcCalagem();
+  return preenchidos;
+}
+
+function laudoMostrarCarregando(ativo){
+  show($("laudoLoadingState"), ativo);
+  show($("laudoDropzone"), !ativo && !laudoArquivoSelecionado);
+  show($("laudoFilePreview"), !ativo && !!laudoArquivoSelecionado);
+  $("laudoModalInterpretar").disabled = ativo;
+  $("laudoModalCancel").disabled = ativo;
+}
+function laudoAtualizarEtapa(texto){
+  $("laudoLoadingText").textContent = texto;
+}
+
+$("laudoModalInterpretar").addEventListener("click", async () => {
+  if(laudoInterpretando) return;
+
+  const textoColado = $("laudoPasteText").value.trim();
+  if(textoColado){
+    try {
+      const dados = laudoExtrairJson(textoColado);
+      const n = laudoPreencherCampos(dados);
+      fecharModalLaudoForcado();
+      mostrarToast(n > 0 ? `✅ Laudo interpretado com sucesso! ${n} parâmetros preenchidos.` : "Nenhum parâmetro reconhecido no texto colado.");
+    } catch(e){
+      mostrarToast("Não consegui interpretar o texto/JSON colado — confira o formato.");
+    }
+    return;
+  }
+
+  if(!laudoArquivoSelecionado){
+    mostrarToast("Anexe um arquivo (PDF ou foto) ou cole o texto/JSON extraído.");
+    return;
+  }
+
+  const apiKey = $("laudoApiKeyInput").value.trim();
+  if(!apiKey){
+    mostrarToast("Informe sua chave da API Gemini, ou use a opção de colar texto/JSON.");
+    if($("laudoApiKeyToggle").getAttribute("aria-expanded") !== "true") $("laudoApiKeyToggle").click();
+    return;
+  }
+  localStorage.setItem(LAUDO_GEMINI_KEY_STORAGE, apiKey);
+
+  laudoInterpretando = true;
+  laudoMostrarCarregando(true);
+  try {
+    laudoAtualizarEtapa("Lendo documento...");
+    const base64 = await laudoLerArquivoComoBase64(laudoArquivoSelecionado.file);
+    laudoAtualizarEtapa("Identificando teores químicos...");
+    const dados = await laudoChamarGemini(apiKey, base64, laudoArquivoSelecionado.mimeType);
+    laudoAtualizarEtapa("Preenchendo matriz...");
+    const n = laudoPreencherCampos(dados);
+    laudoInterpretando = false;
+    fecharModalLaudoForcado();
+    mostrarToast(n > 0 ? `✅ Laudo interpretado com sucesso! ${n} parâmetros preenchidos.` : "A IA não localizou parâmetros reconhecíveis neste laudo.");
+  } catch(e){
+    laudoInterpretando = false;
+    laudoMostrarCarregando(false);
+    mostrarToast("Erro ao interpretar o laudo: " + (e?.message || "falha desconhecida") + ". Tente colar o texto/JSON manualmente.");
+  }
+});
+
+function fecharModalLaudoForcado(){
+  laudoInterpretando = false;
+  laudoModal.classList.add("hidden");
+}
+
 // ---- Exportar a ficha de Calagem & Gessagem (PDF via impressão do navegador, PNG via canvas) ----
 function coletarResumoCalagem(){
   const agora = new Date();
   const d = calUltimoResultado || {};
-  const num = id => { const val = $(id).value.trim(); return val === "" ? "—" : val.replace(".", ","); };
-
-  // custo total (calcário + gesso) na área — mesma conta de calRenderCustoCard,
-  // só que somando os dois produtos pro resumo exportado/WhatsApp
-  const custoCalcario = calCustoProduto(d.totalCalcarioT || 0, $("calPrecoCalcarioVista").value, $("calPrecoCalcarioPrazo").value);
-  const custoGesso = calCustoProduto(d.totalGessoT || 0, $("calPrecoGessoVista").value, $("calPrecoGessoPrazo").value);
-  const custoTotalVista = custoCalcario.vista + custoGesso.vista;
-  const areaHa = d.areaAlq ? alqParaHa(d.areaAlq) : 0;
+  const num = id => { const el = $(id); const val = el ? el.value.trim() : ""; return val === "" ? "—" : val.replace(".", ","); };
 
   // versão curta do rótulo da cultura-alvo pro texto do WhatsApp — a option
   // completa já traz "— descrição (V₂ X%)" embutido, o que duplicaria o
@@ -5722,8 +6279,6 @@ function coletarResumoCalagem(){
     tipoCalcario: d.tipoCalcario ? ("Calcário " + d.tipoCalcario.tipo) : "—",
     faixaMgo: d.tipoCalcario ? d.tipoCalcario.faixaMgO : "",
     alertaParcelamento: !!(d.calagem && d.calagem.alertaParcelamento),
-    cargasCalcario: d.totalCalcarioT ? Math.ceil(d.totalCalcarioT / CAL_CARGA_GRANEL_T) : 0,
-    bagsCalcario: d.totalCalcarioT ? Math.ceil(d.totalCalcarioT / 1) : 0,
     gessagemNecessaria: !!(d.gessagem && d.gessagem.necessaria),
     gessagemMotivos: d.gessagem ? d.gessagem.motivos : [],
     metodoGessagem: $("calMetodoGessagem").selectedOptions[0].textContent,
@@ -5731,9 +6286,6 @@ function coletarResumoCalagem(){
     totalGesso: d.totalGessoT !== undefined ? fmtDec(d.totalGessoT) : "0,00",
     enxofre: d.nutrientes ? fmtDec(d.nutrientes.enxofreKgHa) : "0,00",
     calcio: d.nutrientes ? fmtDec(d.nutrientes.calcioKgHa) : "0,00",
-    custoTotal: custoTotalVista > 0 ? fmtMoeda(custoTotalVista) : "",
-    custoPorAlq: (custoTotalVista > 0 && d.areaAlq) ? fmtMoeda(custoTotalVista / d.areaAlq) : "",
-    custoPorHa: (custoTotalVista > 0 && areaHa) ? fmtMoeda(custoTotalVista / areaHa) : "",
     data: agora.toLocaleDateString("pt-BR"),
     ref: gerarCodigoRef(agora),
     horaGeracao: agora.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"}),

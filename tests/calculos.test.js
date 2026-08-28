@@ -678,9 +678,8 @@ describe("montarTextoWhatsAppCalagem", () => {
     cultura: "Padrão Sudoeste do Paraná",
     v1: "30,23", v2: "80,00", ctc: "8,60", sb: "2,60", relCaMg: "3,33", mg: "0,6",
     ncAplicar: "2,68", totalCalcario: "64,74", tipoCalcario: "Calcário Dolomítico", prnt: "80,00",
-    cargasCalcario: 2, bagsCalcario: 65, alertaParcelamento: true,
+    alertaParcelamento: true,
     ngDoseKgHa: "2.000,00", totalGesso: "48,40", gessagemNecessaria: true, enxofre: "300,00", calcio: "360,00",
-    custoTotal: "R$ 35.543,75", custoPorAlq: "R$ 3.554,38", custoPorHa: "R$ 1.468,75",
   };
 
   it("cabeçalho, produtor, área e cultura-alvo com V2 desejado", () => {
@@ -699,12 +698,11 @@ describe("montarTextoWhatsAppCalagem", () => {
     expect(texto).toContain("• Relação Ca/Mg: 3,33 · Mg: 0,6 cmolc/dm³");
   });
 
-  it("calagem recomendada com dose, total, corretivo, logística e alerta de parcelamento", () => {
+  it("calagem recomendada com dose, total, corretivo e alerta de parcelamento", () => {
     const texto = montarTextoWhatsAppCalagem(resumoBase);
     expect(texto).toContain("💧 *CALAGEM RECOMENDADA:*");
     expect(texto).toContain("*2,68 t/ha* (Total: *64,74 toneladas*)");
     expect(texto).toContain("• Corretivo: *Calcário Dolomítico* (PRNT 80,00%)");
-    expect(texto).toContain("• Logística: ~2 cargas de carreta (ou 65 big bags)");
     expect(texto).toContain("⚠️ _Atenção: Dose > 2,5 t/ha em plantio direto superficial — recomenda-se parcelamento anual._");
   });
 
@@ -726,13 +724,10 @@ describe("montarTextoWhatsAppCalagem", () => {
     expect(texto).not.toContain("Aporte:");
   });
 
-  it("investimento estimado aparece só quando há custo total calculado", () => {
+  it("não inclui mais o bloco de investimento/logística (card removido da aba)", () => {
     const texto = montarTextoWhatsAppCalagem(resumoBase);
-    expect(texto).toContain("💰 *Investimento Estimado:*");
-    expect(texto).toContain("• Custo Total: *R$ 35.543,75* (R$ 3.554,38/alq · R$ 1.468,75/ha)");
-
-    const semCusto = montarTextoWhatsAppCalagem({ ...resumoBase, custoTotal: "" });
-    expect(semCusto).not.toContain("Investimento Estimado");
+    expect(texto).not.toContain("Investimento Estimado");
+    expect(texto).not.toContain("Logística");
   });
 
   it("termina com o rodapé citando o manual do Paraná (SBCS-NEPAR)", () => {

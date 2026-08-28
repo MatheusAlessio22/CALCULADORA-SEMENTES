@@ -314,50 +314,6 @@
     box-shadow:0 1px 2px rgba(30,36,32,.08), 0 4px 10px -6px rgba(30,36,32,.4);
   }
 
-  /* alternância de unidade da Área (Alqueire/Hectare): pílula discreta ao lado
-     do rótulo do campo, mesma linguagem visual do segmented control acima. */
-  .area-label-row{
-    display:flex; align-items:center; justify-content:space-between; gap:8px;
-    margin-bottom:6px;
-  }
-  .area-label-row .lbl{ margin-bottom:0; }
-  .unit-toggle{
-    display:inline-flex; gap:2px;
-    background:#EEF2E9; border-radius:999px; padding:2px;
-  }
-  .unit-toggle-btn{
-    border:0; background:transparent; cursor:pointer;
-    font-size:10.5px; font-weight:700; letter-spacing:.02em;
-    padding:4px 9px; border-radius:999px; color:#4B554F;
-    transition:background .15s, color .15s, box-shadow .15s;
-    white-space:nowrap;
-  }
-  .unit-toggle-btn.is-active{
-    background:#fff; color:var(--accent);
-    box-shadow:0 1px 2px rgba(30,36,32,.08), 0 4px 10px -6px rgba(30,36,32,.4);
-  }
-
-  /* Semáforo agronômico (aba Calagem & Gessagem): reaproveita a paleta semântica
-     dos alertas (info/âmbar/vermelho), com um badge circular de ícone SVG no
-     lugar do emoji cru (ver calSemaforoItem() em app.js). */
-  .semaforo-item{
-    display:flex; align-items:flex-start; gap:10px;
-    border-radius:12px; padding:12px 14px;
-    font-size:12.5px; font-weight:600; line-height:1.45;
-  }
-  .status-icon-badge{
-    display:flex; align-items:center; justify-content:center;
-    width:22px; height:22px; flex:none;
-    border-radius:999px;
-    color:#fff;
-  }
-  .status-icon-badge svg{ width:13px; height:13px; }
-  .semaforo-ok .status-icon-badge{ background:#1E5C2E; box-shadow:0 0 0 3px rgba(30,92,46,.16); }
-  .semaforo-atencao .status-icon-badge{ background:#8A5A00; box-shadow:0 0 0 3px rgba(138,90,0,.16); }
-  .semaforo-alerta .status-icon-badge{ background:#9C2B22; box-shadow:0 0 0 3px rgba(156,43,34,.16); }
-  .semaforo-ok{ background:#E9F5E7; color:#1E5C2E; }
-  .semaforo-alerta{ background:#FBE8E7; color:#9C2B22; }
-  .semaforo-atencao{ background:#FCF3DC; color:#8A5A00; }
 
   /* Tag do corretivo indicado (Calcário Dolomítico/Calcítico/Magnesiano, ver
      determinarTipoCalcario() em app.js): pastilha na cor da cultura ativa, no
@@ -592,24 +548,26 @@
     border-radius:999px; background:var(--accent);
   }
 
-  /* Seletor compacto de unidade embutido num .input-group (K⁺ cmolc/mg em
-     Calagem & Gessagem): o wrap .csel entra como segundo item flex do
-     input-group, com largura de conteúdo (não 100%) — a lista que abre
-     continua com a largura confortável padrão (min 280px, ver positionList
-     em app.js), só o "gatilho" fechado é que fica compacto. */
-  .input-group > .csel.csel-compact{ flex:none; width:auto; }
-  .input-group > .csel.csel-compact button.csel-trigger{
-    width:auto; min-width:0; height:100%;
-    background-color:#F4F6F2;
-    border-left:1px solid var(--border-subtle);
-    padding:0 22px 0 10px;
-    font-size:11px; font-weight:700; color:#4B554F;
-    background-size:12px; background-position:right 7px center;
+  /* Seletor compacto de unidade do K⁺ (Calagem & Gessagem): mora na própria
+     coluna "Unid." da matriz de solo (ver .sm-unit-select), não mais embutido
+     no campo de 0-20 cm — assim os inputs de Ca/Mg/K/Al/H+Al ficam todos
+     visualmente idênticos entre si, e a unidade tem sua própria célula, como
+     as outras linhas da tabela. A lista que abre continua com a largura
+     confortável padrão (min 280px, ver positionList em app.js), só o
+     "gatilho" fechado é que fica compacto o bastante pra coluna estreita. */
+  .soil-matrix .csel.csel-compact{ width:100%; }
+  .soil-matrix .csel.csel-compact button.csel-trigger{
+    width:100%; min-height:34px;
+    border:1.5px solid var(--border-subtle); border-radius:8px;
+    background-color:var(--surface);
+    padding:6px 24px 6px 8px;
+    font-size:10px; font-weight:700; color:#4B554F;
+    background-size:13px; background-position:right 7px center;
   }
-  .input-group > .csel.csel-compact .csel-label{
-    max-width:60px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  .soil-matrix .csel.csel-compact button.csel-trigger:hover{ border-color:var(--border-strong); }
+  .soil-matrix .csel.csel-compact .csel-label{
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
-  .input-group > .csel.csel-compact.is-open button.csel-trigger{ background-color:#fff; }
 
   #pmsBox[open] > summary > span:last-child{visibility:hidden;}
   #pmsBox > summary::-webkit-details-marker{display:none;}
@@ -736,22 +694,50 @@
      align-items:start mantém os inputs começando na MESMA altura mesmo
      quando um dos campos tem nota embaixo — era isso que deixava a linha
      da identificação torta. */
+  /* Grade dos blocos de entrada (Identificação, parâmetros, laudos, regulagem).
+     min-width:0 nos filhos impede que elementos com texto longo (ex.: dropdown de culturas)
+     distorçam ou esmaguem colunas irmãs no CSS Grid. */
   .fld-grid{
     display:grid;
     grid-template-columns:1fr;
     align-items:start;
-    gap:16px;
+    gap:14px;
+  }
+  .fld-grid > *,
+  .fld-grid-2 > *,
+  .fld-grid-3 > *,
+  .fld-grid-4 > *{
+    min-width:0;
+  }
+  .fld-col-full{
+    grid-column:1 / -1;
+  }
+  .fld-grid-2{
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0,1fr));
+    align-items:start;
+    gap:12px;
+  }
+  .fld-grid-3{
+    display:grid;
+    grid-template-columns:repeat(3, minmax(0,1fr));
+    align-items:start;
+    gap:12px;
+  }
+  .fld-grid-4{
+    display:grid;
+    grid-template-columns:repeat(4, minmax(0,1fr));
+    align-items:start;
+    gap:12px;
   }
   @media (min-width:640px){
-    .fld-grid{grid-template-columns:1fr 1fr; gap:14px;}
+    .fld-grid{grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px;}
     .fld-grid > .fld-wide{grid-column:1 / -1;}
   }
   @media (min-width:1024px){
     .fld-grid{gap:12px;}
     .fld-grid > .fld-wide{grid-column:auto;}
     .fld-grid-id{grid-template-columns:1.1fr 1.1fr .95fr;}
-    .fld-grid-3{grid-template-columns:repeat(3, minmax(0,1fr));}
-    .fld-grid-4{grid-template-columns:repeat(4, minmax(0,1fr));}
   }
 
   /* Subtítulo interno de card (ex.: "Complexo de troca" / "Parâmetros
@@ -760,13 +746,20 @@
      aninhado — mesma família tipográfica de .lbl, só que como rótulo de
      seção (não de campo). */
   .cal-subhead{
+    display:flex;
+    align-items:center;
+    gap:6px;
     font-size:10.5px;
     font-weight:700;
     text-transform:uppercase;
     letter-spacing:.06em;
     color:#6B7A70;
-    margin-bottom:10px;
+    margin-top:14px;
+    margin-bottom:8px;
   }
+  /* primeiro subtítulo do card não herda o respiro de topo — quem separa do
+     cabeçalho do card é o padding do próprio .crm-card. */
+  .cal-subhead:first-of-type{ margin-top:0; }
 
   /* nota discreta abaixo de um campo (ex.: a conversão alqueire → hectare).
      Fica fora do fluxo de altura dos outros campos, então não desalinha nada. */
@@ -796,9 +789,10 @@
     justify-content:space-between;
     gap:8px;
     border:1px solid #DFE5D6;
-    border-radius:12px;
-    background:rgba(244,247,240,.7);
-    padding:10px 14px;
+    border-radius:10px;
+    background:#F4F7F0;
+    padding:10px 12px;
+    margin-top:12px;
   }
   @media (min-width:1024px){ .readout{padding:7px 12px;} }
 
@@ -818,6 +812,164 @@
   }
   .readout-metric strong{ font-size:13px; font-weight:800; color:var(--ink-primary); }
 
+  /* Matriz técnica de solo (boletim de laboratório): uma linha por parâmetro
+     químico, com as camadas 0-20 cm (calagem) e 20-40 cm (gessagem) lado a
+     lado, no lugar de dois cards separados repetindo os mesmos rótulos.
+     overflow-x:auto no wrap é só rede de segurança em telas muito estreitas —
+     as colunas já cabem em 375px sem precisar rolar. */
+  .soil-matrix-wrap{ overflow-x:auto; }
+  .soil-matrix{ width:100%; border-collapse:collapse; }
+  .soil-matrix col.sm-c-param{ width:20%; }
+  .soil-matrix col.sm-c-unit{ width:17%; }
+  .soil-matrix thead th{
+    padding:0 6px 8px;
+    text-align:left;
+    font-size:10px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    color:#6B7A70;
+    border-bottom:1px solid #DCE3D6;
+  }
+  .soil-matrix thead th:first-child{ padding-left:0; }
+  .soil-matrix thead th:last-child{ padding-right:0; }
+  .soil-matrix-sub{
+    display:block;
+    margin-top:1px;
+    font-size:9px;
+    font-weight:600;
+    letter-spacing:.02em;
+    text-transform:none;
+    color:#8A968D;
+  }
+  .soil-matrix tbody td{
+    padding:7px 6px;
+    border-bottom:1px solid #EEF2E9;
+    vertical-align:middle;
+  }
+  .soil-matrix tbody tr:last-child td{ border-bottom:0; }
+  .soil-matrix tbody td:first-child{
+    padding-left:0;
+    font-size:12.5px;
+    font-weight:700;
+    color:#1E2420;
+    white-space:nowrap;
+  }
+  .soil-matrix td.sm-unit{
+    padding-right:0;
+    text-align:right;
+    font-size:10px;
+    color:#6B7A70;
+    line-height:1.2;
+  }
+  .soil-matrix td.sm-dash{ text-align:center; color:#B7C0B2; font-size:13px; }
+
+  /* Painel lado a lado de dosagem (Calcário + Gesso): dois crm-card dentro de
+     uma grade de 2 colunas a partir de 640px — no celular seguem empilhados,
+     como já eram antes de virarem "twin". */
+  .twin-kpi-grid{ display:grid; grid-template-columns:1fr; gap:16px; margin-bottom:16px; }
+  .twin-kpi-grid > .crm-card{ margin-bottom:0; }
+  @media (min-width:640px){
+    .twin-kpi-grid{ grid-template-columns:repeat(2, minmax(0,1fr)); }
+  }
+
+  /* Grade compacta de 4 campos (Manejo/Profundidade/Área aplicada/PRNT, em
+     Calagem & Gessagem): 2 colunas no celular, 4 a partir do tablet — não usa
+     .fld-grid-4 direto porque essa classe é fixa em 4 colunas em qualquer
+     largura, o que esmagaria os campos no celular. */
+  .cal-manejo-grid{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px; }
+  .cal-manejo-grid > *{ min-width:0; }
+  @media (min-width:640px){
+    .cal-manejo-grid{ grid-template-columns:repeat(4, minmax(0,1fr)); }
+  }
+
+  /* Linha "Cultura-alvo + V₂": a cultura ganha o dobro do espaço do V₂ (que é
+     só um número curto) — minmax(0,Nfr) evita que o texto longo das opções
+     esmague a coluna, o rótulo só trunca com reticências dentro do próprio
+     botão do seletor (ver .csel-trigger .csel-label). */
+  .cal-cultura-row{ display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr); gap:12px; align-items:start; }
+
+  /* Gráfico técnico de perfil e balanço da CTC (substitui os antigos banners
+     de "parecer" em texto): barras/pinos 100% CSS, sem SVG/canvas/libs
+     externas — cada elemento é só posicionado via style.left/width no JS
+     (calcCalagem()), a partir dos mesmos índices que já alimentam o resto da
+     aba (idx020/idx2040/tipoCalcario). */
+  .ctc-vbar{ position:relative; height:16px; margin:8px 4px 6px; }
+  .ctc-vbar-track{
+    position:absolute; inset:0;
+    border-radius:999px;
+    border:1px solid #E1E6DC;
+    background: linear-gradient(to right,
+      #F6D9D6 0%, #F6D9D6 50%,
+      #FBEAC4 50%, #FBEAC4 65%,
+      #DCEBD3 65%, #DCEBD3 100%);
+  }
+  .ctc-vbar-target{
+    position:absolute; top:-3px; bottom:-3px; width:2px;
+    background: repeating-linear-gradient(to bottom, #4B554F 0 4px, transparent 4px 8px);
+    transform:translateX(-1px);
+    transition:left .2s ease;
+  }
+  .ctc-vbar-pin{
+    position:absolute; top:50%; width:14px; height:14px;
+    background:var(--accent); border:2px solid #fff;
+    border-radius:50%; box-shadow:0 1px 3px rgba(30,36,32,.35);
+    transform:translate(-50%,-50%);
+    transition:left .2s ease;
+  }
+  .ctc-vbar-scale{
+    display:flex; justify-content:space-between;
+    font-size:9.5px; font-weight:600; color:#8A968D;
+    font-family:'JetBrains Mono','Inter',-apple-system,monospace; font-feature-settings:'tnum' 1,'cv05' 1;
+  }
+
+  .ctc-stack{
+    display:flex; height:16px; border-radius:999px; overflow:hidden;
+    border:1px solid #E1E6DC; margin:12px 0 8px;
+  }
+  .ctc-stack-seg{ height:100%; transition:width .2s ease; }
+  .ctc-seg-ca{ background:#5C8A26; }
+  .ctc-seg-mg{ background:#0678A8; }
+  .ctc-seg-k{ background:#D99A1E; }
+  .ctc-seg-hal{ background:#C42A2E; }
+
+  .ctc-legend{ display:flex; flex-wrap:wrap; gap:7px 14px; }
+  .ctc-legend-item{
+    display:inline-flex; align-items:center; gap:5px;
+    font-size:11px; font-weight:600; color:#4B554F;
+  }
+  .ctc-legend-item strong{
+    font-family:'JetBrains Mono','Inter',-apple-system,monospace; font-feature-settings:'tnum' 1,'cv05' 1;
+    color:var(--ink-primary); font-weight:800;
+  }
+  .ctc-legend-dot{ width:8px; height:8px; border-radius:50%; flex:none; }
+  .ctc-legend-dot.ctc-dot-v1{ background:var(--accent); }
+  .ctc-legend-dot.ctc-dot-v2{ background:#4B554F; }
+  .ctc-legend-dot.ctc-dot-ca{ background:#5C8A26; }
+  .ctc-legend-dot.ctc-dot-mg{ background:#0678A8; }
+  .ctc-legend-dot.ctc-dot-k{ background:#D99A1E; }
+  .ctc-legend-dot.ctc-dot-hal{ background:#C42A2E; }
+
+  .ctc-badges{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .ctc-badge{
+    display:inline-flex; align-items:center; gap:5px;
+    padding:5px 10px; border-radius:999px;
+    background:var(--surface-subtle); border:1px solid var(--border-subtle);
+    font-size:11px; font-weight:700; color:#4B554F; white-space:nowrap;
+  }
+  .ctc-badge-accent{ background:var(--accent-soft); border-color:var(--accent-border); color:var(--accent); }
+  .ctc-badge-ok{ background:#E9F5E7; border-color:#CFE6C8; color:#1E5C2E; }
+  .ctc-badge-warn{ background:#FBE8E7; border-color:#F3C7C4; color:#9C2B22; }
+
+  .ctc-subgauge-track{
+    position:relative; height:10px; border-radius:999px;
+    background:#EEF2E9; border:1px solid #E1E6DC; overflow:hidden;
+    margin:8px 0;
+  }
+  .ctc-subgauge-fill{ height:100%; border-radius:999px 0 0 999px; transition:width .2s ease, background .2s ease; background:#5C8A26; }
+  .ctc-subgauge-fill.is-ok{ background:#5C8A26; }
+  .ctc-subgauge-fill.is-alerta{ background:#9C2B22; }
+
   /* Utilities de superfície/borda a partir dos design tokens — pra componentes
      JS (calAddEmbalagem() em app.js) que não precisam de uma classe própria. */
   .bg-surface-subtle{ background:var(--surface-subtle); }
@@ -831,35 +983,67 @@
     background-image: linear-gradient(180deg, #F0F4ED 0%, #E8EEE4 100%);
   }
 
+  /* Colunas roláveis no desktop (Sementes e Calagem, cada uma com metade da
+     tela em lg:overflow-y-auto): scrollbar-gutter reserva o espaço da barra
+     de rolagem sempre, pra ela não roubar do padding quando o conteúdo cresce
+     e o card parar de colar na barra. Seletor de duas classes (elemento
+     Tailwind "lg:overflow-y-auto" + "lg:p-6") tem mais especificidade que
+     qualquer utility isolada do Tailwind, então ganha sem precisar de
+     !important — mesmo com o bloco compilado do Tailwind vindo depois no
+     arquivo. */
+  @media (min-width: 1024px){
+    .lg\:overflow-y-auto.lg\:p-6{
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-gutter: stable;
+      padding: 20px 22px;
+    }
+  }
+
   /* Cartão widget de dashboard: moldura padrão pra qualquer bloco que vire
      um "card" solto na grade executiva (Identificação, Parâmetros, Total,
      Custo do produtor etc.). Seletor "section.crm-card" (elemento+classe)
-     garante prioridade sobre utilities do Tailwind sem precisar de !important. */
+     garante prioridade sobre utilities do Tailwind sem precisar de !important.
+     margin-bottom fixo é o único responsável pelo ritmo vertical entre cards
+     consecutivos — não depender de mt-3/mt-4/mt-5 soltos no HTML. */
   section.crm-card{
     background: #FFFFFF;
-    border: 1px solid #D8E0D2;
+    border: 1px solid #DCE3D6;
     border-radius: 12px;
-    padding: 18px;
-    box-shadow: 0 1px 3px rgba(30,36,32,0.04), 0 6px 16px -4px rgba(30,36,32,0.06);
+    padding: 16px 18px;
+    box-shadow: 0 1px 3px rgba(30,36,32,0.03);
     margin-bottom: 16px;
+    transition: border-color .15s ease, box-shadow .15s ease;
   }
   .crm-card-header{
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 10px;
     padding-bottom: 10px;
     margin-bottom: 14px;
-    border-bottom: 1px solid #EEF2EB;
+    border-bottom: 1px solid #EEF2E9;
   }
   .crm-card-title{
-    font-size: 11px;
+    margin: 0;
+    font-size: 11.5px;
     font-weight: 700;
+    line-height: 1.2;
     text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: #4B554F;
+    letter-spacing: 0.06em;
+    color: #374151;
     display: flex;
     align-items: center;
     gap: 6px;
+  }
+  /* Ícones de título herdam a cor da cultura ativa (--accent) em vez do
+     tamanho relativo de .icon-inline (1em) — mais legíveis ao lado de um
+     rótulo tão pequeno (11.5px). */
+  .crm-card-title svg{
+    width: 15px;
+    height: 15px;
+    color: var(--accent);
+    flex-shrink: 0;
   }
 
   /* Tabela de custos (#custosList, montada em JS): grade oficial dedicada
@@ -1106,12 +1290,13 @@
   }
   .comp-nutrient-pct{ font-weight:600; color:#4B554F; }
 
-  .comp-metric-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .comp-metric-grid{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px; margin-top:10px; }
   .comp-metric-box{
     background:#F4F6F2;
     border-radius:8px;
     padding:8px 10px;
     border:1px solid #E1E8DC;
+    min-width:0;
   }
   .comp-metric-label{ font-size:10px; font-weight:700; text-transform:uppercase; color:#4B554F; letter-spacing:.05em; }
   .comp-metric-value{
@@ -1231,6 +1416,126 @@
     animation:wa-toast-in .18s ease-out;
   }
   @keyframes wa-toast-in{ from{ opacity:0; transform:translate(-50%, 6px); } to{ opacity:1; transform:translate(-50%, 0); } }
+
+  /* Botão interativo de anexar laudo de solo no cabeçalho da matriz */
+  .btn-attach-soil{
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--accent);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.15);
+    box-shadow: 0 1px 3px rgba(30,36,32,0.08);
+    cursor: pointer;
+    transition: all .15s ease;
+    white-space: nowrap;
+  }
+  .btn-attach-soil:hover{
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px -2px rgba(30,36,32,0.15);
+  }
+  .btn-attach-soil:active{
+    transform: translateY(0);
+  }
+
+  /* Dropzone do modal de laudo */
+  .laudo-dropzone{
+    position: relative;
+    border: 2px dashed #BCCBB6;
+    background: #F8FAF6;
+    transition: all .2s ease;
+  }
+  .laudo-dropzone.is-dragover{
+    border-color: var(--accent);
+    background: #EEF5EA;
+    transform: scale(1.01);
+  }
+
+  /* Spinner de carregamento para IA */
+  .laudo-spinner{
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(92,138,38,0.2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: laudo-spin 0.8s linear infinite;
+  }
+  @keyframes laudo-spin{
+    to{ transform: rotate(360deg); }
+  }
+
+  /* Animação de destaque de campo preenchido pela IA */
+  .input-pulse-success{
+    animation: inputPulseSuccess 2s ease-out;
+  }
+  @keyframes inputPulseSuccess{
+    0%{
+      background-color: #DCFCE7 !important;
+      border-color: #22C55E !important;
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25) !important;
+      color: #14532D !important;
+    }
+    70%{
+      background-color: #F0FDF4 !important;
+      border-color: #86EFAC !important;
+    }
+    100%{
+      background-color: inherit;
+      border-color: inherit;
+      box-shadow: inherit;
+      color: inherit;
+    }
+  }
+
+  /* Corpo do modal de laudo: empilha dropzone, botão de câmera, preview do
+     arquivo, estado de carregamento e os dois blocos colapsáveis com respiro
+     vertical entre eles (sem depender de utility Tailwind não compilada). */
+  .laudo-modal-body{ display:flex; flex-direction:column; gap:12px; }
+
+  .laudo-camera-btn{
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    width:100%; border-radius:10px; border:1px solid var(--border-subtle);
+    background:#fff; padding:10px 14px; font-size:12.5px; font-weight:700;
+    color:var(--ink-primary); cursor:pointer; transition:background .15s ease, border-color .15s ease;
+  }
+  .laudo-camera-btn:hover{ background:var(--surface-subtle); border-color:var(--border-strong); }
+
+  /* Cartão do arquivo selecionado (nome, tamanho e botão de remover) */
+  .laudo-file-card{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    border:1px solid var(--border-subtle); border-radius:10px;
+    background:var(--surface-subtle); padding:10px 12px;
+  }
+  .laudo-file-info{ display:flex; align-items:center; gap:10px; min-width:0; }
+  .laudo-file-text{ min-width:0; }
+  .laudo-file-name{
+    font-size:12px; font-weight:700; color:var(--ink-primary);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .laudo-file-size{ font-size:10.5px; color:var(--ink-muted); margin-top:1px; }
+  .laudo-file-remove{
+    flex:none; border-radius:8px; padding:5px; color:var(--ink-muted);
+    background:transparent; border:0; cursor:pointer; transition:background .15s ease, color .15s ease;
+  }
+  .laudo-file-remove:hover{ background:#fff; color:var(--ink-primary); }
+
+  /* Estado de carregamento (spinner + texto da etapa atual) */
+  .laudo-loading{ display:flex; flex-direction:column; align-items:center; gap:10px; padding:20px 0; }
+  .laudo-loading-text{ font-size:12.5px; font-weight:700; color:var(--ink-primary); }
+
+  /* Blocos colapsáveis do modal (chave da API / colar texto) reaproveitam
+     .mem-toggle/.mem-panel da memória de cálculo, só um pouco mais compactos. */
+  .laudo-collapsible-toggle{ padding:8px 12px; font-size:11.5px; font-weight:700; }
+  .laudo-collapsible-body{ display:flex; flex-direction:column; gap:6px; }
+  .laudo-paste-textarea{ height:100px; }
+
+  #laudoModalInterpretar:disabled,
+  #laudoModalCancel:disabled{ opacity:.6; cursor:not-allowed; }
 
   /* folha de impressão / PDF: só aparece na hora de imprimir */
   #printSheet{display:none;}
