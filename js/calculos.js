@@ -221,6 +221,64 @@ const Calculos = (function () {
     return validas.reduce((melhor, atual) => (atual.custoPorKgNutriente < melhor.custoPorKgNutriente ? atual : melhor));
   }
 
+  // ---------- Comparador de Formulações: Equivalência e Compensação de Adubos ----------
+  // Modo "equiv" do comparador (Adubação/Ureia): a partir da formulação que o
+  // produtor já usa hoje (dose praticada, kg/ha) e de um critério de nutriente
+  // (P₂O₅ por padrão, ou NPK Total/K₂O), calcula a dose de uma formulação
+  // candidata que entrega exatamente a mesma quantidade daquele nutriente por
+  // hectare — a regra clássica de equivalência de adubos:
+  //   Dose_Comp = Dose_Base × (%Nutriente_Base ÷ %Nutriente_Comp)
+  function nutrientePctPorCriterio(npk, criterio) {
+    const [n, p, k] = npk || [0, 0, 0];
+    if (criterio === "npk") return (Number(n) || 0) + (Number(p) || 0) + (Number(k) || 0);
+    if (criterio === "k") return Number(k) || 0;
+    return Number(p) || 0; // "p" (P₂O₅) é o critério padrão
+  }
+
+  // Retorna sempre um objeto (nunca null) pra deixar explícito, no `doseHa`,
+  // quando a equivalência não é calculável (nutriente do critério ausente na
+  // base ou na formulação comparada) — quem chama decide como avisar o usuário.
+  function calcularEquivalenciaAdubo({ baseDoseHa, baseNpk, compNpk, criterio } = {}) {
+    const baseNutrientePct = nutrientePctPorCriterio(baseNpk, criterio);
+    const compNutrientePct = nutrientePctPorCriterio(compNpk, criterio);
+    const baseDose = Number(baseDoseHa) || 0;
+    const possivel = baseNutrientePct > 0 && compNutrientePct > 0;
+    return {
+      baseNutrientePct,
+      compNutrientePct,
+      doseHa: possivel ? baseDose * (baseNutrientePct / compNutrientePct) : null,
+    };
+  }
+
+  // Veredito financeiro do modo "Equivalência de Formulações por Sacas": compara
+  // o custo por alqueire (e total na área) do adubo proposto contra a base do
+  // produtor e devolve uma frase pronta pro card em tela, WhatsApp, PDF e PNG.
+  // `fmtMoeda`/`fmtDec` são passados pelo chamador (não moram aqui — ver
+  // formatarPrecoResumo() acima pelo mesmo motivo) pra manter esta função pura
+  // e testável sem depender de formatação específica de moeda/locale.
+  function montarVeredicto({ custoAlqBase, custoAlqComp, custoTotalBase, custoTotalComp, precoSacaBase, precoSacaComp, areaAlq } = {}, fmtMoeda, fmtDec) {
+    const TOL = 0.005;
+    const diffAlq = custoAlqComp - custoAlqBase;
+    const diffTotal = custoTotalComp - custoTotalBase;
+    const economiza = diffAlq < -TOL;
+    const custaMais = diffAlq > TOL;
+    const sacaMaisCara = precoSacaComp > precoSacaBase + TOL;
+    const temArea = areaAlq > 0;
+
+    if (economiza) {
+      const prefixo = sacaMaisCara ? "Mesmo a saca do adubo proposto tendo valor unitário maior, o" : "O";
+      const totalTexto = temArea
+        ? ` (economia total de ${fmtMoeda(Math.abs(diffTotal))} na área de ${fmtDec(areaAlq)} alqueires)`
+        : " — informe a área da lavoura acima para ver a economia total";
+      return `${prefixo} custo final da lavoura é ${fmtMoeda(Math.abs(diffAlq))} mais barato por alqueire${totalTexto}.`;
+    }
+    if (custaMais) {
+      const totalTexto = temArea ? ` (${fmtMoeda(diffTotal)} a mais na área de ${fmtDec(areaAlq)} alqueires)` : "";
+      return `O adubo proposto sai ${fmtMoeda(diffAlq)} mais caro por alqueire${totalTexto}, mesmo entregando menos sacas por alqueire.`;
+    }
+    return "Custo final praticamente equivalente entre as duas opções.";
+  }
+
   // ---------- Texto formatado para envio no WhatsApp ----------
   // Cada função recebe o mesmo objeto "resumo" que já alimenta a exportação em
   // PDF/PNG daquela ficha (coletarResumo/coletarResumoRegulagem/
@@ -252,6 +310,27 @@ const Calculos = (function () {
     blocos.push(necessidade);
     if (r.nutrientes && r.nutrientes.length) {
       blocos.push(`🧪 *Nutrientes no Solo (Total):*\n` + r.nutrientes.map((n) => `• ${n.nome}: ${n.valor} (${n.porAlq})`).join("\n"));
+    }
+    if (r.comparador && r.comparador.linhas && r.comparador.linhas.length) {
+      let compBloco = `🔁 *COMPARADOR DE FORMULAÇÕES* — ${r.comparador.modo}`;
+      if (r.comparador.isEquivalencia && r.comparador.base) {
+        const b = r.comparador.base;
+        compBloco += `\nBase do produtor: *${b.npk}* · ${b.sacasAlq} (${b.doseAlq}) · ${b.custoAlq}/alq · ${b.custoTotal} na área (critério: ${b.criterio})`;
+        compBloco += `\n  ↳ N: ${b.nutrientes.n} · P₂O₅: ${b.nutrientes.p} · K₂O: ${b.nutrientes.k} por alqueire`;
+      }
+      compBloco += "\n" + r.comparador.linhas.map((l) => {
+        const rotuloQtd = r.comparador.isEquivalencia ? `${l.sacasAlq} (${l.doseAlq})` : l.dose;
+        let s = `• ${l.npk} (${l.somaNpk}% NPK): ${rotuloQtd} → *${l.custoTotal}*`;
+        if (l.isMenorCusto) s += " ★ menor custo";
+        if (l.isMelhorCustoBeneficio) s += " ★ melhor custo-benefício";
+        if (r.comparador.isEquivalencia && l.nutrientes) {
+          s += `\n  ↳ N: ${l.nutrientes.n} · P₂O₅: ${l.nutrientes.p} · K₂O: ${l.nutrientes.k} por alqueire`;
+        }
+        if (l.logisticaTexto) s += `\n  ↳ ${l.logisticaTexto}`;
+        if (l.veredicto) s += `\n  ↳ ${l.veredicto}`;
+        return s;
+      }).join("\n");
+      blocos.push(compBloco);
     }
     if (r.linhas && r.linhas.length) {
       const linhasCusto = r.linhas.map((l) => {
@@ -295,7 +374,7 @@ const Calculos = (function () {
     blocos.push(
       `👤 *Produtor:* ${r.cliente || "Não informado"}\n` +
       `📐 *Área:* ${r.area}\n` +
-      `🎯 *Cultura-Alvo:* ${r.culturaAlvoResumida || r.cultura} (V₂ desejado: ${r.v2}%)`
+      `🎯 *V₂ desejado:* ${r.v2}%`
     );
     blocos.push(
       `📊 *Diagnóstico do Solo:*\n` +
@@ -347,6 +426,8 @@ const Calculos = (function () {
     calcularConcentracaoTotalNutrientes,
     calcularCustoPorKgNutriente,
     identificarMelhorCustoBeneficio,
+    calcularEquivalenciaAdubo,
+    montarVeredicto,
     montarTextoWhatsApp,
     montarTextoWhatsAppRegulagem,
     montarTextoWhatsAppCalagem,

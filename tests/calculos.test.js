@@ -23,13 +23,16 @@ import {
   calcularConcentracaoTotalNutrientes,
   calcularCustoPorKgNutriente,
   identificarMelhorCustoBeneficio,
+  calcularEquivalenciaAdubo,
+  montarVeredicto,
   montarTextoWhatsApp,
   montarTextoWhatsAppRegulagem,
   montarTextoWhatsAppCalagem,
 } from "../js/calculos.js";
 
-// formatador simples só pra isolar formatarPrecoResumo da formatação de moeda real
+// formatadores simples só pra isolar as funções puras da formatação real de moeda/locale
 const fmtMoedaFake = (n) => `R$ ${n.toFixed(2)}`;
+const fmtDecFake = (n) => n.toFixed(2);
 
 describe("calcularSementes", () => {
   it("1 alqueire: resultado bate com a fórmula recalculada nos mesmos inputs", () => {
@@ -534,6 +537,109 @@ describe("identificarMelhorCustoBeneficio", () => {
   });
 });
 
+describe("calcularEquivalenciaAdubo", () => {
+  it("critério padrão (P₂O₅): calcula a dose que entrega a mesma quantidade de P₂O₅ da base", () => {
+    // base: 04-14-08 a 250 kg/ha entrega 250 × 14% = 35 kg/ha de P₂O₅
+    const r = calcularEquivalenciaAdubo({ baseDoseHa: 250, baseNpk: [4, 14, 8], compNpk: [10, 15, 15], criterio: "p" });
+    expect(r.baseNutrientePct).toBe(14);
+    expect(r.compNutrientePct).toBe(15);
+    expect(r.doseHa).toBeCloseTo(250 * (14 / 15), 6); // ≈ 233,33 kg/ha
+  });
+
+  it("critério NPK Total: soma os três nutrientes de cada formulação", () => {
+    // base: 04-14-08 (26% NPK) a 250 kg/ha × Ureia 45-00-00 (45% NPK)
+    const r = calcularEquivalenciaAdubo({ baseDoseHa: 250, baseNpk: [4, 14, 8], compNpk: [45, 0, 0], criterio: "npk" });
+    expect(r.baseNutrientePct).toBe(26);
+    expect(r.compNutrientePct).toBe(45);
+    expect(r.doseHa).toBeCloseTo(250 * (26 / 45), 6);
+  });
+
+  it("critério K₂O: usa só o terceiro número da formulação", () => {
+    // base: 04-14-08 (8% K₂O) a 250 kg/ha × KCl 00-00-60 (60% K₂O)
+    const r = calcularEquivalenciaAdubo({ baseDoseHa: 250, baseNpk: [4, 14, 8], compNpk: [0, 0, 60], criterio: "k" });
+    expect(r.baseNutrientePct).toBe(8);
+    expect(r.compNutrientePct).toBe(60);
+    expect(r.doseHa).toBeCloseTo(250 * (8 / 60), 6);
+  });
+
+  it("formulação comparada sem o nutriente do critério: doseHa fica null (equivalência impossível)", () => {
+    // Ureia 45-00-00 não tem P₂O₅ — não dá pra bater a mesma dose de P₂O₅ com ela
+    const r = calcularEquivalenciaAdubo({ baseDoseHa: 250, baseNpk: [4, 14, 8], compNpk: [45, 0, 0], criterio: "p" });
+    expect(r.doseHa).toBeNull();
+    expect(r.compNutrientePct).toBe(0);
+  });
+
+  it("formulação base sem o nutriente do critério: doseHa fica null pra qualquer comparada", () => {
+    const r = calcularEquivalenciaAdubo({ baseDoseHa: 250, baseNpk: [45, 0, 0], compNpk: [4, 14, 8], criterio: "p" });
+    expect(r.baseNutrientePct).toBe(0);
+    expect(r.doseHa).toBeNull();
+  });
+
+  it("dose base zerada ou não informada: doseHa é 0 (não null) quando os nutrientes existem nos dois lados", () => {
+    const r = calcularEquivalenciaAdubo({ baseDoseHa: 0, baseNpk: [4, 14, 8], compNpk: [10, 15, 15], criterio: "p" });
+    expect(r.doseHa).toBe(0);
+  });
+
+  it("critério ausente/desconhecido usa P₂O₅ como padrão", () => {
+    const semCriterio = calcularEquivalenciaAdubo({ baseDoseHa: 100, baseNpk: [4, 14, 8], compNpk: [10, 15, 15] });
+    const comP = calcularEquivalenciaAdubo({ baseDoseHa: 100, baseNpk: [4, 14, 8], compNpk: [10, 15, 15], criterio: "p" });
+    expect(semCriterio.doseHa).toBeCloseTo(comP.doseHa, 6);
+  });
+});
+
+describe("montarVeredicto", () => {
+  it("economiza mesmo com saca mais cara: usa o prefixo 'Mesmo a saca...tendo valor unitário maior'", () => {
+    const texto = montarVeredicto({
+      custoAlqBase: 900, custoAlqComp: 823.5,
+      custoTotalBase: 21780, custoTotalComp: 19928.7,
+      precoSacaBase: 50, precoSacaComp: 61, areaAlq: 24.2,
+    }, fmtMoedaFake, fmtDecFake);
+    expect(texto).toBe(
+      "Mesmo a saca do adubo proposto tendo valor unitário maior, o custo final da lavoura é R$ 76.50 mais barato por alqueire (economia total de R$ 1851.30 na área de 24.20 alqueires)."
+    );
+  });
+
+  it("economiza com saca também mais barata: sem o prefixo, começa direto com 'O custo final'", () => {
+    const texto = montarVeredicto({
+      custoAlqBase: 900, custoAlqComp: 607.5,
+      custoTotalBase: 21780, custoTotalComp: 14701.5,
+      precoSacaBase: 50, precoSacaComp: 45, areaAlq: 24.2,
+    }, fmtMoedaFake, fmtDecFake);
+    expect(texto.startsWith("O custo final da lavoura é R$ 292.50 mais barato por alqueire")).toBe(true);
+    expect(texto).not.toContain("Mesmo a saca");
+  });
+
+  it("adubo proposto sai mais caro no total: frase de alerta, sem mencionar 'mais barato'", () => {
+    const texto = montarVeredicto({
+      custoAlqBase: 900, custoAlqComp: 945,
+      custoTotalBase: 21780, custoTotalComp: 22869,
+      precoSacaBase: 50, precoSacaComp: 70, areaAlq: 24.2,
+    }, fmtMoedaFake, fmtDecFake);
+    expect(texto).toBe(
+      "O adubo proposto sai R$ 45.00 mais caro por alqueire (R$ 1089.00 a mais na área de 24.20 alqueires), mesmo entregando menos sacas por alqueire."
+    );
+  });
+
+  it("sem área informada: omite o total e orienta a informar a área", () => {
+    const texto = montarVeredicto({
+      custoAlqBase: 900, custoAlqComp: 823.5,
+      custoTotalBase: 0, custoTotalComp: 0,
+      precoSacaBase: 50, precoSacaComp: 61, areaAlq: 0,
+    }, fmtMoedaFake, fmtDecFake);
+    expect(texto).toContain("— informe a área da lavoura acima para ver a economia total.");
+    expect(texto).not.toContain("na área de");
+  });
+
+  it("custo praticamente igual (dentro da tolerância): mensagem neutra", () => {
+    const texto = montarVeredicto({
+      custoAlqBase: 900, custoAlqComp: 900.001,
+      custoTotalBase: 21780, custoTotalComp: 21780.02,
+      precoSacaBase: 50, precoSacaComp: 50.0001, areaAlq: 24.2,
+    }, fmtMoedaFake, fmtDecFake);
+    expect(texto).toBe("Custo final praticamente equivalente entre as duas opções.");
+  });
+});
+
 describe("montarTextoWhatsApp", () => {
   const resumoSoja = {
     ref: "20260101-0001", data: "01/01/2026", horaGeracao: "10:00",
@@ -607,6 +713,44 @@ describe("montarTextoWhatsApp", () => {
     expect(texto).not.toContain("Adubação/Ureia ()");
   });
 
+  it("sem comparador de formulações, não inclui o bloco (Sementes & Adubação sem essa ferramenta)", () => {
+    const texto = montarTextoWhatsApp(resumoSoja);
+    expect(texto).not.toContain("COMPARADOR DE FORMULAÇÕES");
+  });
+
+  it("Adubação/Ureia, modo Equivalência por Sacas: inclui a base, os nutrientes N/P/K, a logística e o veredito de cada linha", () => {
+    const resumoEquivalencia = {
+      ...resumoSoja, cultura: "Adubação/Ureia", cultivar: "",
+      comparador: {
+        modo: "Equivalência de Formulações por Sacas (Custo Real do Produtor)",
+        isEquivalencia: true,
+        base: {
+          npk: "10-15-15", sacasAlq: "18,0 sc/alq", doseAlq: "900,00 kg/alq",
+          custoAlq: "R$ 900,00", custoTotal: "R$ 21.780,00", criterio: "P₂O₅",
+          nutrientes: { n: "0,00 kg", p: "135,00 kg", k: "135,00 kg" },
+        },
+        linhas: [
+          {
+            npk: "08-20-15", somaNpk: "43", custoTotal: "R$ 19.965,00", dose: "279,34 kg/ha",
+            sacasAlq: "13,5 sc/alq", doseAlq: "675,00 kg/alq", custoAlq: "R$ 825,00",
+            nutrientes: { n: "54,00 kg", p: "135,00 kg", k: "101,25 kg" },
+            logisticaTexto: "↓ Menos 4,5 sacas/alq (−225,00 kg/alq) para transportar e abastecer",
+            veredicto: "Mesmo a saca do adubo proposto tendo valor unitário maior, o custo final da lavoura é R$ 75,00 mais barato por alqueire (economia total de R$ 1.815,00 na área de 24,20 alqueires).",
+            isMenorCusto: true, isMelhorCustoBeneficio: false,
+          },
+        ],
+      },
+    };
+    const texto = montarTextoWhatsApp(resumoEquivalencia);
+    expect(texto).toContain("🔁 *COMPARADOR DE FORMULAÇÕES* — Equivalência de Formulações por Sacas (Custo Real do Produtor)");
+    expect(texto).toContain("Base do produtor: *10-15-15* · 18,0 sc/alq (900,00 kg/alq) · R$ 900,00/alq · R$ 21.780,00 na área (critério: P₂O₅)");
+    expect(texto).toContain("↳ N: 0,00 kg · P₂O₅: 135,00 kg · K₂O: 135,00 kg por alqueire");
+    expect(texto).toContain("• 08-20-15 (43% NPK): 13,5 sc/alq (675,00 kg/alq) → *R$ 19.965,00* ★ menor custo");
+    expect(texto).toContain("↳ N: 54,00 kg · P₂O₅: 135,00 kg · K₂O: 101,25 kg por alqueire");
+    expect(texto).toContain("↳ ↓ Menos 4,5 sacas/alq (−225,00 kg/alq) para transportar e abastecer");
+    expect(texto).toContain("↳ Mesmo a saca do adubo proposto tendo valor unitário maior, o custo final da lavoura é R$ 75,00 mais barato por alqueire (economia total de R$ 1.815,00 na área de 24,20 alqueires).");
+  });
+
   it("termina com o rodapé de aviso técnico", () => {
     const texto = montarTextoWhatsApp(resumoSoja);
     expect(texto).toContain("_Preço válido no momento da geração — sujeito a alteração._");
@@ -675,20 +819,19 @@ describe("montarTextoWhatsAppCalagem", () => {
   const resumoBase = {
     ref: "20260101-0001", data: "01/01/2026",
     cliente: "Fazenda São Judas", area: "10,00 alq (24,20 ha)",
-    cultura: "Padrão Sudoeste do Paraná",
     v1: "30,23", v2: "80,00", ctc: "8,60", sb: "2,60", relCaMg: "3,33", mg: "0,6",
     ncAplicar: "2,68", totalCalcario: "64,74", tipoCalcario: "Calcário Dolomítico", prnt: "80,00",
     alertaParcelamento: true,
     ngDoseKgHa: "2.000,00", totalGesso: "48,40", gessagemNecessaria: true, enxofre: "300,00", calcio: "360,00",
   };
 
-  it("cabeçalho, produtor, área e cultura-alvo com V2 desejado", () => {
+  it("cabeçalho, produtor, área e V2 desejado", () => {
     const texto = montarTextoWhatsAppCalagem(resumoBase);
     expect(texto).toContain("🧪 *COASUL AGRO — RECOMENDAÇÃO DE CALAGEM E GESSAGEM*");
     expect(texto).toContain("Ref: #20260101-0001 · 01/01/2026");
     expect(texto).toContain("👤 *Produtor:* Fazenda São Judas");
     expect(texto).toContain("📐 *Área:* 10,00 alq (24,20 ha)");
-    expect(texto).toContain("🎯 *Cultura-Alvo:* Padrão Sudoeste do Paraná (V₂ desejado: 80,00%)");
+    expect(texto).toContain("🎯 *V₂ desejado:* 80,00%");
   });
 
   it("diagnóstico do solo com V1/V2, CTC, soma de bases e relação Ca/Mg", () => {
@@ -741,12 +884,5 @@ describe("montarTextoWhatsAppCalagem", () => {
     const texto = montarTextoWhatsAppCalagem(resumoSemRef);
     expect(texto).toContain("🧪 *COASUL AGRO — RECOMENDAÇÃO DE CALAGEM E GESSAGEM*\n01/01/2026");
     expect(texto).not.toContain("undefined");
-  });
-
-  it("usa culturaAlvoResumida quando presente, para não duplicar o '(V₂ X%)' já embutido em r.cultura", () => {
-    const resumo = { ...resumoBase, cultura: "Padrão Sudoeste do Paraná — solo argiloso da região (V₂ 80%)", culturaAlvoResumida: "Padrão Sudoeste do Paraná" };
-    const texto = montarTextoWhatsAppCalagem(resumo);
-    expect(texto).toContain("🎯 *Cultura-Alvo:* Padrão Sudoeste do Paraná (V₂ desejado: 80,00%)");
-    expect(texto).not.toContain("solo argiloso");
   });
 });

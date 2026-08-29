@@ -900,12 +900,6 @@
     .cal-manejo-grid{ grid-template-columns:repeat(4, minmax(0,1fr)); }
   }
 
-  /* Linha "Cultura-alvo + V₂": a cultura ganha o dobro do espaço do V₂ (que é
-     só um número curto) — minmax(0,Nfr) evita que o texto longo das opções
-     esmague a coluna, o rótulo só trunca com reticências dentro do próprio
-     botão do seletor (ver .csel-trigger .csel-label). */
-  .cal-cultura-row{ display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr); gap:12px; align-items:start; }
-
   /* Gráfico técnico de perfil e balanço da CTC (substitui os antigos banners
      de "parecer" em texto): barras/pinos 100% CSS, sem SVG/canvas/libs
      externas — cada elemento é só posicionado via style.left/width no JS
@@ -1015,6 +1009,17 @@
       scrollbar-gutter: stable;
       padding: 20px 22px;
     }
+  }
+
+  /* As duas colunas acima (".two-col-panel") são flex items — por padrão
+     (align-items:stretch) a coluna mais curta era esticada até a altura da
+     mais longa, sobrando um vão em branco embaixo do conteúdo dela (ex.:
+     coluna 1 da Adubação/Ureia, bem mais curta que a coluna 2 depois que o
+     Comparador de Formulações cresceu). align-items:flex-start faz cada
+     coluna ocupar só a altura do próprio conteúdo, sem tirar a rolagem
+     independente de quem realmente precisar dela (ainda min-h-0 + overflow-y). */
+  @media (min-width: 1024px){
+    .two-col-panel{ align-items: flex-start; }
   }
 
   /* Cartão widget de dashboard: moldura padrão pra qualquer bloco que vire
@@ -1233,6 +1238,8 @@
      com destaque na de menor custo (calculado em updateComparador(), não
      fixo aqui). */
   .comp-row{
+    display:flex;
+    flex-direction:column;
     background:#FFFFFF;
     border:1px solid #DCE3D6;
     border-radius:12px;
@@ -1244,19 +1251,54 @@
     background:#F8FAF6;
     box-shadow:0 0 0 1px var(--accent), 0 4px 16px -4px rgba(92,138,38,.15);
   }
+  /* card-base ("Adubo Atual"): distinção sutil de fundo/borda em relação aos
+     cards de proposta, sem destoar da paleta neutra do restante do grid. */
+  #compEquivBaseCard{
+    background:#FAFBF9;
+    border-color:#DCE4D8;
+  }
+
+  /* cabeçalho de cada card do grid (badge "Adubo Atual"/"Proposta N" + botão
+     de remover, quando aplicável) — mesma posição/alinhamento em todos os
+     cards, pra ficarem visualmente uniformes lado a lado. */
+  .comp-row-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    margin-bottom:10px;
+  }
+  .comp-side-badge.is-proposta{ background:var(--accent-soft); color:var(--accent); border:1px solid var(--accent-border); }
+  .comp-remove-icon{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:24px;
+    height:24px;
+    border-radius:6px;
+    color:#8A928B;
+    background:transparent;
+    transition:background .12s, color .12s;
+    flex-shrink:0;
+  }
+  .comp-remove-icon:hover{ background:#FBEAEA; color:#B3261E; }
+  .comp-remove-icon svg{ width:14px; height:14px; }
 
   /* chips de preenchimento rápido (04-14-08, MAP, Ureia...), logo abaixo do
-     campo Formulação — clicar preenche o texto sem precisar digitar. */
-  .comp-chip-row{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+     campo Formulação — clicar preenche o texto sem precisar digitar. Padding
+     e fonte compactos pra caberem numa linha só na largura de um card do
+     grid, sem sobrar um chip órfão isolado na linha seguinte. */
+  .comp-chip-row{ display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; margin-bottom:2px; }
   .comp-chip{
-    border:1px solid #DCE3D6;
-    border-radius:999px;
-    background:#F4F6F2;
-    padding:4px 10px;
-    font-size:11px;
-    font-weight:700;
+    border:1px solid transparent;
+    border-radius:6px;
+    background:var(--surface-subtle);
+    padding:3px 8px;
+    font-size:10.5px;
+    font-weight:600;
     color:#4B554F;
     cursor:pointer;
+    white-space:nowrap;
     transition:background .12s, border-color .12s, color .12s;
   }
   .comp-chip:hover{ background:var(--accent-soft); border-color:var(--accent-border); color:var(--accent); }
@@ -1309,7 +1351,7 @@
 
   .comp-metric-grid{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px; margin-top:10px; }
   .comp-metric-box{
-    background:#F4F6F2;
+    background:#F7F9F6;
     border-radius:8px;
     padding:8px 10px;
     border:1px solid #E1E8DC;
@@ -1336,17 +1378,166 @@
     font-weight:600;
     color:#8A5A00;
   }
-
-  .comp-remove{
-    display:inline-block;
-    margin-top:10px;
+  /* modo "Equivalência": economia em relação à formulação base do produtor —
+     verde (mesmo tom de .comp-best-value-badge) quando sai mais barata, o
+     amber padrão de .comp-delta quando sai mais cara. */
+  .comp-delta.is-savings{ color:#236B56; }
+  .comp-delta-logistica{
+    margin-top:4px;
     font-size:11px;
-    font-weight:700;
+    font-weight:600;
     color:#4B554F;
-    text-decoration:underline;
-    text-underline-offset:2px;
   }
-  .comp-remove:hover{ color:#1E2420; }
+
+  /* barra de controles secundários do modo "Equivalência" (unidade de preço +
+     critério) — toolbar coesa com fundo/borda própria (em vez de texto e
+     segmented controls soltos direto no card), lado a lado numa única linha
+     compacta que quebra em telas estreitas. Os grupos (#compPrecoUnidade /
+     #compCriterio) NÃO crescem pra preencher o espaço (sem flex-grow): cada
+     um fica do tamanho do seu conteúdo, como um segmented control normal —
+     era o "flex:1 1 auto" no grupo Critério que espalhava os botões pela
+     largura toda da barra, uma tela de largura, meio soltos. */
+  .comp-inline-controls{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:8px 20px;
+    margin-top:10px;
+    padding:8px 10px;
+    background:#F4F6F3;
+    border:1px solid #E2E8DE;
+    border-radius:10px;
+  }
+  .comp-inline-control{ display:flex; align-items:center; gap:8px; flex-shrink:0; }
+  .comp-inline-control > div{ flex-shrink:0; }
+  .comp-inline-control-label{
+    font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+    color:#4B554F; white-space:nowrap;
+  }
+  /* padding vertical real dos botões do segmented control — "py-1"/"py-1.5"
+     não existem no snapshot Tailwind compilado deste projeto (só existem as
+     utilities já usadas em algum outro lugar da tela), então ficavam sem
+     nenhum padding vertical, sustentados só pela altura da linha de texto:
+     eficaz no botão ativo (ganha fundo branco), mas deixava os inativos
+     parecendo texto solto flutuando na barra, sem cara de botão nenhum. */
+  #compModo .variant-btn,
+  #compPrecoUnidade .variant-btn,
+  #compCriterio .variant-btn{
+    padding-top:6px;
+    padding-bottom:6px;
+  }
+  /* fundo branco pro grupo de botões em si, pra se destacar da barra
+     (#F4F6F3) que o envolve — sem isso os dois tons ficam quase idênticos e
+     o segmented control "some" visualmente. */
+  #compPrecoUnidade, #compCriterio{
+    background:#FFFFFF;
+    border:1px solid #E2E8DE;
+  }
+
+  /* Grid horizontal de formulações — cartões lado a lado (base "Adubo Atual" +
+     propostas, ou só propostas no modo "Mesma dose"), com o comparador agora
+     em seção de largura total abaixo do grid de 2 colunas da ficha (não mais
+     espremido numa coluna de 56%). auto-fit com mínimo de 260px mostra 1
+     coluna no celular e escala sozinho até 3-4 lado a lado conforme o espaço
+     e a quantidade de cartões — sem precisar de breakpoint fixo por contagem. */
+  .comp-formula-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));
+    gap:14px;
+  }
+  .comp-formula-grid:empty{ display:none; }
+  .comp-side-badge{
+    display:inline-flex; align-items:center;
+    padding:4px 10px; border-radius:999px;
+    font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.04em;
+  }
+  .comp-side-badge.is-base{ background:#F1F5ED; color:#4B554F; border:1px solid #E1E8DC; }
+
+  /* "Equivalência por Sacas": número grande de sacas/alqueire — a métrica que
+     o produtor de fato enxerga na hora de carregar o implemento, por isso vem
+     em destaque acima da grade de métricas secundárias (kg/ha, custo etc.). */
+  .comp-sacas-headline{
+    display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;
+    margin-top:8px;
+  }
+  .comp-sacas-headline-value{
+    font-family:'JetBrains Mono','Inter',-apple-system,monospace; font-feature-settings:'tnum' 1,'cv05' 1;
+    font-size:26px; font-weight:800; color:#1E2420; line-height:1;
+  }
+  .comp-sacas-headline-unit{ font-size:13px; font-weight:600; color:#4B554F; }
+  .comp-sacas-headline-sub{ width:100%; font-size:11px; color:#4B554F; margin-top:2px; }
+
+  /* diferença logística (sacas/kg a menos ou a mais por alqueire) — mais
+     proeminente que .comp-delta-logistica porque é o argumento central desta
+     ferramenta ("adubo mais concentrado carrega menos"), não um detalhe. */
+  .comp-logistica-highlight{
+    margin-top:10px;
+    padding:8px 10px;
+    border-radius:8px;
+    background:rgba(35,107,86,0.08);
+    border:1px solid rgba(35,107,86,0.22);
+    font-size:11.5px;
+    font-weight:700;
+    color:#236B56;
+  }
+  .comp-logistica-highlight.is-negativa{
+    background:rgba(138,90,0,0.08);
+    border-color:rgba(138,90,0,0.22);
+    color:#8A5A00;
+  }
+
+  /* tabela N/P₂O₅/K₂O lado a lado (base × proposto) — prova que o critério de
+     equivalência não sacrifica os outros dois nutrientes da formulação. */
+  .comp-nutrient-table{
+    margin-top:10px;
+    border:1px solid #E1E8DC;
+    border-radius:8px;
+    overflow:hidden;
+  }
+  .comp-nutrient-table-header{
+    display:grid; grid-template-columns:1.3fr repeat(3, minmax(0,1fr));
+    background:#F1F5ED;
+    font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:#4B554F;
+  }
+  .comp-nutrient-table-row{
+    display:grid; grid-template-columns:1.3fr repeat(3, minmax(0,1fr));
+    border-top:1px solid #E1E8DC;
+    font-family:'JetBrains Mono','Inter',-apple-system,monospace; font-feature-settings:'tnum' 1,'cv05' 1;
+    font-size:11.5px;
+  }
+  .comp-nutrient-table-header > *, .comp-nutrient-table-row > *{
+    padding:6px 8px;
+    text-align:right;
+  }
+  .comp-nutrient-table-header > :first-child, .comp-nutrient-table-row > :first-child{
+    text-align:left;
+    font-family:Inter,sans-serif;
+    font-weight:600;
+  }
+  .comp-nutrient-table-row.is-base > :first-child{ color:#4B554F; }
+  .comp-nutrient-table-row.is-proposto{ background:var(--accent-soft); font-weight:700; }
+
+  /* veredito financeiro — o card que resume "vale a pena trocar ou não",
+     colorido conforme o resultado (verde = economia, âmbar = custo maior). */
+  .comp-veredito{
+    margin-top:12px;
+    padding:12px 14px;
+    border-radius:10px;
+    font-size:12.5px;
+    font-weight:600;
+    line-height:1.45;
+  }
+  .comp-veredito.is-savings{
+    background:rgba(35,107,86,0.10);
+    border:1px solid rgba(35,107,86,0.28);
+    color:#1B4F3E;
+  }
+  .comp-veredito.is-cost{
+    background:rgba(138,90,0,0.10);
+    border:1px solid rgba(138,90,0,0.28);
+    color:#6B4700;
+  }
+  .comp-veredito strong{ font-weight:800; }
 
   /* botão "+ adicionar formulação": secundário, pontilhado — não compete
      visualmente com os botões de ação principais da ficha. */
@@ -1887,32 +2078,85 @@ tailwind.config = {
         <div id="custosList" class="space-y-3 lg:space-y-1.5"></div>
       </section>
 
-      <!-- Comparador de formulações (só aparece na aba Adubação/Ureia) -->
-      <section id="comparadorSection" class="hidden shadow-soft mt-6 rounded-xl bg-white p-4 sm:p-5 lg:mt-5 lg:p-3">
-        <h2 class="mb-1 flex flex-wrap items-center gap-x-2 text-[13px] font-extrabold">
-          <span aria-hidden="true"><svg class="ti ti-flask icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3l6 0" /><path d="M10 9l4 0" /><path d="M10 3v6l-4 11a.7 .7 0 0 0 .5 1h11a.7 .7 0 0 0 .5 -1l-4 -11v-6" /></svg></span>Comparar formulações
-        </h2>
-        <p class="mb-4 text-[11px] leading-snug text-muted">
-          Ferramenta auxiliar para apoiar a recomendação de venda — compara o custo estimado de diferentes formulações para a área informada acima. Não substitui o cálculo principal desta aba e está sujeita à mesma ressalva técnica do restante da ficha.
-        </p>
+      </div>
+      </div>
+    </div>
 
-        <div id="compModo" class="mb-4 flex gap-1 rounded-lg bg-canvas p-1" role="group" aria-label="Modo de comparação">
-          <button type="button" class="variant-btn flex-1 rounded-lg px-3 py-2.5 text-[12.5px] font-bold text-muted is-active" data-modo="dose" aria-pressed="true">Mesma dose</button>
-          <button type="button" class="variant-btn flex-1 rounded-lg px-3 py-2.5 text-[12.5px] font-bold text-muted" data-modo="npk" aria-pressed="false">Bater necessidade de NPK</button>
+    <!-- Comparador de formulações (só aparece na aba Adubação/Ureia) — largura
+         total, abaixo do grid de 2 colunas, não dentro de nenhuma delas. -->
+    <div class="border-t border-line p-5 sm:p-7 lg:p-6">
+      <section id="comparadorSection" class="crm-card hidden">
+        <div class="crm-card-header flex-wrap gap-x-3 gap-y-2">
+          <h2 class="crm-card-title"><svg class="ti ti-flask icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3l6 0" /><path d="M10 9l4 0" /><path d="M10 3v6l-4 11a.7 .7 0 0 0 .5 1h11a.7 .7 0 0 0 .5 -1l-4 -11v-6" /></svg>Comparar Formulações</h2>
+          <div class="flex flex-wrap items-center gap-2">
+            <div id="compModo" class="flex gap-1 rounded-lg bg-canvas p-1" role="group" aria-label="Modo de comparação">
+              <button type="button" class="variant-btn rounded-lg px-3 py-1.5 text-[11.5px] font-bold text-muted is-active" data-modo="dose" aria-pressed="true">Mesma dose</button>
+              <button type="button" class="variant-btn rounded-lg px-3 py-1.5 text-[11.5px] font-bold text-muted" data-modo="equiv" aria-pressed="false">Equivalência</button>
+            </div>
+            <div id="compDoseBox">
+              <input type="number" id="compDose" class="inp inp-num inp-sm w-[150px]" step="0.1" min="0" inputmode="decimal" placeholder="Dose (kg/ha)" aria-label="Dose (kg/ha)">
+            </div>
+            <button type="button" class="rounded-lg p-1.5 text-muted hover:bg-canvas hover:text-ink transition" title="Ferramenta auxiliar para apoiar a recomendação de venda — compara o custo estimado de diferentes formulações para a área informada acima. Não substitui o cálculo principal desta aba." aria-label="Sobre esta ferramenta">
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M12 9h.01" /><path d="M11 12h1v4h1" /></svg>
+            </button>
+          </div>
         </div>
 
-        <div class="mb-4 sm:max-w-[50%]">
-          <label class="lbl" for="compDose" id="compDoseLabel">Dose (kg/ha)</label>
-          <input type="number" id="compDose" class="inp inp-num" step="0.1" min="0" inputmode="decimal" placeholder="0">
+        <!-- Controles secundários do modo "Equivalência" (unidade de preço + critério),
+             numa barra inline compacta — só aparece com data-modo="equiv" ativo. -->
+        <div id="compEquivControls" class="hidden comp-inline-controls">
+          <div class="comp-inline-control">
+            <span class="comp-inline-control-label">Preço em</span>
+            <div id="compPrecoUnidade" class="flex gap-1 rounded-lg p-1" role="group" aria-label="Unidade do preço informado">
+              <button type="button" class="variant-btn rounded-lg px-3 py-1 text-[11px] font-bold text-muted is-active" data-unidade="saca" aria-pressed="true">R$/saca</button>
+              <button type="button" class="variant-btn rounded-lg px-3 py-1 text-[11px] font-bold text-muted" data-unidade="ton" aria-pressed="false">R$/ton</button>
+            </div>
+          </div>
+          <div class="comp-inline-control">
+            <span class="comp-inline-control-label">Critério</span>
+            <div id="compCriterio" class="flex gap-1 rounded-lg p-1" role="group" aria-label="Critério de compensação">
+              <button type="button" class="variant-btn rounded-lg px-3 py-1 text-[11px] font-bold text-muted is-active" data-criterio="p" aria-pressed="true">P₂O₅</button>
+              <button type="button" class="variant-btn rounded-lg px-3 py-1 text-[11px] font-bold text-muted" data-criterio="npk" aria-pressed="false">NPK Total</button>
+              <button type="button" class="variant-btn rounded-lg px-3 py-1 text-[11px] font-bold text-muted" data-criterio="k" aria-pressed="false">K₂O</button>
+            </div>
+          </div>
         </div>
 
-        <div id="compRows" class="space-y-3"></div>
+        <!-- Grid horizontal único de formulações — usado nos dois modos. No modo
+             "Equivalência", #compEquivBaseCard (abaixo, escondido por padrão) é
+             inserido aqui como primeiro card via JS (ver o handler de #compModo
+             em app.js), lado a lado com as formulações propostas. -->
+        <div id="compRows" class="comp-formula-grid mt-4"></div>
+
+        <div id="compEquivBaseCard" class="hidden comp-row">
+          <div class="comp-row-head">
+            <span class="comp-side-badge is-base">Adubo Atual (Referência)</span>
+          </div>
+          <div>
+            <label class="lbl" for="compEquivFormula">Formulação</label>
+            <input type="text" id="compEquivFormula" class="inp" placeholder="Ex.: 10-15-15" autocomplete="off">
+            <div class="comp-chip-row">
+              <!-- preenchido em JS a partir de COMP_CHIPS, ver renderComparador() -->
+            </div>
+          </div>
+          <div class="fld-grid mt-2.5">
+            <div>
+              <label class="lbl" for="compEquivSacasAlq">Sacas 50kg/alq</label>
+              <input type="number" id="compEquivSacasAlq" class="inp inp-num" step="0.1" min="0" inputmode="decimal" placeholder="0">
+            </div>
+            <div>
+              <label class="lbl" for="compEquivPreco" id="compEquivPrecoLabel">Preço/saca (50kg)</label>
+              <div class="input-group">
+                <span class="input-group-addon is-prefix">R$</span>
+                <input type="number" id="compEquivPreco" class="inp inp-num inp-money" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
+              </div>
+            </div>
+          </div>
+          <div id="compEquivBaseResumo" class="comp-card-body"></div>
+        </div>
 
         <button type="button" id="compAddRow" class="comp-add-row mt-3 block w-full text-center text-[12.5px] font-bold">+ adicionar formulação</button>
       </section>
-
-      </div>
-      </div>
     </div>
   </main>
   </div>
@@ -2157,7 +2401,7 @@ tailwind.config = {
   <div id="viewCalagem" class="hidden">
     <main class="print-plain overflow-hidden rounded-lg bg-white shadow-sm lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
       <div class="p-5 sm:p-7 lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:p-0">
-      <div class="lg:flex lg:h-full lg:min-h-0">
+      <div class="two-col-panel lg:flex lg:h-full lg:min-h-0">
 
       <!-- Coluna 1 (desktop): identificação, manejo e matriz técnica de solo -->
       <div class="lg:min-h-0 lg:w-[45%] lg:overflow-y-auto lg:border-r lg:border-line lg:p-6">
@@ -2177,19 +2421,6 @@ tailwind.config = {
             <p class="field-note" title="Equivalência automática: 1 alqueire = 2,42 ha">
               <span class="note-ico" aria-hidden="true"><svg class="ti ti-ruler-2 icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3l4 4l-14 14l-4 -4l14 -14" /><path d="M16 7l-1.5 -1.5" /><path d="M13 10l-1.5 -1.5" /><path d="M10 13l-1.5 -1.5" /><path d="M7 16l-1.5 -1.5" /></svg></span><span id="calAreaHaHint">0 ha</span>
             </p>
-          </div>
-        </div>
-        <div class="cal-cultura-row mt-2">
-          <div>
-            <label class="lbl" for="calCultura">Cultura-alvo / V₂ sugerido</label>
-            <select id="calCultura" class="inp">
-              <option value="coasul" data-v2="80" selected>Padrão Sudoeste do Paraná — solo argiloso da região (V₂ 80%)</option>
-              <option value="graos" data-v2="65">Soja/Milho/Trigo/Cevada/Girassol (V₂ 65%)</option>
-              <option value="feijao" data-v2="70">Feijão (V₂ 70%)</option>
-              <option value="pastagem" data-v2="50">Pastagem — Brachiaria (V₂ 50%)</option>
-              <option value="hortigranjeiro" data-v2="75">Hortigranjeiros/Alho/Cebola (V₂ 75%)</option>
-              <option value="manual" data-v2="">Personalizado (V₂ manual)</option>
-            </select>
           </div>
           <div>
             <label class="lbl" for="calV2">V₂ desejada</label>
@@ -2810,6 +3041,64 @@ const Calculos = (function () {
     return validas.reduce((melhor, atual) => (atual.custoPorKgNutriente < melhor.custoPorKgNutriente ? atual : melhor));
   }
 
+  // ---------- Comparador de Formulações: Equivalência e Compensação de Adubos ----------
+  // Modo "equiv" do comparador (Adubação/Ureia): a partir da formulação que o
+  // produtor já usa hoje (dose praticada, kg/ha) e de um critério de nutriente
+  // (P₂O₅ por padrão, ou NPK Total/K₂O), calcula a dose de uma formulação
+  // candidata que entrega exatamente a mesma quantidade daquele nutriente por
+  // hectare — a regra clássica de equivalência de adubos:
+  //   Dose_Comp = Dose_Base × (%Nutriente_Base ÷ %Nutriente_Comp)
+  function nutrientePctPorCriterio(npk, criterio) {
+    const [n, p, k] = npk || [0, 0, 0];
+    if (criterio === "npk") return (Number(n) || 0) + (Number(p) || 0) + (Number(k) || 0);
+    if (criterio === "k") return Number(k) || 0;
+    return Number(p) || 0; // "p" (P₂O₅) é o critério padrão
+  }
+
+  // Retorna sempre um objeto (nunca null) pra deixar explícito, no `doseHa`,
+  // quando a equivalência não é calculável (nutriente do critério ausente na
+  // base ou na formulação comparada) — quem chama decide como avisar o usuário.
+  function calcularEquivalenciaAdubo({ baseDoseHa, baseNpk, compNpk, criterio } = {}) {
+    const baseNutrientePct = nutrientePctPorCriterio(baseNpk, criterio);
+    const compNutrientePct = nutrientePctPorCriterio(compNpk, criterio);
+    const baseDose = Number(baseDoseHa) || 0;
+    const possivel = baseNutrientePct > 0 && compNutrientePct > 0;
+    return {
+      baseNutrientePct,
+      compNutrientePct,
+      doseHa: possivel ? baseDose * (baseNutrientePct / compNutrientePct) : null,
+    };
+  }
+
+  // Veredito financeiro do modo "Equivalência de Formulações por Sacas": compara
+  // o custo por alqueire (e total na área) do adubo proposto contra a base do
+  // produtor e devolve uma frase pronta pro card em tela, WhatsApp, PDF e PNG.
+  // `fmtMoeda`/`fmtDec` são passados pelo chamador (não moram aqui — ver
+  // formatarPrecoResumo() acima pelo mesmo motivo) pra manter esta função pura
+  // e testável sem depender de formatação específica de moeda/locale.
+  function montarVeredicto({ custoAlqBase, custoAlqComp, custoTotalBase, custoTotalComp, precoSacaBase, precoSacaComp, areaAlq } = {}, fmtMoeda, fmtDec) {
+    const TOL = 0.005;
+    const diffAlq = custoAlqComp - custoAlqBase;
+    const diffTotal = custoTotalComp - custoTotalBase;
+    const economiza = diffAlq < -TOL;
+    const custaMais = diffAlq > TOL;
+    const sacaMaisCara = precoSacaComp > precoSacaBase + TOL;
+    const temArea = areaAlq > 0;
+
+    if (economiza) {
+      const prefixo = sacaMaisCara ? "Mesmo a saca do adubo proposto tendo valor unitário maior, o" : "O";
+      const totalTexto = temArea
+        ? ` (economia total de ${fmtMoeda(Math.abs(diffTotal))} na área de ${fmtDec(areaAlq)} alqueires)`
+        : " — informe a área da lavoura acima para ver a economia total";
+      return `${prefixo} custo final da lavoura é ${fmtMoeda(Math.abs(diffAlq))} mais barato por alqueire${totalTexto}.`;
+    }
+    if (custaMais) {
+      const totalTexto = temArea ? ` (${fmtMoeda(diffTotal)} a mais na área de ${fmtDec(areaAlq)} alqueires)` : "";
+      return `O adubo proposto sai ${fmtMoeda(diffAlq)} mais caro por alqueire${totalTexto}, mesmo entregando menos sacas por alqueire.`;
+    }
+    return "Custo final praticamente equivalente entre as duas opções.";
+  }
+
   // ---------- Texto formatado para envio no WhatsApp ----------
   // Cada função recebe o mesmo objeto "resumo" que já alimenta a exportação em
   // PDF/PNG daquela ficha (coletarResumo/coletarResumoRegulagem/
@@ -2841,6 +3130,27 @@ const Calculos = (function () {
     blocos.push(necessidade);
     if (r.nutrientes && r.nutrientes.length) {
       blocos.push(`🧪 *Nutrientes no Solo (Total):*\n` + r.nutrientes.map((n) => `• ${n.nome}: ${n.valor} (${n.porAlq})`).join("\n"));
+    }
+    if (r.comparador && r.comparador.linhas && r.comparador.linhas.length) {
+      let compBloco = `🔁 *COMPARADOR DE FORMULAÇÕES* — ${r.comparador.modo}`;
+      if (r.comparador.isEquivalencia && r.comparador.base) {
+        const b = r.comparador.base;
+        compBloco += `\nBase do produtor: *${b.npk}* · ${b.sacasAlq} (${b.doseAlq}) · ${b.custoAlq}/alq · ${b.custoTotal} na área (critério: ${b.criterio})`;
+        compBloco += `\n  ↳ N: ${b.nutrientes.n} · P₂O₅: ${b.nutrientes.p} · K₂O: ${b.nutrientes.k} por alqueire`;
+      }
+      compBloco += "\n" + r.comparador.linhas.map((l) => {
+        const rotuloQtd = r.comparador.isEquivalencia ? `${l.sacasAlq} (${l.doseAlq})` : l.dose;
+        let s = `• ${l.npk} (${l.somaNpk}% NPK): ${rotuloQtd} → *${l.custoTotal}*`;
+        if (l.isMenorCusto) s += " ★ menor custo";
+        if (l.isMelhorCustoBeneficio) s += " ★ melhor custo-benefício";
+        if (r.comparador.isEquivalencia && l.nutrientes) {
+          s += `\n  ↳ N: ${l.nutrientes.n} · P₂O₅: ${l.nutrientes.p} · K₂O: ${l.nutrientes.k} por alqueire`;
+        }
+        if (l.logisticaTexto) s += `\n  ↳ ${l.logisticaTexto}`;
+        if (l.veredicto) s += `\n  ↳ ${l.veredicto}`;
+        return s;
+      }).join("\n");
+      blocos.push(compBloco);
     }
     if (r.linhas && r.linhas.length) {
       const linhasCusto = r.linhas.map((l) => {
@@ -2884,7 +3194,7 @@ const Calculos = (function () {
     blocos.push(
       `👤 *Produtor:* ${r.cliente || "Não informado"}\n` +
       `📐 *Área:* ${r.area}\n` +
-      `🎯 *Cultura-Alvo:* ${r.culturaAlvoResumida || r.cultura} (V₂ desejado: ${r.v2}%)`
+      `🎯 *V₂ desejado:* ${r.v2}%`
     );
     blocos.push(
       `📊 *Diagnóstico do Solo:*\n` +
@@ -2936,6 +3246,8 @@ const Calculos = (function () {
     calcularConcentracaoTotalNutrientes,
     calcularCustoPorKgNutriente,
     identificarMelhorCustoBeneficio,
+    calcularEquivalenciaAdubo,
+    montarVeredicto,
     montarTextoWhatsApp,
     montarTextoWhatsAppRegulagem,
     montarTextoWhatsAppCalagem,
@@ -3105,6 +3417,7 @@ const {
   converterKMgParaCmolc, calcularIndicesSolo, calcularCalagem, determinarTipoCalcario,
   verificarNecessidadeGessagem, calcularGessagem, nutrientesGesso,
   calcularConcentracaoTotalNutrientes, calcularCustoPorKgNutriente, identificarMelhorCustoBeneficio,
+  calcularEquivalenciaAdubo, montarVeredicto,
   montarTextoWhatsApp, montarTextoWhatsAppRegulagem, montarTextoWhatsAppCalagem,
 } = Calculos;
 
@@ -4365,7 +4678,16 @@ function updateCustos(){
 // ao produtor. Reaproveita lerFormulacao() (mesma função do campo "Formulação
 // cotada" acima) e a área já informada na Identificação — não duplica nem
 // altera o cálculo principal da aba, é só uma simulação à parte.
-let compModo = "dose"; // "dose": mesma dose (kg/ha) pra todas · "npk": cada uma dosada pra bater a mesma necessidade de NPK
+// "dose": mesma dose (kg/ha) pra todas · "equiv": cada uma dosada pra entregar
+// a mesma quantidade do nutriente-critério (compCriterio) que a formulação base do
+// produtor entrega na dose praticada (ver updateComparadorEquivalencia())
+let compModo = "dose";
+// critério de nutriente usado na equivalência (modo "equiv"): "p" (P₂O₅, padrão),
+// "npk" (NPK Total) ou "k" (K₂O) — ver calcularEquivalenciaAdubo() em calculos.js
+let compCriterio = "p";
+// unidade em que os preços do modo "equiv" são digitados (base e formulações
+// comparadas): "saca" (50 kg, padrão) ou "ton" — ver precoParaSaca()
+let compPrecoUnidade = "saca";
 const compRows = [
   { texto: "", preco: "" },
   { texto: "", preco: "" },
@@ -4387,24 +4709,60 @@ const COMP_CHIPS = [
   { label: "KCl", formula: "KCl 00-00-60" },
 ];
 
+const CRITERIO_LABELS = { p: "P₂O₅", npk: "NPK Total", k: "K₂O" };
+
+// modo "equiv": converte o valor digitado (na unidade ativa em compPrecoUnidade)
+// pra R$/saca de 50 kg, que é a unidade em que todo o cálculo do modo trabalha
+// internamente — 1 tonelada = 1.000 kg = 20 sacas de 50 kg.
+function precoParaSaca(valor){
+  const v = parseFloat(valor) || 0;
+  return compPrecoUnidade === "ton" ? v / 20 : v;
+}
+
+// Rótulo do preço de cada linha comparada muda conforme o modo/unidade ativos:
+// "Preço por kg" no modo "dose" · "Preço/saca (50kg)" ou "Preço/tonelada" no
+// modo "equiv", espelhando a unidade escolhida em #compPrecoUnidade.
+function atualizarRotulosComparador(){
+  const label = compModo === "equiv"
+    ? (compPrecoUnidade === "ton" ? "Preço/tonelada" : "Preço/saca (50kg)")
+    : "Preço por kg";
+  compRows.forEach((_row, i) => {
+    const el = $(`compPrecoLabel-${i}`);
+    if(el) el.textContent = label;
+  });
+}
+
 function renderComparador(){
   const rowsBox = $("compRows");
+  // no modo "equiv", #compEquivBaseCard mora dentro de #compRows como primeiro
+  // grid item (ver o handler de #compModo) — innerHTML="" o destruiria junto
+  // com as linhas dinâmicas, então ele sai antes de limpar e volta em seguida.
+  const baseCard = $("compEquivBaseCard");
+  const baseCardWasInside = rowsBox.contains(baseCard);
   rowsBox.innerHTML = "";
+  if(baseCardWasInside) rowsBox.appendChild(baseCard);
   compRows.forEach((row, i) => {
     const div = document.createElement("div");
     div.className = "comp-row";
     div.id = `compRow-${i}`;
     div.innerHTML = `
+      <div class="comp-row-head">
+        <span class="comp-side-badge is-proposta">Proposta ${i + 1}</span>
+        ${compRows.length > 2 ? `
+        <button type="button" class="comp-remove-icon" data-i="${i}" aria-label="Remover esta formulação" title="Remover esta formulação">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
+        </button>` : ""}
+      </div>
       <div class="fld-grid">
         <div>
           <label class="lbl" for="compFormula-${i}">Formulação</label>
-          <input type="text" id="compFormula-${i}" class="inp" placeholder="Ex.: 04-14-08, MAP, Ureia" autocomplete="off">
+          <input type="text" id="compFormula-${i}" class="inp" placeholder="Ex.: 04-14-08" autocomplete="off">
           <div class="comp-chip-row">
             ${COMP_CHIPS.map(c => `<button type="button" class="comp-chip" data-formula="${c.formula}">${c.label}</button>`).join("")}
           </div>
         </div>
         <div>
-          <label class="lbl" for="compPreco-${i}">Preço por kg</label>
+          <label class="lbl" for="compPreco-${i}" id="compPrecoLabel-${i}">Preço por kg</label>
           <div class="input-group">
             <span class="input-group-addon is-prefix">R$</span>
             <input type="number" id="compPreco-${i}" class="inp inp-num inp-money" step="0.01" min="0" inputmode="decimal" placeholder="0,00">
@@ -4412,7 +4770,6 @@ function renderComparador(){
         </div>
       </div>
       <div class="comp-card-body" id="compResult-${i}"></div>
-      ${compRows.length > 2 ? `<button type="button" class="comp-remove mt-2" data-i="${i}">remover formulação</button>` : ""}
     `;
     rowsBox.appendChild(div);
 
@@ -4431,11 +4788,12 @@ function renderComparador(){
       });
     });
 
-    const rm = div.querySelector(".comp-remove");
+    const rm = div.querySelector(".comp-remove-icon");
     if(rm) rm.addEventListener("click", () => { compRows.splice(i, 1); renderComparador(); });
   });
 
   $("compAddRow").classList.toggle("hidden", compRows.length >= 4);
+  atualizarRotulosComparador();
   updateComparador();
 }
 
@@ -4443,7 +4801,13 @@ function updateComparador(){
   if(currentCrop !== "adubacao") return;
   const area = areaAlqDoInput(); // alqueires (canônico) — mesmo campo da Identificação, não duplicado aqui
   const areaHa = area * ALQ_HA;
-  const necessidade = parseFloat($("compDose").value) || 0; // kg/ha: dose (modo "dose") ou necessidade de NPK (modo "npk")
+
+  if(compModo === "equiv"){
+    updateComparadorEquivalencia(area, areaHa);
+    return;
+  }
+
+  const necessidade = parseFloat($("compDose").value) || 0; // kg/ha: dose informada, igual pra todas as linhas (modo "dose")
 
   // 1ª passada: calcula cada linha reconhecida e guarda o resultado — precisa
   // terminar todas antes de saber qual é a mais barata (2ª passada, abaixo),
@@ -4472,9 +4836,7 @@ function updateComparador(){
 
     const [n, p, k] = npk;
     const somaNpk = n + p + k;
-    // modo "dose": todas recebem a mesma dose informada · modo "npk": cada uma usa a dose
-    // que entrega, sozinha, a necessidade total de nutrientes informada (kg/ha ÷ % NPK da formulação)
-    const dose = compModo === "dose" ? necessidade : (somaNpk > 0 ? necessidade / (somaNpk / 100) : 0);
+    const dose = necessidade; // modo "dose": todas as formulações recebem a mesma dose informada
     const doseAlq = dose * ALQ_HA;
     const totalKg = dose * areaHa;
     const bagTamanho = bagSizeFromNpk(n, p, k); // 750 kg só pra ureia específica; demais em bag de 1.000 kg
@@ -4562,6 +4924,215 @@ function updateComparador(){
   });
 }
 
+// ---------- Comparador de formulações — modo "Equivalência de Formulações por
+// Sacas (Custo Real do Produtor)" ----------
+// Parte do adubo que o produtor já usa hoje (formulação + sacas de 50 kg por
+// alqueire + preço) e calcula, pra cada formulação proposta, a quantidade de
+// sacas que entrega a mesma quantidade do nutriente-critério (compCriterio) —
+// ver calcularEquivalenciaAdubo() em calculos.js. O ponto central é mostrar
+// que um adubo mais concentrado carrega MENOS sacas por alqueire — e se isso
+// compensa financeiramente mesmo quando a saca dele é mais cara. Cada linha é
+// sempre comparada contra essa base (sacas a menos/mais, economia/aumento de
+// custo, veredito final), não contra a mais barata entre as linhas propostas
+// (isso continua disponível como badge "★ Menor Custo", mas é secundário).
+function updateComparadorEquivalencia(area, areaHa){
+  const baseResumoBox = $("compEquivBaseResumo");
+  const baseTexto = $("compEquivFormula").value.trim();
+  const baseSacasAlq = parseFloat($("compEquivSacasAlq").value) || 0;
+  const basePrecoSaca = precoParaSaca($("compEquivPreco").value);
+  const criterioLabel = CRITERIO_LABELS[compCriterio] || CRITERIO_LABELS.p;
+
+  const semBase = msg => {
+    baseResumoBox.innerHTML = msg ? `<span class="text-[11px] text-muted">${msg}</span>` : "";
+    ultimoComparador = { modo: compModo, criterio: compCriterio, resultados: [], menor: null, melhorCustoBeneficio: null, base: null };
+    compRows.forEach((_row, i) => {
+      const box = $(`compResult-${i}`);
+      if(box) box.innerHTML = `<span class="text-[11px] text-muted">Informe a formulação base do produtor acima para calcular a equivalência.</span>`;
+    });
+  };
+
+  if(!baseTexto) return semBase("Informe a formulação base que o produtor já usa.");
+  const baseNpk = lerFormulacao(baseTexto);
+  if(!baseNpk){
+    baseResumoBox.innerHTML =
+      `<div class="alert-item alert-warn" style="padding:6px 10px;">` +
+      `<svg class="ti ti-${ALERT_META.warn.icon} alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ALERT_META.warn.paths}</svg>` +
+      `<span class="alert-text">Formulação base não reconhecida — confira o texto digitado.</span></div>`;
+    return semBase();
+  }
+
+  const [bn, bp, bk] = baseNpk;
+  const baseDoseAlq = baseSacasAlq * getSacaAduboSize(); // kg/alq
+  const baseDoseHa = baseDoseAlq / ALQ_HA;
+  const baseTotalKg = baseDoseHa * areaHa;
+  const baseSacasTotal = baseTotalKg / getSacaAduboSize();
+  const baseCustoAlq = baseSacasAlq * basePrecoSaca;
+  const baseCustoHa = baseCustoAlq / ALQ_HA;
+  const baseCustoTotal = baseCustoAlq * area;
+  const baseNutrientePct = calcularEquivalenciaAdubo({ baseDoseHa, baseNpk, compNpk: baseNpk, criterio: compCriterio }).baseNutrientePct;
+  const baseNKgAlq = baseDoseAlq * bn / 100;
+  const basePKgAlq = baseDoseAlq * bp / 100;
+  const baseKKgAlq = baseDoseAlq * bk / 100;
+
+  baseResumoBox.innerHTML = `
+    <div class="comp-npk-row">
+      <span class="comp-npk-badge">${bn}-${bp}-${bk} <span class="comp-npk-total">· base atual do produtor</span></span>
+    </div>
+    ${baseNutrientePct <= 0 ? `
+    <div class="alert-item alert-warn" style="padding:6px 10px;margin-bottom:8px;">
+      <svg class="ti ti-${ALERT_META.warn.icon} alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ALERT_META.warn.paths}</svg>
+      <span class="alert-text">Esta formulação base não tem ${criterioLabel} — escolha outro critério de equivalência para calcular.</span>
+    </div>` : `
+    <div class="comp-nutrient-badge">Considerando ${criterioLabel}: ${fmtDec(baseNutrientePct)}% (${fmtDec(baseDoseAlq * baseNutrientePct / 100)} kg/alq entregues)</div>`}
+    <div class="comp-sacas-headline">
+      <span class="comp-sacas-headline-value">${fmtDec(baseSacasAlq)}</span>
+      <span class="comp-sacas-headline-unit">sc/alq (${fmtDec(baseDoseAlq)} kg/alq)</span>
+      <span class="comp-sacas-headline-sub">${area > 0 ? `${fmtDec(baseSacasTotal)} sacas na área informada (${fmtDec(baseTotalKg)} kg)` : "informe a área acima para ver o total na lavoura"}</span>
+    </div>
+    <div class="comp-metric-grid">
+      <div class="comp-metric-box">
+        <div class="comp-metric-label">Custo por área</div>
+        <div class="comp-metric-value">${fmtMoeda(baseCustoAlq)}/alq</div>
+        <div class="comp-metric-sub">${fmtMoeda(baseCustoHa)}/ha</div>
+      </div>
+      <div class="comp-metric-box is-total">
+        <div class="comp-metric-label">Custo total</div>
+        <div class="comp-metric-value">${fmtMoeda(baseCustoTotal)}</div>
+        <div class="comp-metric-sub">${area > 0 ? "na área informada" : "informe a área acima"}</div>
+      </div>
+    </div>
+  `;
+
+  const resultados = [];
+  compRows.forEach((row, i) => {
+    const box = $(`compResult-${i}`);
+    if(!box) return;
+    const texto = row.texto.trim();
+    const precoSaca = precoParaSaca(row.preco);
+
+    if(!texto){
+      box.innerHTML = `<span class="text-[11px] text-muted">Informe a formulação proposta para calcular a equivalência.</span>`;
+      return;
+    }
+    const npk = lerFormulacao(texto);
+    if(!npk){
+      box.innerHTML =
+        `<div class="alert-item alert-warn" style="padding:6px 10px;">` +
+        `<svg class="ti ti-${ALERT_META.warn.icon} alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ALERT_META.warn.paths}</svg>` +
+        `<span class="alert-text">Formulação não reconhecida — confira o texto digitado.</span></div>`;
+      return;
+    }
+
+    const [n, p, k] = npk;
+    const equiv = calcularEquivalenciaAdubo({ baseDoseHa, baseNpk, compNpk: npk, criterio: compCriterio });
+    if(equiv.doseHa === null){
+      box.innerHTML =
+        `<div class="alert-item alert-warn" style="padding:6px 10px;">` +
+        `<svg class="ti ti-${ALERT_META.warn.icon} alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ALERT_META.warn.paths}</svg>` +
+        `<span class="alert-text">Esta formulação não tem ${criterioLabel} — não é possível calcular a equivalência por este critério.</span></div>`;
+      return;
+    }
+
+    const dose = equiv.doseHa; // kg/ha
+    const doseAlq = dose * ALQ_HA; // kg/alq
+    const sacasAlq = doseAlq / getSacaAduboSize();
+    const totalKg = dose * areaHa;
+    const sacasTotal = totalKg / getSacaAduboSize();
+    const precoPorKg = precoSaca / getSacaAduboSize();
+    const custoAlq = sacasAlq * precoSaca;
+    const custoHa = custoAlq / ALQ_HA;
+    const custoTotal = custoAlq * area;
+    const custoPorKgNutriente = calcularCustoPorKgNutriente({ preco: precoPorKg, tamanhoEmbalagemKg: 1, npkN: n, npkP: p, npkK: k });
+
+    resultados.push({
+      i, box, n, p, k, somaNpk: n + p + k, dose, doseAlq, sacasAlq, totalKg, sacasTotal,
+      precoSaca, custoHa, custoAlq, custoTotal, custoPorKgNutriente,
+      nKgAlq: doseAlq * n / 100, pKgAlq: doseAlq * p / 100, kKgAlq: doseAlq * k / 100,
+      temPreco: precoSaca > 0 && dose > 0,
+      sacasAlqDiff: baseSacasAlq - sacasAlq,
+      kgAlqDiff: baseDoseAlq - doseAlq,
+    });
+  });
+
+  const validos = resultados.filter(r => r.temPreco);
+  const menor = validos.length > 1 ? validos.reduce((a, b) => a.custoTotal < b.custoTotal ? a : b) : null;
+  const melhorCustoBeneficio = resultados.length > 1
+    ? identificarMelhorCustoBeneficio(resultados.filter(r => r.custoPorKgNutriente > 0))
+    : null;
+
+  ultimoComparador = {
+    modo: compModo, criterio: compCriterio, resultados, menor, melhorCustoBeneficio,
+    base: {
+      npk: baseNpk, sacasAlq: baseSacasAlq, doseAlq: baseDoseAlq, precoSaca: basePrecoSaca,
+      custoAlq: baseCustoAlq, custoTotal: baseCustoTotal, sacasTotal: baseSacasTotal,
+      nKgAlq: baseNKgAlq, pKgAlq: basePKgAlq, kKgAlq: baseKKgAlq,
+    },
+  };
+
+  resultados.forEach(r => {
+    const isCheapest = !!menor && r.i === menor.i;
+    const isMelhorCustoBeneficio = !!melhorCustoBeneficio && r.i === melhorCustoBeneficio.i;
+
+    let logisticaHtml = "";
+    if(r.sacasAlqDiff > 0.05){
+      logisticaHtml = `<div class="comp-logistica-highlight">↓ Menos ${fmtDec(r.sacasAlqDiff)} sacas por alqueire (−${fmtDec(Math.abs(r.kgAlqDiff))} kg/alq) para transportar e abastecer</div>`;
+    } else if(r.sacasAlqDiff < -0.05){
+      logisticaHtml = `<div class="comp-logistica-highlight is-negativa">↑ Mais ${fmtDec(Math.abs(r.sacasAlqDiff))} sacas por alqueire (+${fmtDec(Math.abs(r.kgAlqDiff))} kg/alq) para transportar e abastecer</div>`;
+    }
+
+    let veredictoHtml = "";
+    r.veredictoTexto = ""; // guardado no resultado pra coletarResumo() reaproveitar na exportação
+    if(baseCustoAlq > 0 && r.temPreco){
+      r.veredictoTexto = montarVeredicto({
+        custoAlqBase: baseCustoAlq, custoAlqComp: r.custoAlq,
+        custoTotalBase: baseCustoTotal, custoTotalComp: r.custoTotal,
+        precoSacaBase: basePrecoSaca, precoSacaComp: r.precoSaca, areaAlq: area,
+      }, fmtMoeda, fmtDec);
+      const isSavings = r.custoAlq < baseCustoAlq - 0.005;
+      veredictoHtml = `<div class="comp-veredito ${isSavings ? "is-savings" : "is-cost"}">${r.veredictoTexto}</div>`;
+    }
+
+    r.box.innerHTML = `
+      <div class="comp-npk-row">
+        <span class="comp-npk-badge">${r.n}-${r.p}-${r.k} <span class="comp-npk-total">· equivalente por ${criterioLabel}</span></span>
+        <div class="comp-badge-group">
+          ${isCheapest ? `<span class="comp-cheapest-badge">★ Menor Custo</span>` : ""}
+          ${isMelhorCustoBeneficio ? `<span class="comp-best-value-badge">★ Melhor Custo-Benefício</span>` : ""}
+        </div>
+      </div>
+      <div class="comp-sacas-headline">
+        <span class="comp-sacas-headline-value">${fmtDec(r.sacasAlq)}</span>
+        <span class="comp-sacas-headline-unit">sc/alq (${fmtDec(r.doseAlq)} kg/alq)</span>
+        <span class="comp-sacas-headline-sub">${area > 0 ? `${fmtDec(r.sacasTotal)} sacas na área informada (${fmtDec(r.totalKg)} kg)` : "informe a área acima para ver o total na lavoura"}</span>
+      </div>
+      ${logisticaHtml}
+      <div class="comp-nutrient-table">
+        <div class="comp-nutrient-table-header"><span>kg/alq entregue</span><span>N</span><span>P₂O₅</span><span>K₂O</span></div>
+        <div class="comp-nutrient-table-row is-base"><span>Base</span><span>${fmtDec(baseNKgAlq)}</span><span>${fmtDec(basePKgAlq)}</span><span>${fmtDec(baseKKgAlq)}</span></div>
+        <div class="comp-nutrient-table-row is-proposto"><span>Proposto</span><span>${fmtDec(r.nKgAlq)}</span><span>${fmtDec(r.pKgAlq)}</span><span>${fmtDec(r.kKgAlq)}</span></div>
+      </div>
+      <div class="comp-metric-grid">
+        <div class="comp-metric-box">
+          <div class="comp-metric-label">Custo por área</div>
+          <div class="comp-metric-value">${fmtMoeda(r.custoAlq)}/alq</div>
+          <div class="comp-metric-sub">${fmtMoeda(r.custoHa)}/ha</div>
+        </div>
+        <div class="comp-metric-box is-total">
+          <div class="comp-metric-label">Custo total</div>
+          <div class="comp-metric-value">${fmtMoeda(r.custoTotal)}</div>
+          <div class="comp-metric-sub">${area > 0 ? "na área informada" : "informe a área acima"}</div>
+        </div>
+      </div>
+      ${veredictoHtml}
+    `;
+  });
+
+  compRows.forEach((_row, i) => {
+    const div = $(`compRow-${i}`);
+    if(div) div.classList.toggle("is-cheapest", !!menor && i === menor.i);
+  });
+}
+
 $("compModo").querySelectorAll("button").forEach(btn => {
   btn.addEventListener("click", () => {
     compModo = btn.dataset.modo;
@@ -4569,7 +5140,22 @@ $("compModo").querySelectorAll("button").forEach(btn => {
       b.classList.toggle("is-active", b === btn);
       b.setAttribute("aria-pressed", b === btn ? "true" : "false");
     });
-    $("compDoseLabel").textContent = compModo === "dose" ? "Dose (kg/ha)" : "Necessidade de NPK (kg/ha)";
+    // #compEquivBaseCard é realocado (não recriado) pra dentro/fora de
+    // #compRows conforme o modo — vira o primeiro card do grid horizontal de
+    // formulações no modo "equiv", lado a lado com as propostas; some (volta a
+    // ficar fora, escondido) no modo "dose". Preserva valores já digitados e
+    // os listeners já ligados uma única vez, fora de renderComparador().
+    const baseCard = $("compEquivBaseCard");
+    if(compModo === "equiv"){
+      $("compRows").prepend(baseCard);
+      baseCard.classList.remove("hidden");
+    } else {
+      baseCard.classList.add("hidden");
+      $("comparadorSection").appendChild(baseCard);
+    }
+    $("compDoseBox").classList.toggle("hidden", compModo === "equiv");
+    $("compEquivControls").classList.toggle("hidden", compModo !== "equiv");
+    atualizarRotulosComparador();
     updateComparador();
   });
 });
@@ -4578,6 +5164,42 @@ $("compAddRow").addEventListener("click", () => {
   if(compRows.length >= 4) return;
   compRows.push({ texto: "", preco: "" });
   renderComparador();
+});
+
+// ---- Modo "Equivalência de Formulações por Sacas": formulação base do produtor,
+// quantidade em sacas/alqueire, unidade de preço e critério de equivalência ----
+$("compEquivFormula").closest("div").querySelector(".comp-chip-row").innerHTML =
+  COMP_CHIPS.map(c => `<button type="button" class="comp-chip" data-formula="${c.formula}">${c.label}</button>`).join("");
+$("compEquivFormula").closest("div").querySelectorAll(".comp-chip").forEach(chip => {
+  chip.addEventListener("click", () => {
+    $("compEquivFormula").value = chip.dataset.formula;
+    updateComparador();
+  });
+});
+$("compEquivFormula").addEventListener("input", updateComparador);
+$("compEquivSacasAlq").addEventListener("input", updateComparador);
+$("compEquivPreco").addEventListener("input", updateComparador);
+$("compCriterio").querySelectorAll("button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    compCriterio = btn.dataset.criterio;
+    $("compCriterio").querySelectorAll("button").forEach(b => {
+      b.classList.toggle("is-active", b === btn);
+      b.setAttribute("aria-pressed", b === btn ? "true" : "false");
+    });
+    updateComparador();
+  });
+});
+$("compPrecoUnidade").querySelectorAll("button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    compPrecoUnidade = btn.dataset.unidade;
+    $("compPrecoUnidade").querySelectorAll("button").forEach(b => {
+      b.classList.toggle("is-active", b === btn);
+      b.setAttribute("aria-pressed", b === btn ? "true" : "false");
+    });
+    $("compEquivPrecoLabel").textContent = compPrecoUnidade === "ton" ? "Preço/tonelada" : "Preço/saca (50kg)";
+    atualizarRotulosComparador();
+    updateComparador();
+  });
 });
 
 renderComparador();
@@ -4725,19 +5347,48 @@ function coletarResumo(){
   // Comparador de Formulações — só existe na aba Adubação/Ureia; usa o snapshot
   // que updateComparador() já deixou pronto (evita recalcular e reler o DOM
   // aqui). Só entra na ficha exportada quando há pelo menos uma linha reconhecida.
+  const isEquivalencia = currentCrop === "adubacao" && !!ultimoComparador && ultimoComparador.modo === "equiv";
   const comparadorLinhas = (currentCrop === "adubacao" && ultimoComparador)
-    ? ultimoComparador.resultados.map(res => ({
-        npk: `${res.n}-${res.p}-${res.k}`,
-        somaNpk: fmtInt(res.somaNpk),
-        custoPorKgNutriente: res.custoPorKgNutriente > 0 ? fmtMoeda(res.custoPorKgNutriente) : "—",
-        custoTotal: fmtMoeda(res.custoTotal),
-        dose: `${fmtDec(res.dose)} kg/ha`,
-        isMenorCusto: !!ultimoComparador.menor && res.i === ultimoComparador.menor.i,
-        isMelhorCustoBeneficio: !!ultimoComparador.melhorCustoBeneficio && res.i === ultimoComparador.melhorCustoBeneficio.i,
-      }))
+    ? ultimoComparador.resultados.map(res => {
+        let logisticaTexto = "";
+        if(isEquivalencia && Math.abs(res.sacasAlqDiff || 0) > 0.05){
+          logisticaTexto = res.sacasAlqDiff > 0
+            ? `↓ Menos ${fmtDec(res.sacasAlqDiff)} sacas/alq (−${fmtDec(Math.abs(res.kgAlqDiff))} kg/alq) para transportar e abastecer`
+            : `↑ Mais ${fmtDec(Math.abs(res.sacasAlqDiff))} sacas/alq (+${fmtDec(Math.abs(res.kgAlqDiff))} kg/alq) para transportar e abastecer`;
+        }
+        return {
+          npk: `${res.n}-${res.p}-${res.k}`,
+          somaNpk: fmtInt(res.somaNpk),
+          custoPorKgNutriente: res.custoPorKgNutriente > 0 ? fmtMoeda(res.custoPorKgNutriente) : "—",
+          custoTotal: fmtMoeda(res.custoTotal),
+          dose: `${fmtDec(res.dose)} kg/ha`,
+          doseAlq: `${fmtDec(res.doseAlq)} kg/alq`,
+          sacas: isEquivalencia ? `${fmtDec(res.sacasTotal)} sacas` : `${fmtDec(res.sacas)} sacas`,
+          sacasAlq: isEquivalencia ? `${fmtDec(res.sacasAlq)} sc/alq` : "",
+          custoAlq: isEquivalencia ? fmtMoeda(res.custoAlq) : "",
+          nutrientes: isEquivalencia ? { n: `${fmtDec(res.nKgAlq)} kg`, p: `${fmtDec(res.pKgAlq)} kg`, k: `${fmtDec(res.kKgAlq)} kg` } : null,
+          logisticaTexto,
+          veredicto: res.veredictoTexto || "",
+          isMenorCusto: !!ultimoComparador.menor && res.i === ultimoComparador.menor.i,
+          isMelhorCustoBeneficio: !!ultimoComparador.melhorCustoBeneficio && res.i === ultimoComparador.melhorCustoBeneficio.i,
+        };
+      })
     : [];
   const comparador = comparadorLinhas.length
-    ? { modo: ultimoComparador.modo === "dose" ? "Mesma dose para todas" : "Bater necessidade de NPK", linhas: comparadorLinhas }
+    ? {
+        modo: ultimoComparador.modo === "dose" ? "Mesma dose para todas" : "Equivalência de Formulações por Sacas (Custo Real do Produtor)",
+        linhas: comparadorLinhas,
+        isEquivalencia,
+        base: isEquivalencia && ultimoComparador.base ? {
+          npk: `${ultimoComparador.base.npk[0]}-${ultimoComparador.base.npk[1]}-${ultimoComparador.base.npk[2]}`,
+          sacasAlq: `${fmtDec(ultimoComparador.base.sacasAlq)} sc/alq`,
+          doseAlq: `${fmtDec(ultimoComparador.base.doseAlq)} kg/alq`,
+          custoAlq: fmtMoeda(ultimoComparador.base.custoAlq),
+          custoTotal: fmtMoeda(ultimoComparador.base.custoTotal),
+          criterio: CRITERIO_LABELS[ultimoComparador.criterio] || CRITERIO_LABELS.p,
+          nutrientes: { n: `${fmtDec(ultimoComparador.base.nKgAlq)} kg`, p: `${fmtDec(ultimoComparador.base.pKgAlq)} kg`, k: `${fmtDec(ultimoComparador.base.kKgAlq)} kg` },
+        } : null,
+      }
     : null;
 
   return {
@@ -4917,6 +5568,27 @@ function montarFolha(r){
     ${r.comparador ? `
     <div style="margin-top:14px;">
       <div style="font-size:12px;font-weight:800;color:#4B554F;">Comparador de formulações <span style="font-weight:400;font-size:10.5px;">— ${esc(r.comparador.modo)}</span></div>
+      ${r.comparador.isEquivalencia && r.comparador.base ? `
+      <div style="margin-top:6px;background:#F7FAF5;border:1px solid #DCE3D6;border-radius:8px;padding:8px 12px;font-size:10.5px;">
+        Formulação base do produtor: <strong style="font-family:monospace;">${esc(r.comparador.base.npk)}</strong> ·
+        Quantidade aplicada: <strong>${esc(r.comparador.base.sacasAlq)}</strong> (${esc(r.comparador.base.doseAlq)}) ·
+        Custo: <strong>${esc(r.comparador.base.custoAlq)}/alq</strong> (${esc(r.comparador.base.custoTotal)} na área) ·
+        Critério de equivalência: <strong>${esc(r.comparador.base.criterio)}</strong>
+        <div style="margin-top:4px;">N: <strong>${esc(r.comparador.base.nutrientes.n)}</strong> · P₂O₅: <strong>${esc(r.comparador.base.nutrientes.p)}</strong> · K₂O: <strong>${esc(r.comparador.base.nutrientes.k)}</strong> por alqueire</div>
+      </div>` : ""}
+      ${r.comparador.isEquivalencia ? r.comparador.linhas.map(l => `
+      <div style="margin-top:8px;border:1px solid #DCE3D6;border-radius:8px;padding:10px 12px;font-size:11px;">
+        <div>
+          <strong style="font-family:monospace;font-size:13px;">${esc(l.npk)}</strong> <span style="color:#4B554F;font-size:9.5px;">(${esc(l.somaNpk)}% NPK)</span>
+          ${l.isMenorCusto ? ' <span style="display:inline-block;background:rgba(35,107,86,0.10);color:#236B56;font-size:8.5px;font-weight:700;padding:2px 7px;border-radius:999px;">MENOR CUSTO</span>' : ""}
+          ${l.isMelhorCustoBeneficio ? ' <span style="display:inline-block;background:#236B56;color:#fff;font-size:8.5px;font-weight:700;padding:2px 7px;border-radius:999px;">★ MELHOR CUSTO-BENEFÍCIO</span>' : ""}
+        </div>
+        <div style="margin-top:4px;font-family:monospace;font-size:15px;font-weight:800;">${esc(l.sacasAlq)} <span style="font-family:'Segoe UI',Arial,sans-serif;font-size:10.5px;font-weight:400;color:#4B554F;">(${esc(l.doseAlq)})</span></div>
+        ${l.logisticaTexto ? `<div style="margin-top:3px;font-size:10px;font-weight:700;color:#236B56;">${esc(l.logisticaTexto)}</div>` : ""}
+        <div style="margin-top:6px;font-size:10px;color:#4B554F;">N: <strong style="color:#1E2420;">${esc(l.nutrientes.n)}</strong> · P₂O₅: <strong style="color:#1E2420;">${esc(l.nutrientes.p)}</strong> · K₂O: <strong style="color:#1E2420;">${esc(l.nutrientes.k)}</strong> por alqueire</div>
+        <div style="margin-top:4px;font-size:10.5px;">Custo: <strong>${esc(l.custoAlq)}/alq</strong> (${esc(l.custoTotal)} na área)</div>
+        ${l.veredicto ? `<div style="margin-top:6px;padding:6px 8px;border-radius:6px;background:rgba(35,107,86,0.08);color:#1B4F3E;font-size:10px;font-weight:600;">${esc(l.veredicto)}</div>` : ""}
+      </div>`).join("") : `
       <table style="width:100%;border-collapse:separate;border-spacing:0;margin-top:8px;font-size:11px;">
         <thead>
           <tr style="text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:#4B554F;background:#F1F5ED;">
@@ -4939,7 +5611,7 @@ function montarFolha(r){
             <td style="padding:8px;border-bottom:1px solid #EEF2EB;text-align:right;font-family:monospace;font-weight:700;white-space:nowrap;">${esc(l.custoTotal)}</td>
           </tr>`).join("")}
         </tbody>
-      </table>
+      </table>`}
     </div>` : ""}
 
     <div style="margin-top:14px;">
@@ -5214,30 +5886,84 @@ function layoutFicha(ctx, draw, r, logo){
   if(r.comparador){
     texto(ctx, draw, `COMPARADOR DE FORMULAÇÕES — ${r.comparador.modo.toUpperCase()}`, P, y + 10, {font:"bold 9.5px " + FONTE, cor:"#4B554F", espaco:"0.6px"});
     y += 20;
-    caixa(ctx, draw, P, y, dir - P, 22, 6, "#F1F5ED");
-    texto(ctx, draw, "FORMULAÇÃO", P + 8, y + 14, {font:"bold 9px " + FONTE, cor:"#4B554F", espaco:"0.5px"});
-    const cDose = dir - 260, cRs = dir - 130, cTotal = dir;
-    [["DOSE", cDose], ["R$/KG NUTRIENTE", cRs], ["CUSTO TOTAL", cTotal - 8]]
-      .forEach(([t, x]) => texto(ctx, draw, t, x, y + 14, {font:"bold 9px " + FONTE, cor:"#4B554F", align:"right", espaco:"0.5px"}));
-    y += 30;
-    r.comparador.linhas.forEach(l => {
-      const nomeMaxW = cDose - P - 16;
-      texto(ctx, draw, l.npk, P, y + 15, {font:"bold 12px " + MONO, maxW:nomeMaxW});
-      ctx.font = "bold 12px " + MONO;
-      const wn = ctx.measureText(l.npk).width;
-      texto(ctx, draw, `(${l.somaNpk}% NPK)`, P + wn + 8, y + 15, {font:"10px " + FONTE, cor:"#4B554F"});
-      if(l.isMelhorCustoBeneficio){
-        texto(ctx, draw, "★ MELHOR CUSTO-BENEFÍCIO", P, y + 30, {font:"bold 8.5px " + FONTE, cor:"#236B56"});
-      } else if(l.isMenorCusto){
-        texto(ctx, draw, "MENOR CUSTO", P, y + 30, {font:"bold 8.5px " + FONTE, cor:"#236B56"});
-      }
-      texto(ctx, draw, l.dose, cDose, y + 16, {font:"11px " + MONO, cor:"#4B554F", align:"right"});
-      texto(ctx, draw, l.custoPorKgNutriente, cRs, y + 16, {font:"bold 12px " + MONO, align:"right"});
-      texto(ctx, draw, l.custoTotal, cTotal, y + 16, {font:"bold 12px " + MONO, align:"right"});
-      y += 40;
-      risco(ctx, draw, P, y, dir, "#EEF2EB");
-      y += 4;
-    });
+
+    if(r.comparador.isEquivalencia && r.comparador.base){
+      const b = r.comparador.base;
+      const baseLinha1 = `Base do produtor: ${b.npk} · Quantidade: ${b.sacasAlq} (${b.doseAlq}) · Custo: ${b.custoAlq}/alq (${b.custoTotal} na área) · Critério: ${b.criterio}`;
+      const baseLinha2 = `N: ${b.nutrientes.n} · P₂O₅: ${b.nutrientes.p} · K₂O: ${b.nutrientes.k} por alqueire`;
+      const baseLinhas1 = quebraTexto(ctx, baseLinha1, dir - P - 20);
+      const baseLinhas2 = quebraTexto(ctx, baseLinha2, dir - P - 20);
+      const baseAltura = (baseLinhas1.length + baseLinhas2.length) * 14 + 14;
+      caixa(ctx, draw, P, y, dir - P, baseAltura, 8, "#F7FAF5", "#DCE3D6");
+      baseLinhas1.forEach((l, i) => texto(ctx, draw, l, P + 10, y + 16 + i * 14, {font:"10px " + FONTE, cor:"#4B554F"}));
+      baseLinhas2.forEach((l, i) => texto(ctx, draw, l, P + 10, y + 16 + (baseLinhas1.length + i) * 14, {font:"10px " + FONTE, cor:"#4B554F"}));
+      y += baseAltura + 10;
+
+      // um cartão por formulação proposta — layout dedicado (sacas em destaque,
+      // ganho logístico, nutrientes N/P/K e o veredito financeiro), diferente
+      // da tabela compacta usada no modo "Mesma dose" logo abaixo.
+      r.comparador.linhas.forEach(l => {
+        const veredictoLinhas = l.veredicto ? quebraTexto(ctx, l.veredicto, dir - P - 40) : [];
+        const logisticaLinhas = l.logisticaTexto ? quebraTexto(ctx, l.logisticaTexto, dir - P - 24) : [];
+        const alturaVeredicto = veredictoLinhas.length ? veredictoLinhas.length * 13 + 16 : 0;
+        const alturaLogistica = logisticaLinhas.length ? logisticaLinhas.length * 14 + 4 : 0;
+        const altura = 18 + 24 + 18 + alturaLogistica + 16 + 14 + 10 + alturaVeredicto + 10;
+
+        caixa(ctx, draw, P, y, dir - P, altura, 8, "#FFFFFF", "#DCE3D6");
+        let ly = y + 18;
+        texto(ctx, draw, l.npk, P + 12, ly, {font:"bold 13px " + MONO});
+        ctx.font = "bold 13px " + MONO;
+        const wn = ctx.measureText(l.npk).width;
+        texto(ctx, draw, `(${l.somaNpk}% NPK)`, P + 12 + wn + 8, ly, {font:"10px " + FONTE, cor:"#4B554F"});
+        if(l.isMelhorCustoBeneficio){
+          texto(ctx, draw, "★ MELHOR CUSTO-BENEFÍCIO", dir - 8, ly, {font:"bold 8.5px " + FONTE, cor:"#236B56", align:"right"});
+        } else if(l.isMenorCusto){
+          texto(ctx, draw, "MENOR CUSTO", dir - 8, ly, {font:"bold 8.5px " + FONTE, cor:"#236B56", align:"right"});
+        }
+        ly += 26;
+        texto(ctx, draw, l.sacasAlq, P + 12, ly, {font:"bold 20px " + MONO});
+        ctx.font = "bold 20px " + MONO;
+        const wsacas = ctx.measureText(l.sacasAlq).width;
+        texto(ctx, draw, `(${l.doseAlq})`, P + 12 + wsacas + 8, ly, {font:"10.5px " + FONTE, cor:"#4B554F"});
+        ly += 18;
+        logisticaLinhas.forEach((ll, i) => texto(ctx, draw, ll, P + 12, ly + i * 14, {font:"bold 10px " + FONTE, cor:"#236B56"}));
+        ly += alturaLogistica;
+        texto(ctx, draw, `N: ${l.nutrientes.n} · P₂O₅: ${l.nutrientes.p} · K₂O: ${l.nutrientes.k} por alqueire`, P + 12, ly, {font:"10px " + FONTE, cor:"#4B554F"});
+        ly += 16;
+        texto(ctx, draw, `Custo: ${l.custoAlq}/alq (${l.custoTotal} na área)`, P + 12, ly, {font:"10.5px " + FONTE, cor:"#1E2420"});
+        ly += 14;
+        if(veredictoLinhas.length){
+          caixa(ctx, draw, P + 12, ly, dir - P - 24, alturaVeredicto - 4, 6, "#EAF3EF");
+          veredictoLinhas.forEach((vl, i) => texto(ctx, draw, vl, P + 20, ly + 14 + i * 13, {font:"bold 9.5px " + FONTE, cor:"#1B4F3E"}));
+        }
+        y += altura + 10;
+      });
+    } else {
+      caixa(ctx, draw, P, y, dir - P, 22, 6, "#F1F5ED");
+      texto(ctx, draw, "FORMULAÇÃO", P + 8, y + 14, {font:"bold 9px " + FONTE, cor:"#4B554F", espaco:"0.5px"});
+      const cDose = dir - 260, cRs = dir - 130, cTotal = dir;
+      [["DOSE", cDose], ["R$/KG NUTRIENTE", cRs], ["CUSTO TOTAL", cTotal - 8]]
+        .forEach(([t, x]) => texto(ctx, draw, t, x, y + 14, {font:"bold 9px " + FONTE, cor:"#4B554F", align:"right", espaco:"0.5px"}));
+      y += 30;
+      r.comparador.linhas.forEach(l => {
+        const nomeMaxW = cDose - P - 16;
+        texto(ctx, draw, l.npk, P, y + 15, {font:"bold 12px " + MONO, maxW:nomeMaxW});
+        ctx.font = "bold 12px " + MONO;
+        const wn = ctx.measureText(l.npk).width;
+        texto(ctx, draw, `(${l.somaNpk}% NPK)`, P + wn + 8, y + 15, {font:"10px " + FONTE, cor:"#4B554F"});
+        if(l.isMelhorCustoBeneficio){
+          texto(ctx, draw, "★ MELHOR CUSTO-BENEFÍCIO", P, y + 30, {font:"bold 8.5px " + FONTE, cor:"#236B56"});
+        } else if(l.isMenorCusto){
+          texto(ctx, draw, "MENOR CUSTO", P, y + 30, {font:"bold 8.5px " + FONTE, cor:"#236B56"});
+        }
+        texto(ctx, draw, l.dose, cDose, y + 16, {font:"11px " + MONO, cor:"#4B554F", align:"right"});
+        texto(ctx, draw, l.custoPorKgNutriente, cRs, y + 16, {font:"bold 12px " + MONO, align:"right"});
+        texto(ctx, draw, l.custoTotal, cTotal, y + 16, {font:"bold 12px " + MONO, align:"right"});
+        y += 40;
+        risco(ctx, draw, P, y, dir, "#EEF2EB");
+        y += 4;
+      });
+    }
     y += 14;
   }
 
@@ -5738,14 +6464,6 @@ function calFmtAreaRelatorio(areaAlq){
   return calAreaUnit === "ha" ? `${ha} (${alq})` : `${alq} (${ha})`;
 }
 
-// Cultura-alvo -> V₂ sugerido (editável); "Personalizado" deixa o campo livre.
-$("calCultura").addEventListener("change", () => {
-  const sel = $("calCultura");
-  const opt = sel.selectedOptions?.[0] || sel.options[sel.selectedIndex] || sel.querySelector(`option[value="${sel.value}"]`);
-  const v2 = opt?.dataset?.v2;
-  if(v2) $("calV2").value = v2;
-  calcCalagem();
-});
 // Sistema de manejo -> profundidade sugerida (editável); "Personalizado" deixa o campo livre.
 $("calManejo").addEventListener("change", () => {
   const sel = $("calManejo");
@@ -5772,7 +6490,6 @@ $("calMetodoGessagem").addEventListener("change", calcCalagem);
 // em Espaçamento/Transpasse — os listeners de "change" acima continuam
 // disparando normalmente, já que enhanceSelect() só troca a aparência e
 // redispara "change" no <select> nativo por baixo (ver enhanceSelect()).
-enhanceSelect($("calCultura"));
 enhanceSelect($("calKUnidade020"));
 // marca o wrap como compacto: o K⁺ mora na própria coluna "Unid." da matriz
 // de solo (ver .csel-compact em styles.css), no lugar do <select> de largura
@@ -6249,16 +6966,8 @@ function coletarResumoCalagem(){
   const d = calUltimoResultado || {};
   const num = id => { const el = $(id); const val = el ? el.value.trim() : ""; return val === "" ? "—" : val.replace(".", ","); };
 
-  // versão curta do rótulo da cultura-alvo pro texto do WhatsApp — a option
-  // completa já traz "— descrição (V₂ X%)" embutido, o que duplicaria o
-  // "(V₂ desejado: X%)" que o próprio texto do WhatsApp acrescenta depois
-  const culturaTexto = $("calCultura").selectedOptions[0].textContent;
-  const culturaAlvoResumida = culturaTexto.split(" — ")[0].replace(/\s*\(V.*?\)\s*$/, "").trim();
-
   return {
     cliente: $("calCliente").value.trim(),
-    cultura: culturaTexto,
-    culturaAlvoResumida,
     manejo: $("calManejo").selectedOptions[0].textContent,
     area: calFmtAreaRelatorio(d.areaAlq || 0),
     laudo020: [["Ca²⁺", num("calCa020")], ["Mg²⁺", num("calMg020")], ["K⁺", num("calK020")], ["Al³⁺", num("calAl020")], ["H+Al", num("calHAl020")]],
@@ -6293,8 +7002,7 @@ function coletarResumoCalagem(){
 }
 
 function nomeArquivoCalagem(r, ext){
-  const limpa = t => (t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "").toLowerCase();
-  return ["calagem-gessagem", limpa(r.cultura), r.data.replace(/\//g, "-")].filter(Boolean).join("_") + "." + ext;
+  return ["calagem-gessagem", r.data.replace(/\//g, "-")].filter(Boolean).join("_") + "." + ext;
 }
 
 function montarFolhaCalagem(r){
@@ -6327,7 +7035,7 @@ function montarFolhaCalagem(r){
     </div>
 
     <table style="width:100%;margin-top:12px;border-collapse:separate;border-spacing:10px 0;">
-      <tr>${bloco("Cliente", r.cliente || "—")}${bloco("Cultura/grupo", r.cultura)}${bloco("Manejo", r.manejo)}${bloco("Área a corrigir", r.area)}</tr>
+      <tr>${bloco("Cliente", r.cliente || "—")}${bloco("Manejo", r.manejo)}${bloco("Área a corrigir", r.area)}</tr>
     </table>
 
     ${laudoLinha("Laudo de solo — camada 0-20 cm", r.laudo020.filter(([k]) => k !== "Argila %"))}
@@ -6377,8 +7085,8 @@ function layoutFichaCalagem(ctx, draw, r, logo){
   if(draw){ ctx.fillStyle = "#8C6D46"; ctx.fillRect(P, y, dir - P, 2.5); }
   y += 20;
 
-  const info = [["Cliente", r.cliente || "—"], ["Cultura/grupo", r.cultura], ["Manejo", r.manejo], ["Área a corrigir", r.area]];
-  const gap = 10, bw = (dir - P - gap * 3) / 4, bh = 48;
+  const info = [["Cliente", r.cliente || "—"], ["Manejo", r.manejo], ["Área a corrigir", r.area]];
+  const gap = 10, bw = (dir - P - gap * (info.length - 1)) / info.length, bh = 48;
   info.forEach(([k, v], i) => {
     const x = P + i * (bw + gap);
     caixa(ctx, draw, x, y, bw, bh, 8, "#F7FAF5", "#DCE3D6");

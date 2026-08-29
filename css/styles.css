@@ -883,12 +883,6 @@
     .cal-manejo-grid{ grid-template-columns:repeat(4, minmax(0,1fr)); }
   }
 
-  /* Linha "Cultura-alvo + V₂": a cultura ganha o dobro do espaço do V₂ (que é
-     só um número curto) — minmax(0,Nfr) evita que o texto longo das opções
-     esmague a coluna, o rótulo só trunca com reticências dentro do próprio
-     botão do seletor (ver .csel-trigger .csel-label). */
-  .cal-cultura-row{ display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr); gap:12px; align-items:start; }
-
   /* Gráfico técnico de perfil e balanço da CTC (substitui os antigos banners
      de "parecer" em texto): barras/pinos 100% CSS, sem SVG/canvas/libs
      externas — cada elemento é só posicionado via style.left/width no JS
@@ -998,6 +992,17 @@
       scrollbar-gutter: stable;
       padding: 20px 22px;
     }
+  }
+
+  /* As duas colunas acima (".two-col-panel") são flex items — por padrão
+     (align-items:stretch) a coluna mais curta era esticada até a altura da
+     mais longa, sobrando um vão em branco embaixo do conteúdo dela (ex.:
+     coluna 1 da Adubação/Ureia, bem mais curta que a coluna 2 depois que o
+     Comparador de Formulações cresceu). align-items:flex-start faz cada
+     coluna ocupar só a altura do próprio conteúdo, sem tirar a rolagem
+     independente de quem realmente precisar dela (ainda min-h-0 + overflow-y). */
+  @media (min-width: 1024px){
+    .two-col-panel{ align-items: flex-start; }
   }
 
   /* Cartão widget de dashboard: moldura padrão pra qualquer bloco que vire
@@ -1216,6 +1221,8 @@
      com destaque na de menor custo (calculado em updateComparador(), não
      fixo aqui). */
   .comp-row{
+    display:flex;
+    flex-direction:column;
     background:#FFFFFF;
     border:1px solid #DCE3D6;
     border-radius:12px;
@@ -1227,19 +1234,54 @@
     background:#F8FAF6;
     box-shadow:0 0 0 1px var(--accent), 0 4px 16px -4px rgba(92,138,38,.15);
   }
+  /* card-base ("Adubo Atual"): distinção sutil de fundo/borda em relação aos
+     cards de proposta, sem destoar da paleta neutra do restante do grid. */
+  #compEquivBaseCard{
+    background:#FAFBF9;
+    border-color:#DCE4D8;
+  }
+
+  /* cabeçalho de cada card do grid (badge "Adubo Atual"/"Proposta N" + botão
+     de remover, quando aplicável) — mesma posição/alinhamento em todos os
+     cards, pra ficarem visualmente uniformes lado a lado. */
+  .comp-row-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    margin-bottom:10px;
+  }
+  .comp-side-badge.is-proposta{ background:var(--accent-soft); color:var(--accent); border:1px solid var(--accent-border); }
+  .comp-remove-icon{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:24px;
+    height:24px;
+    border-radius:6px;
+    color:#8A928B;
+    background:transparent;
+    transition:background .12s, color .12s;
+    flex-shrink:0;
+  }
+  .comp-remove-icon:hover{ background:#FBEAEA; color:#B3261E; }
+  .comp-remove-icon svg{ width:14px; height:14px; }
 
   /* chips de preenchimento rápido (04-14-08, MAP, Ureia...), logo abaixo do
-     campo Formulação — clicar preenche o texto sem precisar digitar. */
-  .comp-chip-row{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+     campo Formulação — clicar preenche o texto sem precisar digitar. Padding
+     e fonte compactos pra caberem numa linha só na largura de um card do
+     grid, sem sobrar um chip órfão isolado na linha seguinte. */
+  .comp-chip-row{ display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; margin-bottom:2px; }
   .comp-chip{
-    border:1px solid #DCE3D6;
-    border-radius:999px;
-    background:#F4F6F2;
-    padding:4px 10px;
-    font-size:11px;
-    font-weight:700;
+    border:1px solid transparent;
+    border-radius:6px;
+    background:var(--surface-subtle);
+    padding:3px 8px;
+    font-size:10.5px;
+    font-weight:600;
     color:#4B554F;
     cursor:pointer;
+    white-space:nowrap;
     transition:background .12s, border-color .12s, color .12s;
   }
   .comp-chip:hover{ background:var(--accent-soft); border-color:var(--accent-border); color:var(--accent); }
@@ -1292,7 +1334,7 @@
 
   .comp-metric-grid{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px; margin-top:10px; }
   .comp-metric-box{
-    background:#F4F6F2;
+    background:#F7F9F6;
     border-radius:8px;
     padding:8px 10px;
     border:1px solid #E1E8DC;
@@ -1319,17 +1361,166 @@
     font-weight:600;
     color:#8A5A00;
   }
-
-  .comp-remove{
-    display:inline-block;
-    margin-top:10px;
+  /* modo "Equivalência": economia em relação à formulação base do produtor —
+     verde (mesmo tom de .comp-best-value-badge) quando sai mais barata, o
+     amber padrão de .comp-delta quando sai mais cara. */
+  .comp-delta.is-savings{ color:#236B56; }
+  .comp-delta-logistica{
+    margin-top:4px;
     font-size:11px;
-    font-weight:700;
+    font-weight:600;
     color:#4B554F;
-    text-decoration:underline;
-    text-underline-offset:2px;
   }
-  .comp-remove:hover{ color:#1E2420; }
+
+  /* barra de controles secundários do modo "Equivalência" (unidade de preço +
+     critério) — toolbar coesa com fundo/borda própria (em vez de texto e
+     segmented controls soltos direto no card), lado a lado numa única linha
+     compacta que quebra em telas estreitas. Os grupos (#compPrecoUnidade /
+     #compCriterio) NÃO crescem pra preencher o espaço (sem flex-grow): cada
+     um fica do tamanho do seu conteúdo, como um segmented control normal —
+     era o "flex:1 1 auto" no grupo Critério que espalhava os botões pela
+     largura toda da barra, uma tela de largura, meio soltos. */
+  .comp-inline-controls{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:8px 20px;
+    margin-top:10px;
+    padding:8px 10px;
+    background:#F4F6F3;
+    border:1px solid #E2E8DE;
+    border-radius:10px;
+  }
+  .comp-inline-control{ display:flex; align-items:center; gap:8px; flex-shrink:0; }
+  .comp-inline-control > div{ flex-shrink:0; }
+  .comp-inline-control-label{
+    font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+    color:#4B554F; white-space:nowrap;
+  }
+  /* padding vertical real dos botões do segmented control — "py-1"/"py-1.5"
+     não existem no snapshot Tailwind compilado deste projeto (só existem as
+     utilities já usadas em algum outro lugar da tela), então ficavam sem
+     nenhum padding vertical, sustentados só pela altura da linha de texto:
+     eficaz no botão ativo (ganha fundo branco), mas deixava os inativos
+     parecendo texto solto flutuando na barra, sem cara de botão nenhum. */
+  #compModo .variant-btn,
+  #compPrecoUnidade .variant-btn,
+  #compCriterio .variant-btn{
+    padding-top:6px;
+    padding-bottom:6px;
+  }
+  /* fundo branco pro grupo de botões em si, pra se destacar da barra
+     (#F4F6F3) que o envolve — sem isso os dois tons ficam quase idênticos e
+     o segmented control "some" visualmente. */
+  #compPrecoUnidade, #compCriterio{
+    background:#FFFFFF;
+    border:1px solid #E2E8DE;
+  }
+
+  /* Grid horizontal de formulações — cartões lado a lado (base "Adubo Atual" +
+     propostas, ou só propostas no modo "Mesma dose"), com o comparador agora
+     em seção de largura total abaixo do grid de 2 colunas da ficha (não mais
+     espremido numa coluna de 56%). auto-fit com mínimo de 260px mostra 1
+     coluna no celular e escala sozinho até 3-4 lado a lado conforme o espaço
+     e a quantidade de cartões — sem precisar de breakpoint fixo por contagem. */
+  .comp-formula-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));
+    gap:14px;
+  }
+  .comp-formula-grid:empty{ display:none; }
+  .comp-side-badge{
+    display:inline-flex; align-items:center;
+    padding:4px 10px; border-radius:999px;
+    font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.04em;
+  }
+  .comp-side-badge.is-base{ background:#F1F5ED; color:#4B554F; border:1px solid #E1E8DC; }
+
+  /* "Equivalência por Sacas": número grande de sacas/alqueire — a métrica que
+     o produtor de fato enxerga na hora de carregar o implemento, por isso vem
+     em destaque acima da grade de métricas secundárias (kg/ha, custo etc.). */
+  .comp-sacas-headline{
+    display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;
+    margin-top:8px;
+  }
+  .comp-sacas-headline-value{
+    font-family:'JetBrains Mono','Inter',-apple-system,monospace; font-feature-settings:'tnum' 1,'cv05' 1;
+    font-size:26px; font-weight:800; color:#1E2420; line-height:1;
+  }
+  .comp-sacas-headline-unit{ font-size:13px; font-weight:600; color:#4B554F; }
+  .comp-sacas-headline-sub{ width:100%; font-size:11px; color:#4B554F; margin-top:2px; }
+
+  /* diferença logística (sacas/kg a menos ou a mais por alqueire) — mais
+     proeminente que .comp-delta-logistica porque é o argumento central desta
+     ferramenta ("adubo mais concentrado carrega menos"), não um detalhe. */
+  .comp-logistica-highlight{
+    margin-top:10px;
+    padding:8px 10px;
+    border-radius:8px;
+    background:rgba(35,107,86,0.08);
+    border:1px solid rgba(35,107,86,0.22);
+    font-size:11.5px;
+    font-weight:700;
+    color:#236B56;
+  }
+  .comp-logistica-highlight.is-negativa{
+    background:rgba(138,90,0,0.08);
+    border-color:rgba(138,90,0,0.22);
+    color:#8A5A00;
+  }
+
+  /* tabela N/P₂O₅/K₂O lado a lado (base × proposto) — prova que o critério de
+     equivalência não sacrifica os outros dois nutrientes da formulação. */
+  .comp-nutrient-table{
+    margin-top:10px;
+    border:1px solid #E1E8DC;
+    border-radius:8px;
+    overflow:hidden;
+  }
+  .comp-nutrient-table-header{
+    display:grid; grid-template-columns:1.3fr repeat(3, minmax(0,1fr));
+    background:#F1F5ED;
+    font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:#4B554F;
+  }
+  .comp-nutrient-table-row{
+    display:grid; grid-template-columns:1.3fr repeat(3, minmax(0,1fr));
+    border-top:1px solid #E1E8DC;
+    font-family:'JetBrains Mono','Inter',-apple-system,monospace; font-feature-settings:'tnum' 1,'cv05' 1;
+    font-size:11.5px;
+  }
+  .comp-nutrient-table-header > *, .comp-nutrient-table-row > *{
+    padding:6px 8px;
+    text-align:right;
+  }
+  .comp-nutrient-table-header > :first-child, .comp-nutrient-table-row > :first-child{
+    text-align:left;
+    font-family:Inter,sans-serif;
+    font-weight:600;
+  }
+  .comp-nutrient-table-row.is-base > :first-child{ color:#4B554F; }
+  .comp-nutrient-table-row.is-proposto{ background:var(--accent-soft); font-weight:700; }
+
+  /* veredito financeiro — o card que resume "vale a pena trocar ou não",
+     colorido conforme o resultado (verde = economia, âmbar = custo maior). */
+  .comp-veredito{
+    margin-top:12px;
+    padding:12px 14px;
+    border-radius:10px;
+    font-size:12.5px;
+    font-weight:600;
+    line-height:1.45;
+  }
+  .comp-veredito.is-savings{
+    background:rgba(35,107,86,0.10);
+    border:1px solid rgba(35,107,86,0.28);
+    color:#1B4F3E;
+  }
+  .comp-veredito.is-cost{
+    background:rgba(138,90,0,0.10);
+    border:1px solid rgba(138,90,0,0.28);
+    color:#6B4700;
+  }
+  .comp-veredito strong{ font-weight:800; }
 
   /* botão "+ adicionar formulação": secundário, pontilhado — não compete
      visualmente com os botões de ação principais da ficha. */
