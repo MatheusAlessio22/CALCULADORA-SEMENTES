@@ -1689,6 +1689,33 @@
     transform: translateY(0);
   }
 
+  /* Botão pra limpar a Matriz Técnica de Solo (mesmo header do
+     .btn-attach-soil) — visual "ghost" pra ficar secundário em relação ao
+     botão principal de anexar, já que é uma ação menos usada. */
+  .btn-clear-soil{
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    color: var(--ink-muted);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border-subtle);
+    cursor: pointer;
+    transition: all .15s ease;
+    white-space: nowrap;
+  }
+  .btn-clear-soil:hover{
+    background: var(--surface-subtle);
+    border-color: var(--border-strong);
+    color: var(--ink-primary);
+  }
+  .btn-clear-soil:active{
+    transform: translateY(0);
+  }
+
   /* Dropzone do modal de laudo */
   .laudo-dropzone{
     position: relative;
@@ -2512,10 +2539,16 @@ tailwind.config = {
       <section class="crm-card">
         <div class="crm-card-header flex-wrap gap-x-3 gap-y-2">
           <h2 class="crm-card-title">Matriz Técnica de Solo — Boletim de Laboratório</h2>
-          <button type="button" id="btnAnexarLaudo" class="btn-attach-soil">
-            <svg class="h-4 w-4 icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 7l-6.5 6.5a1.5 1.5 0 0 0 3 3l6.5 -6.5a3 3 0 0 0 -6 -6l-6.5 6.5a4.5 4.5 0 0 0 9 9l6.5 -6.5" /></svg>
-            Anexar Laudo (PDF / Foto)
-          </button>
+          <div class="flex items-center gap-2">
+            <button type="button" id="btnLimparMatriz" class="btn-clear-soil">
+              <svg class="h-4 w-4 icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
+              Limpar Matriz
+            </button>
+            <button type="button" id="btnAnexarLaudo" class="btn-attach-soil">
+              <svg class="h-4 w-4 icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 7l-6.5 6.5a1.5 1.5 0 0 0 3 3l6.5 -6.5a3 3 0 0 0 -6 -6l-6.5 6.5a4.5 4.5 0 0 0 9 9l6.5 -6.5" /></svg>
+              Anexar Laudo (PDF / Foto)
+            </button>
+          </div>
         </div>
         <div class="soil-matrix-wrap">
           <table class="soil-matrix">
@@ -6521,10 +6554,16 @@ $("calManejo").addEventListener("change", () => {
   calcCalagem();
 });
 
-const CAL_INPUT_IDS = [
-  "calV2","calProfundidade","calPrnt","calAreaAplicadaPct",
+// Só os campos que vêm do boletim de laboratório (não inclui V₂ desejada,
+// PRNT, profundidade e área aplicada, que são parâmetros de manejo/decisão
+// e não do laudo em si) — ver btnLimparMatriz abaixo.
+const CAL_MATRIX_IDS = [
   "calPhCaCl2020","calPhH2O020","calCa020","calMg020","calK020","calAl020","calHAl020",
   "calCa2040","calMg2040","calK2040","calAl2040","calHAl2040","calArgila2040",
+];
+const CAL_INPUT_IDS = [
+  "calV2","calProfundidade","calPrnt","calAreaAplicadaPct",
+  ...CAL_MATRIX_IDS,
 ];
 CAL_INPUT_IDS.forEach(id => {
   const el = $(id);
@@ -6533,6 +6572,17 @@ CAL_INPUT_IDS.forEach(id => {
 $("calArea").addEventListener("input", calcCalagem);
 $("calKUnidade020").addEventListener("change", calcCalagem);
 $("calMetodoGessagem").addEventListener("change", calcCalagem);
+
+// Limpa só os campos vindos do laudo (Matriz Técnica de Solo), sem mexer em
+// V₂/PRNT/profundidade/área — pra anexar um laudo novo/atualizado por cima
+// de uma leitura antiga sem os valores anteriores se misturarem.
+$("btnLimparMatriz").addEventListener("click", () => {
+  if(!window.confirm("Limpar todos os valores da Matriz Técnica de Solo (Ca, Mg, K, Al, H+Al, pH, argila)?")) return;
+  CAL_MATRIX_IDS.forEach(id => { $(id).value = ""; });
+  $("calKUnidade020").value = "cmolc";
+  calcCalagem();
+  mostrarToast("Matriz técnica limpa.");
+});
 
 // Selects da aba Calagem & Gessagem com o mesmo componente customizado usado
 // em Espaçamento/Transpasse — os listeners de "change" acima continuam
@@ -6777,6 +6827,7 @@ function laudoResetarEstado(){
 
 function abrirModalLaudo(){
   laudoResetarEstado();
+  laudoMostrarCarregando(false);
   laudoModal.classList.remove("hidden");
 }
 function fecharModalLaudo(){
@@ -6999,6 +7050,7 @@ $("laudoModalInterpretar").addEventListener("click", async () => {
 
 function fecharModalLaudoForcado(){
   laudoInterpretando = false;
+  laudoMostrarCarregando(false);
   laudoModal.classList.add("hidden");
 }
 

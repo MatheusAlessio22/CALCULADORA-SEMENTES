@@ -3110,10 +3110,16 @@ $("calManejo").addEventListener("change", () => {
   calcCalagem();
 });
 
-const CAL_INPUT_IDS = [
-  "calV2","calProfundidade","calPrnt","calAreaAplicadaPct",
+// Só os campos que vêm do boletim de laboratório (não inclui V₂ desejada,
+// PRNT, profundidade e área aplicada, que são parâmetros de manejo/decisão
+// e não do laudo em si) — ver btnLimparMatriz abaixo.
+const CAL_MATRIX_IDS = [
   "calPhCaCl2020","calPhH2O020","calCa020","calMg020","calK020","calAl020","calHAl020",
   "calCa2040","calMg2040","calK2040","calAl2040","calHAl2040","calArgila2040",
+];
+const CAL_INPUT_IDS = [
+  "calV2","calProfundidade","calPrnt","calAreaAplicadaPct",
+  ...CAL_MATRIX_IDS,
 ];
 CAL_INPUT_IDS.forEach(id => {
   const el = $(id);
@@ -3122,6 +3128,17 @@ CAL_INPUT_IDS.forEach(id => {
 $("calArea").addEventListener("input", calcCalagem);
 $("calKUnidade020").addEventListener("change", calcCalagem);
 $("calMetodoGessagem").addEventListener("change", calcCalagem);
+
+// Limpa só os campos vindos do laudo (Matriz Técnica de Solo), sem mexer em
+// V₂/PRNT/profundidade/área — pra anexar um laudo novo/atualizado por cima
+// de uma leitura antiga sem os valores anteriores se misturarem.
+$("btnLimparMatriz").addEventListener("click", () => {
+  if(!window.confirm("Limpar todos os valores da Matriz Técnica de Solo (Ca, Mg, K, Al, H+Al, pH, argila)?")) return;
+  CAL_MATRIX_IDS.forEach(id => { $(id).value = ""; });
+  $("calKUnidade020").value = "cmolc";
+  calcCalagem();
+  mostrarToast("Matriz técnica limpa.");
+});
 
 // Selects da aba Calagem & Gessagem com o mesmo componente customizado usado
 // em Espaçamento/Transpasse — os listeners de "change" acima continuam
@@ -3366,6 +3383,7 @@ function laudoResetarEstado(){
 
 function abrirModalLaudo(){
   laudoResetarEstado();
+  laudoMostrarCarregando(false);
   laudoModal.classList.remove("hidden");
 }
 function fecharModalLaudo(){
@@ -3588,6 +3606,7 @@ $("laudoModalInterpretar").addEventListener("click", async () => {
 
 function fecharModalLaudoForcado(){
   laudoInterpretando = false;
+  laudoMostrarCarregando(false);
   laudoModal.classList.add("hidden");
 }
 

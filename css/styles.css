@@ -1672,6 +1672,33 @@
     transform: translateY(0);
   }
 
+  /* Botão pra limpar a Matriz Técnica de Solo (mesmo header do
+     .btn-attach-soil) — visual "ghost" pra ficar secundário em relação ao
+     botão principal de anexar, já que é uma ação menos usada. */
+  .btn-clear-soil{
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    color: var(--ink-muted);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border-subtle);
+    cursor: pointer;
+    transition: all .15s ease;
+    white-space: nowrap;
+  }
+  .btn-clear-soil:hover{
+    background: var(--surface-subtle);
+    border-color: var(--border-strong);
+    color: var(--ink-primary);
+  }
+  .btn-clear-soil:active{
+    transform: translateY(0);
+  }
+
   /* Dropzone do modal de laudo */
   .laudo-dropzone{
     position: relative;
