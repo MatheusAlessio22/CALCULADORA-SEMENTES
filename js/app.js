@@ -3307,13 +3307,14 @@ calMemoriaToggle.addEventListener("click", () => {
 
 // ---- Anexar e interpretar laudo de solo (PDF/foto) via IA multimodal ----
 // Fluxo: usuário anexa o laudo (ou cola um texto/JSON já pronto) -> a chave
-// Gemini fica só no localStorage deste aparelho -> a IA devolve um JSON com
-// os teores -> preenchemos os inputs da matriz técnica (com pulso visual de
-// confirmação) e chamamos calcCalagem() de novo pra recalcular tudo na hora.
-// Sem chave/rede o app continua 100% funcional: o campo de colar texto/JSON
-// não depende de nenhuma chamada de rede.
-const LAUDO_GEMINI_KEY_STORAGE = "gemini_api_key";
-const LAUDO_GEMINI_MODEL = "gemini-3.6-flash";
+// IA -> a IA devolve um JSON com os teores -> preenchemos os inputs da
+// matriz técnica (com pulso visual de confirmação) e chamamos calcCalagem()
+// de novo pra recalcular tudo na hora. A chamada pro Gemini passa por um
+// proxy (Cloudflare Worker, ver worker/) que guarda a chave da API do lado
+// do servidor — o app não pede nem guarda chave nenhuma, só chama o proxy.
+// Sem rede o app continua 100% funcional: o campo de colar texto/JSON não
+// depende de nenhuma chamada de rede.
+const LAUDO_PROXY_URL = "https://calculadora-coasul-gemini-proxy.matheusantonioo204.workers.dev";
 const LAUDO_TIPOS_ACEITOS = [".pdf", ".png", ".jpg", ".jpeg", ".webp"];
 // 503 = modelo sobrecarregado, 429 = rate limit: erros transitórios do lado
 // do Google que costumam se resolver sozinhos numa nova tentativa curta.
@@ -3324,14 +3325,6 @@ const LAUDO_RETRY_BASE_MS = 1500;
 function esperar(ms){
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
-const LAUDO_PROMPT = `Você é um agrônomo especialista em interpretar laudos de análise de solo (boletins de laboratório brasileiros).
-Analise o documento anexado (PDF ou foto de um laudo de solo) e devolva APENAS um JSON válido, sem markdown e sem texto fora do JSON, no formato exato abaixo:
-{
-  "cliente": "nome do produtor/cooperado, ou null se não constar",
-  "camada_0_20": { "ca": number|null, "mg": number|null, "k": number|null, "k_unidade": "cmolc"|"mgdm3", "al": number|null, "h_al": number|null, "p": number|null, "ph": number|null, "argila_pct": number|null },
-  "camada_20_40": { "ca": number|null, "mg": number|null, "k": number|null, "k_unidade": "cmolc"|"mgdm3", "al": number|null, "h_al": number|null, "argila_pct": number|null }
-}
-Regras: use ponto decimal (nunca vírgula); todos os valores de Ca, Mg, Al e H+Al em cmolc/dm³; se o K estiver em mg/dm³ no laudo, informe "k_unidade":"mgdm3" e mantenha o valor em mg/dm³ (não converta); se o laudo trouxer só a camada 0-20 cm, devolva "camada_20_40" com todos os campos null; nunca invente valores — o que não constar no laudo deve ser null.`;
 
 const laudoModal = $("laudoModal");
 let laudoArquivoSelecionado = null; // { file, mimeType }
@@ -3353,7 +3346,6 @@ function configurarPainelColapsavel(toggleEl, panelEl){
     }
   });
 }
-configurarPainelColapsavel($("laudoApiKeyToggle"), $("laudoApiKeyPanel"));
 configurarPainelColapsavel($("laudoPasteToggle"), $("laudoPastePanel"));
 
 function laudoFormatarTamanho(bytes){
@@ -3374,7 +3366,6 @@ function laudoResetarEstado(){
 
 function abrirModalLaudo(){
   laudoResetarEstado();
-  $("laudoApiKeyInput").value = localStorage.getItem(LAUDO_GEMINI_KEY_STORAGE) || "";
   laudoModal.classList.remove("hidden");
 }
 function fecharModalLaudo(){
@@ -3388,12 +3379,6 @@ $("laudoModalCancel").addEventListener("click", fecharModalLaudo);
 laudoModal.addEventListener("click", e => { if(e.target === laudoModal) fecharModalLaudo(); });
 document.addEventListener("keydown", e => {
   if(e.key === "Escape" && !laudoModal.classList.contains("hidden")) fecharModalLaudo();
-});
-
-$("laudoApiKeyInput").addEventListener("change", () => {
-  const chave = $("laudoApiKeyInput").value.trim();
-  if(chave) localStorage.setItem(LAUDO_GEMINI_KEY_STORAGE, chave);
-  else localStorage.removeItem(LAUDO_GEMINI_KEY_STORAGE);
 });
 
 function laudoValidarArquivo(file){
@@ -3464,20 +3449,11 @@ function laudoExtrairJson(texto){
   return JSON.parse(limpo.slice(inicio, fim + 1));
 }
 
-async function laudoChamarGemini(apiKey, base64, mimeType, onTentativa){
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${LAUDO_GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
-  const body = {
-    contents: [{
-      parts: [
-        { text: LAUDO_PROMPT },
-        { inline_data: { mime_type: mimeType, data: base64 } },
-      ],
-    }],
-    generationConfig: { temperature: 0.1, responseMimeType: "application/json" },
-  };
+async function laudoChamarGemini(base64, mimeType, onTentativa){
+  const body = { base64, mimeType };
 
   for(let tentativa = 1; tentativa <= LAUDO_MAX_TENTATIVAS; tentativa++){
-    const resposta = await fetch(url, {
+    const resposta = await fetch(LAUDO_PROXY_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -3492,7 +3468,7 @@ async function laudoChamarGemini(apiKey, base64, mimeType, onTentativa){
     const detalhe = await resposta.text().catch(() => "");
     const podeRetentar = LAUDO_STATUS_RETENTAVEIS.includes(resposta.status) && tentativa < LAUDO_MAX_TENTATIVAS;
     if(!podeRetentar){
-      throw new Error(`Falha na API Gemini (${resposta.status}). ${detalhe.slice(0, 160)}`);
+      throw new Error(`Falha na interpretação por IA (${resposta.status}). ${detalhe.slice(0, 160)}`);
     }
     const esperaMs = LAUDO_RETRY_BASE_MS * tentativa;
     onTentativa?.(tentativa, LAUDO_MAX_TENTATIVAS, esperaMs);
@@ -3589,21 +3565,13 @@ $("laudoModalInterpretar").addEventListener("click", async () => {
     return;
   }
 
-  const apiKey = $("laudoApiKeyInput").value.trim();
-  if(!apiKey){
-    mostrarToast("Informe sua chave da API Gemini, ou use a opção de colar texto/JSON.");
-    if($("laudoApiKeyToggle").getAttribute("aria-expanded") !== "true") $("laudoApiKeyToggle").click();
-    return;
-  }
-  localStorage.setItem(LAUDO_GEMINI_KEY_STORAGE, apiKey);
-
   laudoInterpretando = true;
   laudoMostrarCarregando(true);
   try {
     laudoAtualizarEtapa("Lendo documento...");
     const base64 = await laudoLerArquivoComoBase64(laudoArquivoSelecionado.file);
     laudoAtualizarEtapa("Identificando teores químicos...");
-    const dados = await laudoChamarGemini(apiKey, base64, laudoArquivoSelecionado.mimeType, (tentativa, total, esperaMs) => {
+    const dados = await laudoChamarGemini(base64, laudoArquivoSelecionado.mimeType, (tentativa, total, esperaMs) => {
       laudoAtualizarEtapa(`Servidor da IA ocupado, tentando de novo (${tentativa}/${total}) em ${Math.round(esperaMs / 1000)}s...`);
     });
     laudoAtualizarEtapa("Preenchendo matriz...");

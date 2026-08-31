@@ -41,6 +41,16 @@
         "node": true,
         "es2022": true
       }
+    },
+    {
+      "files": ["worker/**/*.js"],
+      "env": {
+        "worker": true,
+        "es2022": true
+      },
+      "parserOptions": {
+        "sourceType": "module"
+      }
     }
   ]
 }

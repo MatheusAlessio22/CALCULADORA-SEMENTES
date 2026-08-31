@@ -2824,21 +2824,6 @@ tailwind.config = {
         </div>
 
         <section>
-          <button type="button" id="laudoApiKeyToggle" class="mem-toggle laudo-collapsible-toggle flex w-full items-center gap-2 rounded-lg text-ink" aria-expanded="false" aria-controls="laudoApiKeyPanel">
-            <svg class="h-4 w-4 icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z" /><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /></svg>
-            Configurar chave da API Gemini (opcional)
-            <svg class="mem-chevron ml-auto h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
-          </button>
-          <div id="laudoApiKeyPanel" class="mem-panel">
-            <div class="mem-panel-inner laudo-collapsible-body">
-              <label class="lbl" for="laudoApiKeyInput">Chave da API (Google AI Studio)</label>
-              <input type="password" id="laudoApiKeyInput" class="inp" placeholder="AIza..." autocomplete="off">
-              <p class="text-[10.5px] text-muted">Armazenada apenas neste dispositivo. Necessária só para interpretação automática via IA.</p>
-            </div>
-          </div>
-        </section>
-
-        <section>
           <button type="button" id="laudoPasteToggle" class="mem-toggle laudo-collapsible-toggle flex w-full items-center gap-2 rounded-lg text-ink" aria-expanded="false" aria-controls="laudoPastePanel">
             <svg class="h-4 w-4 icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2" /><path d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z" /><path d="M9 12l6 0" /><path d="M9 16l6 0" /></svg>
             Colar texto ou JSON extraído (sem IA)
@@ -6733,13 +6718,14 @@ calMemoriaToggle.addEventListener("click", () => {
 
 // ---- Anexar e interpretar laudo de solo (PDF/foto) via IA multimodal ----
 // Fluxo: usuário anexa o laudo (ou cola um texto/JSON já pronto) -> a chave
-// Gemini fica só no localStorage deste aparelho -> a IA devolve um JSON com
-// os teores -> preenchemos os inputs da matriz técnica (com pulso visual de
-// confirmação) e chamamos calcCalagem() de novo pra recalcular tudo na hora.
-// Sem chave/rede o app continua 100% funcional: o campo de colar texto/JSON
-// não depende de nenhuma chamada de rede.
-const LAUDO_GEMINI_KEY_STORAGE = "gemini_api_key";
-const LAUDO_GEMINI_MODEL = "gemini-3.6-flash";
+// IA -> a IA devolve um JSON com os teores -> preenchemos os inputs da
+// matriz técnica (com pulso visual de confirmação) e chamamos calcCalagem()
+// de novo pra recalcular tudo na hora. A chamada pro Gemini passa por um
+// proxy (Cloudflare Worker, ver worker/) que guarda a chave da API do lado
+// do servidor — o app não pede nem guarda chave nenhuma, só chama o proxy.
+// Sem rede o app continua 100% funcional: o campo de colar texto/JSON não
+// depende de nenhuma chamada de rede.
+const LAUDO_PROXY_URL = "https://calculadora-coasul-gemini-proxy.matheusantonioo204.workers.dev";
 const LAUDO_TIPOS_ACEITOS = [".pdf", ".png", ".jpg", ".jpeg", ".webp"];
 // 503 = modelo sobrecarregado, 429 = rate limit: erros transitórios do lado
 // do Google que costumam se resolver sozinhos numa nova tentativa curta.
@@ -6750,14 +6736,6 @@ const LAUDO_RETRY_BASE_MS = 1500;
 function esperar(ms){
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
-const LAUDO_PROMPT = `Você é um agrônomo especialista em interpretar laudos de análise de solo (boletins de laboratório brasileiros).
-Analise o documento anexado (PDF ou foto de um laudo de solo) e devolva APENAS um JSON válido, sem markdown e sem texto fora do JSON, no formato exato abaixo:
-{
-  "cliente": "nome do produtor/cooperado, ou null se não constar",
-  "camada_0_20": { "ca": number|null, "mg": number|null, "k": number|null, "k_unidade": "cmolc"|"mgdm3", "al": number|null, "h_al": number|null, "p": number|null, "ph": number|null, "argila_pct": number|null },
-  "camada_20_40": { "ca": number|null, "mg": number|null, "k": number|null, "k_unidade": "cmolc"|"mgdm3", "al": number|null, "h_al": number|null, "argila_pct": number|null }
-}
-Regras: use ponto decimal (nunca vírgula); todos os valores de Ca, Mg, Al e H+Al em cmolc/dm³; se o K estiver em mg/dm³ no laudo, informe "k_unidade":"mgdm3" e mantenha o valor em mg/dm³ (não converta); se o laudo trouxer só a camada 0-20 cm, devolva "camada_20_40" com todos os campos null; nunca invente valores — o que não constar no laudo deve ser null.`;
 
 const laudoModal = $("laudoModal");
 let laudoArquivoSelecionado = null; // { file, mimeType }
@@ -6779,7 +6757,6 @@ function configurarPainelColapsavel(toggleEl, panelEl){
     }
   });
 }
-configurarPainelColapsavel($("laudoApiKeyToggle"), $("laudoApiKeyPanel"));
 configurarPainelColapsavel($("laudoPasteToggle"), $("laudoPastePanel"));
 
 function laudoFormatarTamanho(bytes){
@@ -6800,7 +6777,6 @@ function laudoResetarEstado(){
 
 function abrirModalLaudo(){
   laudoResetarEstado();
-  $("laudoApiKeyInput").value = localStorage.getItem(LAUDO_GEMINI_KEY_STORAGE) || "";
   laudoModal.classList.remove("hidden");
 }
 function fecharModalLaudo(){
@@ -6814,12 +6790,6 @@ $("laudoModalCancel").addEventListener("click", fecharModalLaudo);
 laudoModal.addEventListener("click", e => { if(e.target === laudoModal) fecharModalLaudo(); });
 document.addEventListener("keydown", e => {
   if(e.key === "Escape" && !laudoModal.classList.contains("hidden")) fecharModalLaudo();
-});
-
-$("laudoApiKeyInput").addEventListener("change", () => {
-  const chave = $("laudoApiKeyInput").value.trim();
-  if(chave) localStorage.setItem(LAUDO_GEMINI_KEY_STORAGE, chave);
-  else localStorage.removeItem(LAUDO_GEMINI_KEY_STORAGE);
 });
 
 function laudoValidarArquivo(file){
@@ -6890,20 +6860,11 @@ function laudoExtrairJson(texto){
   return JSON.parse(limpo.slice(inicio, fim + 1));
 }
 
-async function laudoChamarGemini(apiKey, base64, mimeType, onTentativa){
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${LAUDO_GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
-  const body = {
-    contents: [{
-      parts: [
-        { text: LAUDO_PROMPT },
-        { inline_data: { mime_type: mimeType, data: base64 } },
-      ],
-    }],
-    generationConfig: { temperature: 0.1, responseMimeType: "application/json" },
-  };
+async function laudoChamarGemini(base64, mimeType, onTentativa){
+  const body = { base64, mimeType };
 
   for(let tentativa = 1; tentativa <= LAUDO_MAX_TENTATIVAS; tentativa++){
-    const resposta = await fetch(url, {
+    const resposta = await fetch(LAUDO_PROXY_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -6918,7 +6879,7 @@ async function laudoChamarGemini(apiKey, base64, mimeType, onTentativa){
     const detalhe = await resposta.text().catch(() => "");
     const podeRetentar = LAUDO_STATUS_RETENTAVEIS.includes(resposta.status) && tentativa < LAUDO_MAX_TENTATIVAS;
     if(!podeRetentar){
-      throw new Error(`Falha na API Gemini (${resposta.status}). ${detalhe.slice(0, 160)}`);
+      throw new Error(`Falha na interpretação por IA (${resposta.status}). ${detalhe.slice(0, 160)}`);
     }
     const esperaMs = LAUDO_RETRY_BASE_MS * tentativa;
     onTentativa?.(tentativa, LAUDO_MAX_TENTATIVAS, esperaMs);
@@ -7015,21 +6976,13 @@ $("laudoModalInterpretar").addEventListener("click", async () => {
     return;
   }
 
-  const apiKey = $("laudoApiKeyInput").value.trim();
-  if(!apiKey){
-    mostrarToast("Informe sua chave da API Gemini, ou use a opção de colar texto/JSON.");
-    if($("laudoApiKeyToggle").getAttribute("aria-expanded") !== "true") $("laudoApiKeyToggle").click();
-    return;
-  }
-  localStorage.setItem(LAUDO_GEMINI_KEY_STORAGE, apiKey);
-
   laudoInterpretando = true;
   laudoMostrarCarregando(true);
   try {
     laudoAtualizarEtapa("Lendo documento...");
     const base64 = await laudoLerArquivoComoBase64(laudoArquivoSelecionado.file);
     laudoAtualizarEtapa("Identificando teores químicos...");
-    const dados = await laudoChamarGemini(apiKey, base64, laudoArquivoSelecionado.mimeType, (tentativa, total, esperaMs) => {
+    const dados = await laudoChamarGemini(base64, laudoArquivoSelecionado.mimeType, (tentativa, total, esperaMs) => {
       laudoAtualizarEtapa(`Servidor da IA ocupado, tentando de novo (${tentativa}/${total}) em ${Math.round(esperaMs / 1000)}s...`);
     });
     laudoAtualizarEtapa("Preenchendo matriz...");
