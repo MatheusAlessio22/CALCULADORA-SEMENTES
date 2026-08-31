@@ -360,8 +360,13 @@ describe("determinarTipoCalcario", () => {
     expect(determinarTipoCalcario({ mg: 1.0, caMg: 4.5 }).tipo).toBe("Dolomítico");
   });
 
-  it("Mg entre 0,8 e 1,5 e Ca/Mg entre 2,5 e 4,0 recomenda Magnesiano", () => {
-    expect(determinarTipoCalcario({ mg: 1.2, caMg: 3.0 }).tipo).toBe("Magnesiano");
+  it("miolo (Mg entre 0,8 e 1,5, Ca/Mg entre 2,0 e 4,0) com Mg até 1,15 recomenda Dolomítico", () => {
+    expect(determinarTipoCalcario({ mg: 1.0, caMg: 3.0 }).tipo).toBe("Dolomítico");
+    expect(determinarTipoCalcario({ mg: 1.15, caMg: 3.0 }).tipo).toBe("Dolomítico");
+  });
+
+  it("miolo (Mg entre 0,8 e 1,5, Ca/Mg entre 2,0 e 4,0) com Mg acima de 1,15 recomenda Calcítico", () => {
+    expect(determinarTipoCalcario({ mg: 1.2, caMg: 3.0 }).tipo).toBe("Calcítico");
   });
 
   it("Mg acima de 1,5 cmolc/dm³ recomenda Calcítico", () => {

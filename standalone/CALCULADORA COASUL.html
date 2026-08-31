@@ -2963,14 +2963,18 @@ const Calculos = (function () {
   }
 
   // Tipo de calcário recomendado a partir do teor de Mg²⁺ e da relação Ca/Mg da
-  // camada 0-20 cm. As duas primeiras regras (dolomítico e calcítico) cobrem os
-  // extremos definidos no manual; qualquer combinação que não caia em nenhuma das
-  // duas (o miolo: Mg entre 0,8 e 1,5 cmolc/dm³ e Ca/Mg entre 2,0 e 4,0) é
-  // magnesiano, a faixa intermediária.
+  // camada 0-20 cm. As duas primeiras regras cobrem os extremos definidos no
+  // manual (dolomítico, calcítico). O miolo (Mg entre 0,8 e 1,5 cmolc/dm³ e
+  // Ca/Mg entre 2,0 e 4,0) seria magnesiano no manual, mas a Coasul só
+  // trabalha com Dolomítico e Calcítico — então esse miolo é dividido no
+  // ponto médio da faixa de Mg (1,15 cmolc/dm³): abaixo pende pro produto
+  // com mais MgO (Dolomítico), acima pende pro produto com menos MgO
+  // (Calcítico), seguindo a mesma direção das regras dos extremos.
   function determinarTipoCalcario({ mg = 0, caMg = 0 } = {}) {
     if (mg < 0.8 || caMg > 4.0) return { tipo: "Dolomítico", faixaMgO: "MgO > 12%" };
     if (mg > 1.5 || caMg < 2.0) return { tipo: "Calcítico", faixaMgO: "MgO < 5%" };
-    return { tipo: "Magnesiano", faixaMgO: "MgO entre 5% e 12%" };
+    if (mg <= 1.15) return { tipo: "Dolomítico", faixaMgO: "MgO > 12%" };
+    return { tipo: "Calcítico", faixaMgO: "MgO < 5%" };
   }
 
   // Gatilhos oficiais (Paraná) para indicar gessagem, a partir do laudo do
