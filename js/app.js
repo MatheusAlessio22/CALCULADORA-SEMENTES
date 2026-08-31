@@ -3313,6 +3313,15 @@ calMemoriaToggle.addEventListener("click", () => {
 const LAUDO_GEMINI_KEY_STORAGE = "gemini_api_key";
 const LAUDO_GEMINI_MODEL = "gemini-3.6-flash";
 const LAUDO_TIPOS_ACEITOS = [".pdf", ".png", ".jpg", ".jpeg", ".webp"];
+// 503 = modelo sobrecarregado, 429 = rate limit: erros transitórios do lado
+// do Google que costumam se resolver sozinhos numa nova tentativa curta.
+const LAUDO_STATUS_RETENTAVEIS = [503, 429];
+const LAUDO_MAX_TENTATIVAS = 3;
+const LAUDO_RETRY_BASE_MS = 1500;
+
+function esperar(ms){
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 const LAUDO_PROMPT = `Você é um agrônomo especialista em interpretar laudos de análise de solo (boletins de laboratório brasileiros).
 Analise o documento anexado (PDF ou foto de um laudo de solo) e devolva APENAS um JSON válido, sem markdown e sem texto fora do JSON, no formato exato abaixo:
 {
@@ -3453,7 +3462,7 @@ function laudoExtrairJson(texto){
   return JSON.parse(limpo.slice(inicio, fim + 1));
 }
 
-async function laudoChamarGemini(apiKey, base64, mimeType){
+async function laudoChamarGemini(apiKey, base64, mimeType, onTentativa){
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${LAUDO_GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
   const body = {
     contents: [{
@@ -3464,19 +3473,29 @@ async function laudoChamarGemini(apiKey, base64, mimeType){
     }],
     generationConfig: { temperature: 0.1, responseMimeType: "application/json" },
   };
-  const resposta = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if(!resposta.ok){
+
+  for(let tentativa = 1; tentativa <= LAUDO_MAX_TENTATIVAS; tentativa++){
+    const resposta = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if(resposta.ok){
+      const dados = await resposta.json();
+      const texto = dados?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if(!texto) throw new Error("A IA não devolveu nenhum conteúdo interpretável.");
+      return laudoExtrairJson(texto);
+    }
+
     const detalhe = await resposta.text().catch(() => "");
-    throw new Error(`Falha na API Gemini (${resposta.status}). ${detalhe.slice(0, 160)}`);
+    const podeRetentar = LAUDO_STATUS_RETENTAVEIS.includes(resposta.status) && tentativa < LAUDO_MAX_TENTATIVAS;
+    if(!podeRetentar){
+      throw new Error(`Falha na API Gemini (${resposta.status}). ${detalhe.slice(0, 160)}`);
+    }
+    const esperaMs = LAUDO_RETRY_BASE_MS * tentativa;
+    onTentativa?.(tentativa, LAUDO_MAX_TENTATIVAS, esperaMs);
+    await esperar(esperaMs);
   }
-  const dados = await resposta.json();
-  const texto = dados?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if(!texto) throw new Error("A IA não devolveu nenhum conteúdo interpretável.");
-  return laudoExtrairJson(texto);
 }
 
 // Mapa parâmetro do JSON da IA -> id do input na matriz técnica (só os campos
@@ -3579,7 +3598,9 @@ $("laudoModalInterpretar").addEventListener("click", async () => {
     laudoAtualizarEtapa("Lendo documento...");
     const base64 = await laudoLerArquivoComoBase64(laudoArquivoSelecionado.file);
     laudoAtualizarEtapa("Identificando teores químicos...");
-    const dados = await laudoChamarGemini(apiKey, base64, laudoArquivoSelecionado.mimeType);
+    const dados = await laudoChamarGemini(apiKey, base64, laudoArquivoSelecionado.mimeType, (tentativa, total, esperaMs) => {
+      laudoAtualizarEtapa(`Servidor da IA ocupado, tentando de novo (${tentativa}/${total}) em ${Math.round(esperaMs / 1000)}s...`);
+    });
     laudoAtualizarEtapa("Preenchendo matriz...");
     const n = laudoPreencherCampos(dados);
     laudoInterpretando = false;
