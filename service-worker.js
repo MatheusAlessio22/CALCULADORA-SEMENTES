@@ -8,7 +8,7 @@
 // Pra publicar uma atualização: mude CACHE_NAME (ex.: v1 -> v2). Isso cria
 // um cache novo, o "activate" apaga o antigo, e os clientes pegam a versão
 // nova na próxima abertura.
-const CACHE_NAME = 'cache-v1788176476362';
+const CACHE_NAME = 'cache-v1788182542711';
 
 const APP_SHELL = [
   "./",
