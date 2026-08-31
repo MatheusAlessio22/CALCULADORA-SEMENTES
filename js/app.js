@@ -3311,7 +3311,7 @@ calMemoriaToggle.addEventListener("click", () => {
 // Sem chave/rede o app continua 100% funcional: o campo de colar texto/JSON
 // não depende de nenhuma chamada de rede.
 const LAUDO_GEMINI_KEY_STORAGE = "gemini_api_key";
-const LAUDO_GEMINI_MODEL = "gemini-2.0-flash";
+const LAUDO_GEMINI_MODEL = "gemini-3.6-flash";
 const LAUDO_TIPOS_ACEITOS = [".pdf", ".png", ".jpg", ".jpeg", ".webp"];
 const LAUDO_PROMPT = `Você é um agrônomo especialista em interpretar laudos de análise de solo (boletins de laboratório brasileiros).
 Analise o documento anexado (PDF ou foto de um laudo de solo) e devolva APENAS um JSON válido, sem markdown e sem texto fora do JSON, no formato exato abaixo:
