@@ -283,6 +283,79 @@ const Calculos = (function () {
     return "Custo final praticamente equivalente entre as duas opções.";
   }
 
+  // ---------- Estimativa de Produtividade: Necessidade de Nutrientes ----------
+  // A partir de uma produtividade-alvo (sacas de 60 kg por alqueire), estima a
+  // exportação bruta de N/P₂O₅/K₂O pelos grãos colhidos — o que a lavoura
+  // "leva" do solo pra entregar aquela produção — e aponta, numa lista de
+  // formulações, qual tem a proporção mais parecida com essa necessidade.
+  // "Bruta" porque não desconta nutriente já disponível no solo (isso viria
+  // de um laudo, como na aba Calagem & Gessagem) nem eficiência de
+  // aproveitamento do adubo aplicado — é a exportação teórica pelos grãos.
+
+  // Necessidade bruta de N/P₂O₅/K₂O (kg) por alqueire, dada a produtividade-
+  // alvo em sacas de 60 kg e o coeficiente de extração (kg de nutriente por
+  // TONELADA de grão) da cultura.
+  function calcularNecessidadeNutrientes({ produtividadeSacaAlq = 0, coef } = {}) {
+    const sacas = Number(produtividadeSacaAlq) || 0;
+    const toneladasAlq = (sacas * 60) / 1000;
+    const c = coef || { n: 0, p: 0, k: 0 };
+    const nKgAlq = toneladasAlq * (Number(c.n) || 0);
+    const pKgAlq = toneladasAlq * (Number(c.p) || 0);
+    const kKgAlq = toneladasAlq * (Number(c.k) || 0);
+    return { toneladasAlq, nKgAlq, pKgAlq, kKgAlq, totalKgAlq: nKgAlq + pKgAlq + kKgAlq };
+  }
+
+  // Pontua uma formulação candidata [N%, P%, K%] contra a necessidade
+  // calculada: `distancia` é a distância euclidiana entre as razões N:P:K
+  // normalizadas (0 = proporção idêntica; quanto maior, mais "torta" a
+  // formulação é em relação ao que a lavoura precisa) — não mede quantidade,
+  // só o "formato". `doseAlq` é a dose que cobre o nutriente mais exigente
+  // (maior kg necessário ÷ % da formulação), pra nunca deixar a lavoura curta
+  // em nenhum dos três; nutriente ausente na formulação (% = 0) não entra na
+  // conta da dose e aparece como falta pura em `diferenca`.
+  function pontuarFormulacao(necessidade, npk) {
+    const [n, p, k] = npk;
+    const somaFormulacao = n + p + k;
+    const somaNecessidade = necessidade ? necessidade.totalKgAlq : 0;
+    if (somaFormulacao <= 0 || !(somaNecessidade > 0)) {
+      return { npk, distancia: Infinity, doseAlq: 0, fornecido: { n: 0, p: 0, k: 0 }, diferenca: { n: 0, p: 0, k: 0 } };
+    }
+
+    const razaoForm = { n: n / somaFormulacao, p: p / somaFormulacao, k: k / somaFormulacao };
+    const razaoNec = {
+      n: necessidade.nKgAlq / somaNecessidade,
+      p: necessidade.pKgAlq / somaNecessidade,
+      k: necessidade.kKgAlq / somaNecessidade,
+    };
+    const distancia = Math.sqrt(
+      (razaoForm.n - razaoNec.n) ** 2 + (razaoForm.p - razaoNec.p) ** 2 + (razaoForm.k - razaoNec.k) ** 2
+    );
+
+    const doseAlq = Math.max(
+      n > 0 ? necessidade.nKgAlq / (n / 100) : 0,
+      p > 0 ? necessidade.pKgAlq / (p / 100) : 0,
+      k > 0 ? necessidade.kKgAlq / (k / 100) : 0
+    );
+
+    const fornecido = { n: doseAlq * (n / 100), p: doseAlq * (p / 100), k: doseAlq * (k / 100) };
+    const diferenca = {
+      n: fornecido.n - necessidade.nKgAlq,
+      p: fornecido.p - necessidade.pKgAlq,
+      k: fornecido.k - necessidade.kKgAlq,
+    };
+
+    return { npk, distancia, doseAlq, fornecido, diferenca };
+  }
+
+  // Rankeia um catálogo de formulações [N%, P%, K%] pela distância à
+  // necessidade (menor primeiro) — quem chama usa o primeiro item como
+  // recomendação principal e pode mostrar os seguintes como alternativa.
+  function encontrarFormulacaoMaisProxima(necessidade, catalogo) {
+    return (catalogo || [])
+      .map((npk) => pontuarFormulacao(necessidade, npk))
+      .sort((a, b) => a.distancia - b.distancia);
+  }
+
   // ---------- Texto formatado para envio no WhatsApp ----------
   // Cada função recebe o mesmo objeto "resumo" que já alimenta a exportação em
   // PDF/PNG daquela ficha (coletarResumo/coletarResumoRegulagem/
@@ -432,6 +505,9 @@ const Calculos = (function () {
     identificarMelhorCustoBeneficio,
     calcularEquivalenciaAdubo,
     montarVeredicto,
+    calcularNecessidadeNutrientes,
+    pontuarFormulacao,
+    encontrarFormulacaoMaisProxima,
     montarTextoWhatsApp,
     montarTextoWhatsAppRegulagem,
     montarTextoWhatsAppCalagem,
