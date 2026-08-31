@@ -1,5 +1,5 @@
 
-const APP_VERSION = "1.4.0";
+const APP_VERSION = "1.4.1";
 
 const CROPS = {
   soja: {
@@ -3112,7 +3112,7 @@ $("calManejo").addEventListener("change", () => {
 
 const CAL_INPUT_IDS = [
   "calV2","calProfundidade","calPrnt","calAreaAplicadaPct",
-  "calCa020","calMg020","calK020","calAl020","calHAl020",
+  "calPhCaCl2020","calPhH2O020","calCa020","calMg020","calK020","calAl020","calHAl020",
   "calCa2040","calMg2040","calK2040","calAl2040","calHAl2040","calArgila2040",
 ];
 CAL_INPUT_IDS.forEach(id => {
@@ -3166,6 +3166,8 @@ function calcCalagem(){
   $("calReadoutCtc020").textContent = fmtDec(idx020.ctcPh7);
   $("calReadoutV1").textContent = fmtDec(idx020.v) + "%";
   $("calReadoutCaMg").textContent = fmtDec(idx020.caMg);
+  $("calReadoutPhCaCl2").textContent = fmtDec(v("calPhCaCl2020"));
+  $("calReadoutPhH2O").textContent = fmtDec(v("calPhH2O020"));
   $("calReadoutV2040").textContent = fmtDec(idx2040.v) + "%";
   $("calReadoutM2040").textContent = fmtDec(idx2040.m) + "%";
 
@@ -3499,9 +3501,12 @@ async function laudoChamarGemini(apiKey, base64, mimeType, onTentativa){
 }
 
 // Mapa parâmetro do JSON da IA -> id do input na matriz técnica (só os campos
-// que a calculadora realmente usa em calcCalagem(); "p", "ph" e a argila da
-// camada 0-20 não têm campo próprio na ficha e ficam de fora do preenchimento).
-const LAUDO_CAMPOS_020 = { ca: "calCa020", mg: "calMg020", k: "calK020", al: "calAl020", h_al: "calHAl020" };
+// que a calculadora realmente usa em calcCalagem(); "p" e a argila da camada
+// 0-20 não têm campo próprio na ficha e ficam de fora do preenchimento. O
+// "ph" do JSON não distingue o método — mapeado pro campo CaCl₂ por ser o
+// mais comum nos laudos da região (Paraná); confira e ajuste manualmente se
+// o laudo anexado trouxer pH em H₂O.
+const LAUDO_CAMPOS_020 = { ca: "calCa020", mg: "calMg020", k: "calK020", al: "calAl020", h_al: "calHAl020", ph: "calPhCaCl2020" };
 const LAUDO_CAMPOS_2040 = { ca: "calCa2040", mg: "calMg2040", k: "calK2040", al: "calAl2040", h_al: "calHAl2040", argila_pct: "calArgila2040" };
 
 function laudoAplicarPulso(el){
@@ -3833,4 +3838,18 @@ if("serviceWorker" in navigator && (location.protocol === "https:" || location.h
       reg.update().catch(() => {});
     }).catch(() => {});
   });
+
+  // O service worker (skipWaiting + clients.claim() em service-worker.js)
+  // ativa uma versão nova assim que ela termina de instalar, sem esperar as
+  // abas abertas fecharem. "controllerchange" dispara exatamente nesse
+  // momento — a aba já aberta continua rodando o JS antigo em memória até
+  // recarregar, então avisamos o usuário em vez de deixar ele preso numa
+  // versão desatualizada sem saber.
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    $("updateBanner").classList.add("is-visible");
+    $("updateBanner").classList.remove("hidden");
+  });
 }
+$("updateBannerBtn").addEventListener("click", () => {
+  window.location.reload();
+});

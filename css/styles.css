@@ -1608,6 +1608,44 @@
   }
   @keyframes wa-toast-in{ from{ opacity:0; transform:translate(-50%, 6px); } to{ opacity:1; transform:translate(-50%, 0); } }
 
+  /* Aviso de nova versão (#updateBanner): aparece quando o service worker
+     ativa uma versão nova em segundo plano (ver "controllerchange" em
+     app.js) enquanto a página aberta ainda está rodando o JS antigo em
+     memória — só um reload troca de fato o código em execução. Mesmo padrão
+     do #appToast: oculto via `hidden`, some visível quando o JS troca pra
+     .is-visible. */
+  #updateBanner{
+    position:fixed;
+    inset-inline:0;
+    top:0;
+    z-index:60;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    flex-wrap:wrap;
+    padding:10px 16px;
+    background:var(--accent);
+    color:#FFFFFF;
+    font-size:12.5px;
+    font-weight:700;
+    box-shadow:0 2px 10px rgb(0 0 0 / 0.15);
+  }
+  #updateBanner.is-visible{
+    display:flex !important;
+    animation:wa-toast-in .18s ease-out;
+  }
+  #updateBanner .update-banner-btn{
+    border:1px solid rgb(255 255 255 / 0.5);
+    background:rgb(255 255 255 / 0.15);
+    color:#FFFFFF;
+    font-size:12px;
+    font-weight:800;
+    padding:4px 12px;
+    border-radius:999px;
+    cursor:pointer;
+  }
+  #updateBanner .update-banner-btn:hover{ background:rgb(255 255 255 / 0.28); }
+
   /* Botão interativo de anexar laudo de solo no cabeçalho da matriz */
   .btn-attach-soil{
     display: inline-flex;

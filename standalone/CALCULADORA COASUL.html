@@ -1625,6 +1625,44 @@
   }
   @keyframes wa-toast-in{ from{ opacity:0; transform:translate(-50%, 6px); } to{ opacity:1; transform:translate(-50%, 0); } }
 
+  /* Aviso de nova versão (#updateBanner): aparece quando o service worker
+     ativa uma versão nova em segundo plano (ver "controllerchange" em
+     app.js) enquanto a página aberta ainda está rodando o JS antigo em
+     memória — só um reload troca de fato o código em execução. Mesmo padrão
+     do #appToast: oculto via `hidden`, some visível quando o JS troca pra
+     .is-visible. */
+  #updateBanner{
+    position:fixed;
+    inset-inline:0;
+    top:0;
+    z-index:60;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    flex-wrap:wrap;
+    padding:10px 16px;
+    background:var(--accent);
+    color:#FFFFFF;
+    font-size:12.5px;
+    font-weight:700;
+    box-shadow:0 2px 10px rgb(0 0 0 / 0.15);
+  }
+  #updateBanner.is-visible{
+    display:flex !important;
+    animation:wa-toast-in .18s ease-out;
+  }
+  #updateBanner .update-banner-btn{
+    border:1px solid rgb(255 255 255 / 0.5);
+    background:rgb(255 255 255 / 0.15);
+    color:#FFFFFF;
+    font-size:12px;
+    font-weight:800;
+    padding:4px 12px;
+    border-radius:999px;
+    cursor:pointer;
+  }
+  #updateBanner .update-banner-btn:hover{ background:rgb(255 255 255 / 0.28); }
+
   /* Botão interativo de anexar laudo de solo no cabeçalho da matriz */
   .btn-attach-soil{
     display: inline-flex;
@@ -2497,6 +2535,18 @@ tailwind.config = {
             </thead>
             <tbody>
               <tr>
+                <td>pH CaCl₂</td>
+                <td><input type="number" id="calPhCaCl2020" class="inp inp-sm inp-num" step="0.1" min="0" max="14" inputmode="decimal" placeholder="0"></td>
+                <td class="sm-unit sm-dash" aria-hidden="true">—</td>
+                <td class="sm-unit">—</td>
+              </tr>
+              <tr>
+                <td>pH H₂O</td>
+                <td><input type="number" id="calPhH2O020" class="inp inp-sm inp-num" step="0.1" min="0" max="14" inputmode="decimal" placeholder="0"></td>
+                <td class="sm-unit sm-dash" aria-hidden="true">—</td>
+                <td class="sm-unit">—</td>
+              </tr>
+              <tr>
                 <td>Ca²⁺</td>
                 <td><input type="number" id="calCa020" class="inp inp-sm inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0"></td>
                 <td><input type="number" id="calCa2040" class="inp inp-sm inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0"></td>
@@ -2548,6 +2598,9 @@ tailwind.config = {
             <span class="readout-metric">CTC(T) <strong id="calReadoutCtc020">0,00</strong></span>
             <span class="readout-metric">V₁ <strong id="calReadoutV1">0,00%</strong></span>
             <span class="readout-metric">Ca:Mg <strong id="calReadoutCaMg">0,00</strong></span>
+            <span class="readout-metric">pH CaCl₂ <strong id="calReadoutPhCaCl2">0,00</strong></span>
+            <span class="readout-metric">pH H₂O <strong id="calReadoutPhH2O">0,00</strong></span>
+            <span class="readout-metric">pH ideal <strong>5,50–6,00</strong> <span class="text-muted">(CaCl₂)</span></span>
           </span>
         </div>
         <div class="readout">
@@ -2815,6 +2868,12 @@ tailwind.config = {
 <!-- Toast de Feedback -->
 <div id="appToast" class="pointer-events-none fixed bottom-6 left-1/2 -translate-x-1/2 z-50 hidden rounded-full bg-ink/90 px-4 py-2 text-[12px] font-semibold text-white shadow-lg backdrop-blur transition-all">
   <span id="appToastText">Mensagem copiada!</span>
+</div>
+
+<!-- Aviso de nova versão disponível (aparece quando o service worker atualiza em segundo plano) -->
+<div id="updateBanner" class="hidden" role="alert">
+  <span>Nova versão do app disponível.</span>
+  <button type="button" id="updateBannerBtn" class="update-banner-btn">Atualizar agora</button>
 </div>
 
 <script>
@@ -3366,7 +3425,7 @@ const CULTIVARES = {
 };
 
 
-const APP_VERSION = "1.4.0";
+const APP_VERSION = "1.4.1";
 
 const CROPS = {
   soja: {
@@ -6479,7 +6538,7 @@ $("calManejo").addEventListener("change", () => {
 
 const CAL_INPUT_IDS = [
   "calV2","calProfundidade","calPrnt","calAreaAplicadaPct",
-  "calCa020","calMg020","calK020","calAl020","calHAl020",
+  "calPhCaCl2020","calPhH2O020","calCa020","calMg020","calK020","calAl020","calHAl020",
   "calCa2040","calMg2040","calK2040","calAl2040","calHAl2040","calArgila2040",
 ];
 CAL_INPUT_IDS.forEach(id => {
@@ -6533,6 +6592,8 @@ function calcCalagem(){
   $("calReadoutCtc020").textContent = fmtDec(idx020.ctcPh7);
   $("calReadoutV1").textContent = fmtDec(idx020.v) + "%";
   $("calReadoutCaMg").textContent = fmtDec(idx020.caMg);
+  $("calReadoutPhCaCl2").textContent = fmtDec(v("calPhCaCl2020"));
+  $("calReadoutPhH2O").textContent = fmtDec(v("calPhH2O020"));
   $("calReadoutV2040").textContent = fmtDec(idx2040.v) + "%";
   $("calReadoutM2040").textContent = fmtDec(idx2040.m) + "%";
 
@@ -6866,9 +6927,12 @@ async function laudoChamarGemini(apiKey, base64, mimeType, onTentativa){
 }
 
 // Mapa parâmetro do JSON da IA -> id do input na matriz técnica (só os campos
-// que a calculadora realmente usa em calcCalagem(); "p", "ph" e a argila da
-// camada 0-20 não têm campo próprio na ficha e ficam de fora do preenchimento).
-const LAUDO_CAMPOS_020 = { ca: "calCa020", mg: "calMg020", k: "calK020", al: "calAl020", h_al: "calHAl020" };
+// que a calculadora realmente usa em calcCalagem(); "p" e a argila da camada
+// 0-20 não têm campo próprio na ficha e ficam de fora do preenchimento. O
+// "ph" do JSON não distingue o método — mapeado pro campo CaCl₂ por ser o
+// mais comum nos laudos da região (Paraná); confira e ajuste manualmente se
+// o laudo anexado trouxer pH em H₂O.
+const LAUDO_CAMPOS_020 = { ca: "calCa020", mg: "calMg020", k: "calK020", al: "calAl020", h_al: "calHAl020", ph: "calPhCaCl2020" };
 const LAUDO_CAMPOS_2040 = { ca: "calCa2040", mg: "calMg2040", k: "calK2040", al: "calAl2040", h_al: "calHAl2040", argila_pct: "calArgila2040" };
 
 function laudoAplicarPulso(el){
@@ -7200,7 +7264,21 @@ if("serviceWorker" in navigator && (location.protocol === "https:" || location.h
       reg.update().catch(() => {});
     }).catch(() => {});
   });
+
+  // O service worker (skipWaiting + clients.claim() em service-worker.js)
+  // ativa uma versão nova assim que ela termina de instalar, sem esperar as
+  // abas abertas fecharem. "controllerchange" dispara exatamente nesse
+  // momento — a aba já aberta continua rodando o JS antigo em memória até
+  // recarregar, então avisamos o usuário em vez de deixar ele preso numa
+  // versão desatualizada sem saber.
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    $("updateBanner").classList.add("is-visible");
+    $("updateBanner").classList.remove("hidden");
+  });
 }
+$("updateBannerBtn").addEventListener("click", () => {
+  window.location.reload();
+});
 
 // ---- Ícone e "instalar no celular": reaproveita o logo já embutido no
 // cabeçalho (evita duplicar o base64 no <head>) para gerar um ícone quadrado

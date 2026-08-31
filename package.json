@@ -1,6 +1,6 @@
 {
   "name": "calculadora-coasul-pwa",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Ficha de campo para calcular necessidade de sementes, adubação e custo por embalagem (Soja, Milho, Feijão, Trigo e Adubação/Ureia), além de uma calculadora de regulagem de plantadeira. Funciona 100% offline — não faz nenhuma chamada de rede.",
   "main": "service-worker.js",
   "scripts": {
@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "format": "prettier --check .",
     "test": "vitest run",
-    "release": "node -e \"const fs = require('fs'); const swPath = './service-worker.js'; let sw = fs.readFileSync(swPath, 'utf8'); const v = 'cache-v' + Date.now(); sw = sw.replace(/const\\s+CACHE_NAME\\s*=\\s*['\\\"](.+?)['\\\"]/g, 'const CACHE_NAME = \\'' + v + '\\''); fs.writeFileSync(swPath, sw); console.log('Novo Cache gerado: ' + v);\" && npm run build && npm run test"
+    "release": "node scripts/release.js && npm run build && npm run test"
   },
   "repository": {
     "type": "git",

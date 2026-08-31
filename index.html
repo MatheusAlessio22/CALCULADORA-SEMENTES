@@ -717,6 +717,18 @@
             </thead>
             <tbody>
               <tr>
+                <td>pH CaCl₂</td>
+                <td><input type="number" id="calPhCaCl2020" class="inp inp-sm inp-num" step="0.1" min="0" max="14" inputmode="decimal" placeholder="0"></td>
+                <td class="sm-unit sm-dash" aria-hidden="true">—</td>
+                <td class="sm-unit">—</td>
+              </tr>
+              <tr>
+                <td>pH H₂O</td>
+                <td><input type="number" id="calPhH2O020" class="inp inp-sm inp-num" step="0.1" min="0" max="14" inputmode="decimal" placeholder="0"></td>
+                <td class="sm-unit sm-dash" aria-hidden="true">—</td>
+                <td class="sm-unit">—</td>
+              </tr>
+              <tr>
                 <td>Ca²⁺</td>
                 <td><input type="number" id="calCa020" class="inp inp-sm inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0"></td>
                 <td><input type="number" id="calCa2040" class="inp inp-sm inp-num" step="0.01" min="0" inputmode="decimal" placeholder="0"></td>
@@ -768,6 +780,9 @@
             <span class="readout-metric">CTC(T) <strong id="calReadoutCtc020">0,00</strong></span>
             <span class="readout-metric">V₁ <strong id="calReadoutV1">0,00%</strong></span>
             <span class="readout-metric">Ca:Mg <strong id="calReadoutCaMg">0,00</strong></span>
+            <span class="readout-metric">pH CaCl₂ <strong id="calReadoutPhCaCl2">0,00</strong></span>
+            <span class="readout-metric">pH H₂O <strong id="calReadoutPhH2O">0,00</strong></span>
+            <span class="readout-metric">pH ideal <strong>5,50–6,00</strong> <span class="text-muted">(CaCl₂)</span></span>
           </span>
         </div>
         <div class="readout">
@@ -1035,6 +1050,12 @@
 <!-- Toast de Feedback -->
 <div id="appToast" class="pointer-events-none fixed bottom-6 left-1/2 -translate-x-1/2 z-50 hidden rounded-full bg-ink/90 px-4 py-2 text-[12px] font-semibold text-white shadow-lg backdrop-blur transition-all">
   <span id="appToastText">Mensagem copiada!</span>
+</div>
+
+<!-- Aviso de nova versão disponível (aparece quando o service worker atualiza em segundo plano) -->
+<div id="updateBanner" class="hidden" role="alert">
+  <span>Nova versão do app disponível.</span>
+  <button type="button" id="updateBannerBtn" class="update-banner-btn">Atualizar agora</button>
 </div>
 
 <script src="js/calculos.js"></script>
