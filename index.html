@@ -25,7 +25,36 @@
 </head>
 
 <body class="field-pattern bg-canvas text-ink antialiased min-h-screen px-4 pb-16 pt-6 sm:pt-8 lg:pb-4 lg:pt-5">
-<div class="app-shell relative z-[1] mx-auto flex h-full w-full max-w-2xl flex-col lg:max-w-[1300px]">
+
+<!-- Portão de login: TELA própria (não modal) que cobre a tela inteira até
+     Auth.tentarLogin() confirmar usuário/senha (ver js/auth.js e o bootstrap
+     de login no fim dele). Fundo opaco (ver #loginGate em styles.css) — o
+     app não fica visível nem borrado atrás, é uma página de login mesmo.
+     Fica visível por padrão no HTML — se JS estiver desabilitado, a ficha
+     simplesmente não abre, em vez de vazar os dados sem senha. -->
+<div id="loginGate" class="fixed inset-0 flex items-center justify-center p-4">
+  <div class="bg-white">
+    <div class="mb-4 text-center">
+      <img src="assets/logo.png" alt="Logo Coasul" class="mx-auto mb-3 h-14 w-auto">
+      <h2 class="text-[17px] font-bold text-ink">Acesso restrito</h2>
+      <p class="mt-1 text-[12.5px] text-muted">Use as credenciais da equipe.</p>
+    </div>
+    <form id="loginForm" autocomplete="on">
+      <div>
+        <label for="loginUser">Usuário</label>
+        <input type="text" id="loginUser" name="username" autocomplete="username" required class="text-ink">
+      </div>
+      <div>
+        <label for="loginPass">Senha</label>
+        <input type="password" id="loginPass" name="password" autocomplete="current-password" required class="text-ink">
+      </div>
+      <p id="loginError" class="hidden text-[12px] font-semibold text-[#C42A2E]" role="status" aria-live="polite">Usuário ou senha incorretos.</p>
+      <button type="submit">Entrar</button>
+    </form>
+  </div>
+</div>
+
+<div id="appShell" class="app-shell relative z-[1] mx-auto flex h-full w-full max-w-2xl flex-col lg:max-w-[1300px]">
 
   <header id="siteHeader" class="mb-6 text-center lg:mb-3 lg:flex lg:items-center lg:gap-4 lg:text-left">
     <span class="header-topline" aria-hidden="true"></span>
@@ -53,6 +82,9 @@
         </svg>
         WhatsApp
       </button>
+      <button type="button" id="btnLogout" title="Sair e pedir usuário/senha novamente"
+              class="rounded-lg border bg-white px-3.5 py-2 text-[12px] font-bold transition hover:brightness-105 active:translate-y-px"
+              style="border-color:#DFE5D6; color:#1E2420"><svg class="ti ti-logout icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2" /><path d="M7 12h14l-3 -3" /><path d="M18 15l3 -3" /></svg> Sair</button>
     </div>
   </header>
 
@@ -1049,6 +1081,7 @@
   <button type="button" id="updateBannerBtn" class="update-banner-btn">Atualizar agora</button>
 </div>
 
+<script src="js/auth.js"></script>
 <script src="js/calculos.js"></script>
 <script src="js/cultivares.js"></script>
 <script src="js/app.js"></script>

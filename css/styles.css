@@ -53,6 +53,19 @@
     --accent-surface: rgba(92,138,38,.05);
     --accent-border: rgba(92,138,38,.30);
     --accent-hover: #8FC33B;
+
+    /* Tokens ESTÁTICOS do cartão de login (#loginGate) — não reaproveitam
+       --accent porque --accent é dinâmico por cultura (trocado por
+       applyAccentVars() em app.js sempre que selectCrop() roda) e a tela de
+       login precisa ficar sempre na mesma cor institucional, mesmo que a
+       última cultura vista antes do logout tenha sido milho/feijão/trigo. O
+       valor #5C8A26 é o mesmo verde institucional (--accent no estado
+       inicial/soja, e "brand.greenDeep" no config do Tailwind comentado mais
+       abaixo neste arquivo) — só fixo em vez de dinâmico. */
+    --login-accent: #5C8A26;
+    --login-accent-hover: #557F23;
+    --login-accent-active: #4F7721;
+    --login-accent-soft: rgba(92,138,38,.16);
   }
 
   html,body{-webkit-text-size-adjust:100%;}
@@ -1645,6 +1658,167 @@
     cursor:pointer;
   }
   #updateBanner .update-banner-btn:hover{ background:rgb(255 255 255 / 0.28); }
+
+  /* Portão de login (#loginGate): tela própria (não modal translúcido) — fundo
+     opaco com o mesmo degradê de body.field-pattern, então o app não aparece
+     nem borrado atrás. Fica acima de tudo (modais, toast e #updateBanner usam
+     no máximo z-index:60) enquanto Auth.usuarioLogado() não confirma uma
+     sessão válida — ver bootstrap de login em auth.js. Some com `hidden`
+     assim que o login é aceito. */
+  #loginGate{
+    z-index:70;
+    background-color:#F4F6F2;
+    background-image:linear-gradient(180deg, #F4F6F2 0%, #EBF0E8 100%);
+    animation:wa-fade-in .18s ease-out;
+    /* overflow-y:auto — sem isso, um cartão mais alto que a tela (zoom alto
+       + viewport estreito) fica com o topo cortado e inacessível: o
+       #loginGate é fixed, então rolar a página não move ele. Com auto, dá
+       pra rolar até o topo/fim do cartão nesse cenário extremo. */
+    overflow-y:auto;
+  }
+
+  /* ---- Refinamento visual do cartão (2026-08) — só #loginGate; nenhum id,
+     name, data-* ou classe lida por JS foi tocado (ver getElementById em
+     js/auth.js: #loginGate, #loginForm, #loginUser, #loginPass, #loginError,
+     #btnLogout, e a classe "hidden" trocada via classList). ---- */
+
+  /* Cartão: raio maior e sombra em duas camadas (perto + espalhada, pra
+     profundidade real) no lugar do border quase reto de antes. O border que
+     sobra é só um traço quase imperceptível — a sombra é que dá o contorno. */
+  #loginGate > div{
+    width:100%;
+    max-width:380px;
+    border-radius:16px;
+    padding:40px 36px 36px;
+    border:1px solid rgba(16,24,40,.06);
+    box-shadow:0 1px 2px rgba(16,24,40,.04), 0 12px 28px -8px rgba(16,24,40,.12);
+    animation:wa-scale-up .18s cubic-bezier(.2,.9,.3,1.1);
+  }
+
+  /* Rótulos: sentence case (não mais caixa alta), peso médio, cor mais
+     escura que o texto de apoio abaixo do logo — cria hierarquia entre
+     rótulo do campo e a frase de apoio. */
+  #loginGate label{
+    display:block;
+    margin-bottom:6px;
+    font-size:13px;
+    font-weight:500;
+    letter-spacing:0;
+    text-transform:none;
+    color:var(--ink-secondary);
+  }
+
+  /* Campos: mais altura (padding vertical maior — ~48px de altura total com
+     este font-size/line-height) e anel de foco visível. font-size:15px
+     evita o zoom automático de alguns navegadores mobile abaixo de 16px. */
+  #loginGate input{
+    display:block;
+    width:100%;
+    padding:13px 14px;
+    font-size:15px;
+    line-height:1.4;
+    border:1px solid var(--border-subtle);
+    border-radius:10px;
+    background:#FFFFFF;
+    transition:border-color 160ms ease, box-shadow 160ms ease;
+  }
+  #loginGate input:focus,
+  #loginGate input:focus-visible{
+    border-color:var(--login-accent);
+    box-shadow:0 0 0 3px var(--login-accent-soft);
+    outline:none;
+  }
+  /* Espaço entre os dois grupos de campo (usuário/senha). A mensagem de erro
+     ganha uma margem menor, só o suficiente pra não colar no campo acima
+     quando aparece — ela fica escondida por padrão via a classe `hidden`
+     (ver Auth em js/auth.js), então não afeta o espaçamento quando some. */
+  #loginGate form > div + div{ margin-top:18px; }
+  #loginGate #loginError{ margin-top:6px; }
+
+  /* Botão "Entrar": única cor sólida do cartão fora do logo — é o ponto
+     focal. Cor institucional FIXA (--login-accent), não --accent (esse é
+     dinâmico por cultura — ver comentário do token em :root, no topo do
+     arquivo) — senão o botão mudaria de cor conforme a última cultura vista
+     antes do logout. */
+  #loginGate button[type="submit"]{
+    display:block;
+    width:100%;
+    margin-top:24px;
+    padding:14px 16px;
+    border:none;
+    border-radius:10px;
+    background:var(--login-accent);
+    color:#FFFFFF;
+    font-size:15px;
+    font-weight:600;
+    letter-spacing:.01em;
+    cursor:pointer;
+    transition:background-color 160ms ease, transform 100ms ease, box-shadow 160ms ease;
+  }
+  #loginGate button[type="submit"]:hover{ background:var(--login-accent-hover); }
+  #loginGate button[type="submit"]:active{ background:var(--login-accent-active); transform:translateY(1px); }
+  #loginGate button[type="submit"]:focus-visible{
+    outline:none;
+    box-shadow:0 0 0 3px var(--login-accent-soft);
+  }
+  #loginGate button[type="submit"]:disabled{ opacity:.6; cursor:not-allowed; }
+  #loginGate button[type="submit"]:disabled:hover,
+  #loginGate button[type="submit"]:disabled:active{
+    background:var(--login-accent);
+    transform:none;
+  }
+
+  /* ---- Transição de saída do #loginGate + entrada do app (2026-08) ----
+     O gate continua display:flex durante a saída — só ganha `hidden` de
+     verdade quando a transição termina (via esconderLoginGate() em
+     js/auth.js, com guarda de timeout). É assim que dá pra animar um
+     display:none sem depender de transition-behavior:allow-discrete +
+     @starting-style (Chrome 117+/Safari 17.4+/Firefox 129+ só — este
+     projeto não declara nenhum alvo de navegador, então fica pelo caminho
+     que funciona em qualquer um). O cartão sai primeiro (mais rápido), o
+     fundo dissolve depois — dá a sensação de camada em vez de apagão. */
+  #loginGate.is-leaving{
+    pointer-events:none;
+    transition:opacity 280ms ease-out;
+    opacity:0;
+  }
+  #loginGate.is-leaving > div{
+    transition:opacity 180ms cubic-bezier(.4,0,1,1), transform 180ms cubic-bezier(.4,0,1,1);
+    opacity:0;
+    transform:translateY(-6px) scale(.985);
+  }
+
+  /* Entrada do app (#appShell): só roda no login efetivo (ver
+     esconderLoginGate()/entrarNoApp() em js/auth.js) — numa sessão já salva
+     em localStorage o gate nunca aparece, então essa classe nunca é
+     aplicada e o app renderiza direto, sem animação. Roda em paralelo com o
+     fade final do overlay (não depois) — é o que faz o crossfade parecer
+     rápido. Nenhum descendente de #appShell usa position:fixed/sticky (só
+     os modais, o toast e o updateBanner, que são irmãos do #appShell, fora
+     dele), então o transform durante a animação não bagunça containing
+     block de nada. */
+  @keyframes app-entrar{
+    from{ opacity:0; transform:translateY(8px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+  #appShell.app-entrando{
+    animation:app-entrar 300ms cubic-bezier(.16,1,.3,1) both;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    #loginGate,
+    #loginGate > div,
+    #loginGate input,
+    #loginGate button[type="submit"]{
+      animation:none;
+      transition:none;
+    }
+    /* transitionend não dispara de forma confiável com duração 0s — 1ms
+       ainda dispara o evento e a guarda de timeout do helper cobre o resto. */
+    #loginGate.is-leaving{ transition:opacity 1ms; }
+    #loginGate.is-leaving > div{ transition:opacity 1ms; transform:none; }
+    #appShell.app-entrando{ animation:none; }
+  }
 
   /* Botão interativo de anexar laudo de solo no cabeçalho da matriz */
   .btn-attach-soil{

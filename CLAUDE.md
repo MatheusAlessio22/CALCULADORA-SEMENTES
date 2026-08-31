@@ -26,8 +26,13 @@ Ficha de campo para cálculo de sementes, adubação, custo por embalagem e regu
   ```
 - Garantir que a precisão dos cálculos agrícolas de dosagem, população de plantas e regulagem de engrenagens esteja alinhada com as recomendações agronômicas.
 
+## Login (acesso restrito)
+- A ficha exige login (usuário + senha) antes de liberar o uso — ver `js/auth.js` e o portão `#loginGate` em `index.html`.
+- Usuários autorizados ficam em `USERS` (`js/auth.js`), como hash SHA-256 da senha — nunca em texto puro. Pra adicionar/trocar conta: `node scripts/gerar-hash-senha.js "senha"` e colar o hash gerado, depois `npm run build` pra propagar pro `standalone/`.
+- Isso é uma barreira contra uso casual, não segurança forte (quem lê o código-fonte vê os hashes). Não é o lugar pra guardar nada que exija proteção de verdade.
+
 ## Estrutura do Repositório
-- `js/`: Lógica das calculadoras (`calculos.js`, `cultivares.js`, `app.js`).
+- `js/`: Lógica das calculadoras (`calculos.js`, `cultivares.js`, `app.js`) e controle de acesso (`auth.js`).
 - `css/`: Estilos da aplicação e responsividade.
 - `tests/`: Testes unitários com Vitest (`calculos.test.js`).
 - `standalone/`: Versão autocontida da ficha em arquivo único (`CALCULADORA COASUL.html`).

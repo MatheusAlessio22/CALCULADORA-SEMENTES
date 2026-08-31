@@ -70,6 +70,19 @@
     --accent-surface: rgba(92,138,38,.05);
     --accent-border: rgba(92,138,38,.30);
     --accent-hover: #8FC33B;
+
+    /* Tokens ESTÁTICOS do cartão de login (#loginGate) — não reaproveitam
+       --accent porque --accent é dinâmico por cultura (trocado por
+       applyAccentVars() em app.js sempre que selectCrop() roda) e a tela de
+       login precisa ficar sempre na mesma cor institucional, mesmo que a
+       última cultura vista antes do logout tenha sido milho/feijão/trigo. O
+       valor #5C8A26 é o mesmo verde institucional (--accent no estado
+       inicial/soja, e "brand.greenDeep" no config do Tailwind comentado mais
+       abaixo neste arquivo) — só fixo em vez de dinâmico. */
+    --login-accent: #5C8A26;
+    --login-accent-hover: #557F23;
+    --login-accent-active: #4F7721;
+    --login-accent-soft: rgba(92,138,38,.16);
   }
 
   html,body{-webkit-text-size-adjust:100%;}
@@ -1663,6 +1676,167 @@
   }
   #updateBanner .update-banner-btn:hover{ background:rgb(255 255 255 / 0.28); }
 
+  /* Portão de login (#loginGate): tela própria (não modal translúcido) — fundo
+     opaco com o mesmo degradê de body.field-pattern, então o app não aparece
+     nem borrado atrás. Fica acima de tudo (modais, toast e #updateBanner usam
+     no máximo z-index:60) enquanto Auth.usuarioLogado() não confirma uma
+     sessão válida — ver bootstrap de login em auth.js. Some com `hidden`
+     assim que o login é aceito. */
+  #loginGate{
+    z-index:70;
+    background-color:#F4F6F2;
+    background-image:linear-gradient(180deg, #F4F6F2 0%, #EBF0E8 100%);
+    animation:wa-fade-in .18s ease-out;
+    /* overflow-y:auto — sem isso, um cartão mais alto que a tela (zoom alto
+       + viewport estreito) fica com o topo cortado e inacessível: o
+       #loginGate é fixed, então rolar a página não move ele. Com auto, dá
+       pra rolar até o topo/fim do cartão nesse cenário extremo. */
+    overflow-y:auto;
+  }
+
+  /* ---- Refinamento visual do cartão (2026-08) — só #loginGate; nenhum id,
+     name, data-* ou classe lida por JS foi tocado (ver getElementById em
+     js/auth.js: #loginGate, #loginForm, #loginUser, #loginPass, #loginError,
+     #btnLogout, e a classe "hidden" trocada via classList). ---- */
+
+  /* Cartão: raio maior e sombra em duas camadas (perto + espalhada, pra
+     profundidade real) no lugar do border quase reto de antes. O border que
+     sobra é só um traço quase imperceptível — a sombra é que dá o contorno. */
+  #loginGate > div{
+    width:100%;
+    max-width:380px;
+    border-radius:16px;
+    padding:40px 36px 36px;
+    border:1px solid rgba(16,24,40,.06);
+    box-shadow:0 1px 2px rgba(16,24,40,.04), 0 12px 28px -8px rgba(16,24,40,.12);
+    animation:wa-scale-up .18s cubic-bezier(.2,.9,.3,1.1);
+  }
+
+  /* Rótulos: sentence case (não mais caixa alta), peso médio, cor mais
+     escura que o texto de apoio abaixo do logo — cria hierarquia entre
+     rótulo do campo e a frase de apoio. */
+  #loginGate label{
+    display:block;
+    margin-bottom:6px;
+    font-size:13px;
+    font-weight:500;
+    letter-spacing:0;
+    text-transform:none;
+    color:var(--ink-secondary);
+  }
+
+  /* Campos: mais altura (padding vertical maior — ~48px de altura total com
+     este font-size/line-height) e anel de foco visível. font-size:15px
+     evita o zoom automático de alguns navegadores mobile abaixo de 16px. */
+  #loginGate input{
+    display:block;
+    width:100%;
+    padding:13px 14px;
+    font-size:15px;
+    line-height:1.4;
+    border:1px solid var(--border-subtle);
+    border-radius:10px;
+    background:#FFFFFF;
+    transition:border-color 160ms ease, box-shadow 160ms ease;
+  }
+  #loginGate input:focus,
+  #loginGate input:focus-visible{
+    border-color:var(--login-accent);
+    box-shadow:0 0 0 3px var(--login-accent-soft);
+    outline:none;
+  }
+  /* Espaço entre os dois grupos de campo (usuário/senha). A mensagem de erro
+     ganha uma margem menor, só o suficiente pra não colar no campo acima
+     quando aparece — ela fica escondida por padrão via a classe `hidden`
+     (ver Auth em js/auth.js), então não afeta o espaçamento quando some. */
+  #loginGate form > div + div{ margin-top:18px; }
+  #loginGate #loginError{ margin-top:6px; }
+
+  /* Botão "Entrar": única cor sólida do cartão fora do logo — é o ponto
+     focal. Cor institucional FIXA (--login-accent), não --accent (esse é
+     dinâmico por cultura — ver comentário do token em :root, no topo do
+     arquivo) — senão o botão mudaria de cor conforme a última cultura vista
+     antes do logout. */
+  #loginGate button[type="submit"]{
+    display:block;
+    width:100%;
+    margin-top:24px;
+    padding:14px 16px;
+    border:none;
+    border-radius:10px;
+    background:var(--login-accent);
+    color:#FFFFFF;
+    font-size:15px;
+    font-weight:600;
+    letter-spacing:.01em;
+    cursor:pointer;
+    transition:background-color 160ms ease, transform 100ms ease, box-shadow 160ms ease;
+  }
+  #loginGate button[type="submit"]:hover{ background:var(--login-accent-hover); }
+  #loginGate button[type="submit"]:active{ background:var(--login-accent-active); transform:translateY(1px); }
+  #loginGate button[type="submit"]:focus-visible{
+    outline:none;
+    box-shadow:0 0 0 3px var(--login-accent-soft);
+  }
+  #loginGate button[type="submit"]:disabled{ opacity:.6; cursor:not-allowed; }
+  #loginGate button[type="submit"]:disabled:hover,
+  #loginGate button[type="submit"]:disabled:active{
+    background:var(--login-accent);
+    transform:none;
+  }
+
+  /* ---- Transição de saída do #loginGate + entrada do app (2026-08) ----
+     O gate continua display:flex durante a saída — só ganha `hidden` de
+     verdade quando a transição termina (via esconderLoginGate() em
+     js/auth.js, com guarda de timeout). É assim que dá pra animar um
+     display:none sem depender de transition-behavior:allow-discrete +
+     @starting-style (Chrome 117+/Safari 17.4+/Firefox 129+ só — este
+     projeto não declara nenhum alvo de navegador, então fica pelo caminho
+     que funciona em qualquer um). O cartão sai primeiro (mais rápido), o
+     fundo dissolve depois — dá a sensação de camada em vez de apagão. */
+  #loginGate.is-leaving{
+    pointer-events:none;
+    transition:opacity 280ms ease-out;
+    opacity:0;
+  }
+  #loginGate.is-leaving > div{
+    transition:opacity 180ms cubic-bezier(.4,0,1,1), transform 180ms cubic-bezier(.4,0,1,1);
+    opacity:0;
+    transform:translateY(-6px) scale(.985);
+  }
+
+  /* Entrada do app (#appShell): só roda no login efetivo (ver
+     esconderLoginGate()/entrarNoApp() em js/auth.js) — numa sessão já salva
+     em localStorage o gate nunca aparece, então essa classe nunca é
+     aplicada e o app renderiza direto, sem animação. Roda em paralelo com o
+     fade final do overlay (não depois) — é o que faz o crossfade parecer
+     rápido. Nenhum descendente de #appShell usa position:fixed/sticky (só
+     os modais, o toast e o updateBanner, que são irmãos do #appShell, fora
+     dele), então o transform durante a animação não bagunça containing
+     block de nada. */
+  @keyframes app-entrar{
+    from{ opacity:0; transform:translateY(8px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+  #appShell.app-entrando{
+    animation:app-entrar 300ms cubic-bezier(.16,1,.3,1) both;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    #loginGate,
+    #loginGate > div,
+    #loginGate input,
+    #loginGate button[type="submit"]{
+      animation:none;
+      transition:none;
+    }
+    /* transitionend não dispara de forma confiável com duração 0s — 1ms
+       ainda dispara o evento e a guarda de timeout do helper cobre o resto. */
+    #loginGate.is-leaving{ transition:opacity 1ms; }
+    #loginGate.is-leaving > div{ transition:opacity 1ms; transform:none; }
+    #appShell.app-entrando{ animation:none; }
+  }
+
   /* Botão interativo de anexar laudo de solo no cabeçalho da matriz */
   .btn-attach-soil{
     display: inline-flex;
@@ -1870,7 +2044,36 @@ tailwind.config = {
 </head>
 
 <body class="field-pattern bg-canvas text-ink antialiased min-h-screen px-4 pb-16 pt-6 sm:pt-8 lg:pb-4 lg:pt-5">
-<div class="app-shell relative z-[1] mx-auto flex h-full w-full max-w-2xl flex-col lg:max-w-[1300px]">
+
+<!-- Portão de login: TELA própria (não modal) que cobre a tela inteira até
+     Auth.tentarLogin() confirmar usuário/senha (ver js/auth.js e o bootstrap
+     de login no fim dele). Fundo opaco (ver #loginGate em styles.css) — o
+     app não fica visível nem borrado atrás, é uma página de login mesmo.
+     Fica visível por padrão no HTML — se JS estiver desabilitado, a ficha
+     simplesmente não abre, em vez de vazar os dados sem senha. -->
+<div id="loginGate" class="fixed inset-0 flex items-center justify-center p-4">
+  <div class="bg-white">
+    <div class="mb-4 text-center">
+      <img src="assets/logo.png" alt="Logo Coasul" class="mx-auto mb-3 h-14 w-auto">
+      <h2 class="text-[17px] font-bold text-ink">Acesso restrito</h2>
+      <p class="mt-1 text-[12.5px] text-muted">Use as credenciais da equipe.</p>
+    </div>
+    <form id="loginForm" autocomplete="on">
+      <div>
+        <label for="loginUser">Usuário</label>
+        <input type="text" id="loginUser" name="username" autocomplete="username" required class="text-ink">
+      </div>
+      <div>
+        <label for="loginPass">Senha</label>
+        <input type="password" id="loginPass" name="password" autocomplete="current-password" required class="text-ink">
+      </div>
+      <p id="loginError" class="hidden text-[12px] font-semibold text-[#C42A2E]" role="status" aria-live="polite">Usuário ou senha incorretos.</p>
+      <button type="submit">Entrar</button>
+    </form>
+  </div>
+</div>
+
+<div id="appShell" class="app-shell relative z-[1] mx-auto flex h-full w-full max-w-2xl flex-col lg:max-w-[1300px]">
 
   <header id="siteHeader" class="mb-6 text-center lg:mb-3 lg:flex lg:items-center lg:gap-4 lg:text-left">
     <span class="header-topline" aria-hidden="true"></span>
@@ -1898,6 +2101,9 @@ tailwind.config = {
         </svg>
         WhatsApp
       </button>
+      <button type="button" id="btnLogout" title="Sair e pedir usuário/senha novamente"
+              class="rounded-lg border bg-white px-3.5 py-2 text-[12px] font-bold transition hover:brightness-105 active:translate-y-px"
+              style="border-color:#DFE5D6; color:#1E2420"><svg class="ti ti-logout icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2" /><path d="M7 12h14l-3 -3" /><path d="M18 15l3 -3" /></svg> Sair</button>
     </div>
   </header>
 
@@ -2895,6 +3101,250 @@ tailwind.config = {
 </div>
 
 <script>
+// ---- Controle de acesso (login) -------------------------------------------
+// A ficha é 100% offline, então não existe servidor pra validar senha: a
+// lista de usuários autorizados mora aqui mesmo, no código. Pra não deixar a
+// senha em texto puro visível pra quem abrir o arquivo, guardamos só o hash
+// SHA-256 dela e comparamos hash com hash no login (ver Auth.tentarLogin).
+// Isso barra o uso casual por quem não tem a senha combinada com a equipe,
+// mas não é segurança forte: alguém disposto a ler o código-fonte consegue
+// tentar quebrar o hash offline. Não guarde aqui nada que exija proteção de
+// verdade.
+//
+// Pra adicionar, trocar ou remover uma conta:
+//   1. Rode:  node scripts/gerar-hash-senha.js "a-senha-da-pessoa"
+//   2. Cole o hash impresso numa linha de USERS abaixo (troque "user" pelo
+//      nome de usuário escolhido).
+//   3. Rode `npm run build` pra regerar a versão standalone com a lista nova.
+const USERS = [
+  { user: "detec.chopin", hash: "f94e12f0bcbb9909c4a26140c8906027d9dcc54950caa755eeb9105b2092ad70" },
+];
+
+// SHA-256 puro em JavaScript (sem depender de crypto.subtle, que exige
+// "contexto seguro" e pode não estar disponível quando a versão standalone é
+// aberta direto do disco, file://, em alguns navegadores/WebViews). Recebe
+// texto e devolve o hash em hexadecimal. Suporta acentos: o texto é
+// convertido pra bytes UTF-8 antes de entrar no algoritmo (FIPS 180-4).
+function sha256Hex(texto) {
+  const bytes = unescape(encodeURIComponent(String(texto)));
+
+  function rightRotate(value, amount) {
+    return (value >>> amount) | (value << (32 - amount));
+  }
+
+  const maxWord = Math.pow(2, 32);
+  let i, j;
+  let result = "";
+  const words = [];
+  const bitLength = bytes.length * 8;
+
+  const hash = [];
+  const k = [];
+  const isComposite = {};
+  let primeCounter = 0;
+  for (let candidate = 2; primeCounter < 64; candidate++) {
+    if (!isComposite[candidate]) {
+      for (i = 0; i < 313; i += candidate) isComposite[i] = candidate;
+      hash[primeCounter] = (Math.pow(candidate, 0.5) * maxWord) | 0;
+      k[primeCounter++] = (Math.pow(candidate, 1 / 3) * maxWord) | 0;
+    }
+  }
+
+  let padded = bytes + "\x80";
+  while (padded.length % 64 - 56) padded += "\x00";
+  for (i = 0; i < padded.length; i++) {
+    j = padded.charCodeAt(i);
+    words[i >> 2] |= j << ((3 - (i % 4)) * 8);
+  }
+  words[words.length] = Math.floor(bitLength / maxWord);
+  words[words.length] = bitLength;
+
+  let h = hash;
+  for (j = 0; j < words.length; ) {
+    const w = words.slice(j, (j += 16));
+    const oldHash = h;
+    h = h.slice(0, 8);
+
+    for (i = 0; i < 64; i++) {
+      const w15 = w[i - 15];
+      const w2 = w[i - 2];
+      const a = h[0];
+      const e = h[4];
+      const temp1 =
+        h[7] +
+        (rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25)) +
+        ((e & h[5]) ^ (~e & h[6])) +
+        k[i] +
+        (w[i] =
+          i < 16
+            ? w[i]
+            : (w[i - 16] +
+                (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3)) +
+                w[i - 7] +
+                (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10))) |
+              0);
+      const temp2 =
+        (rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22)) +
+        ((a & h[1]) ^ (a & h[2]) ^ (h[1] & h[2]));
+
+      h = [(temp1 + temp2) | 0].concat(h);
+      h[4] = (h[4] + temp1) | 0;
+    }
+
+    for (i = 0; i < 8; i++) h[i] = (h[i] + oldHash[i]) | 0;
+  }
+
+  for (i = 0; i < 8; i++) {
+    for (j = 3; j + 1; j--) {
+      const b = (h[i] >> (j * 8)) & 255;
+      result += (b < 16 ? "0" : "") + b.toString(16);
+    }
+  }
+  return result;
+}
+
+const Auth = (() => {
+  const SESSION_KEY = "coasulAuthUser";
+
+  function usuarioLogado() {
+    try {
+      return localStorage.getItem(SESSION_KEY);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function tentarLogin(usuario, senha) {
+    const alvo = String(usuario || "").trim().toLowerCase();
+    if (!alvo || !senha) return false;
+    const hash = sha256Hex(senha);
+    const encontrado = USERS.find(
+      (u) => u.user.toLowerCase() === alvo && u.hash === hash
+    );
+    if (!encontrado) return false;
+    try {
+      localStorage.setItem(SESSION_KEY, encontrado.user);
+    } catch (e) {
+      /* localStorage indisponível (ex.: navegação privada) — segue logado só nesta aba */
+    }
+    return true;
+  }
+
+  function logout() {
+    try {
+      localStorage.removeItem(SESSION_KEY);
+    } catch (e) {
+      /* nada a limpar */
+    }
+  }
+
+  return { usuarioLogado, tentarLogin, logout };
+})();
+
+// ---- Portão de login: liga o formulário de #loginGate ao Auth acima e
+// esconde a tela de acesso quando já existe sessão salva (localStorage) ou
+// quando o login é aceito. Roda direto (sem esperar DOMContentLoaded) porque
+// este script é carregado no fim do <body>, com o DOM já pronto. Só existe
+// no navegador — pulado quando este arquivo é usado via require() no Node
+// (scripts/gerar-hash-senha.js).
+if (typeof document !== "undefined") {
+  (() => {
+    const gate = document.getElementById("loginGate");
+    const form = document.getElementById("loginForm");
+    const userInput = document.getElementById("loginUser");
+    const passInput = document.getElementById("loginPass");
+    const errorMsg = document.getElementById("loginError");
+    const btnLogout = document.getElementById("btnLogout");
+    const appShell = document.getElementById("appShell");
+
+    function esconderPortao() {
+      gate.classList.add("hidden");
+    }
+
+    function mostrarPortao() {
+      gate.classList.remove("hidden");
+      gate.classList.remove("is-leaving"); // sem isso, o 2º login abriria com o cartão invisível
+      if (userInput) userInput.value = "";
+      if (passInput) passInput.value = "";
+      if (errorMsg) errorMsg.classList.add("hidden");
+    }
+
+    // ---- Helpers de apresentação (transição de saída/entrada) — só efeito
+    // visual, não mexem em nada de Auth acima. Usados apenas no login
+    // efetivo (envio do formulário); a sessão já salva pula direto pra
+    // esconderPortao() sem passar por aqui, então nunca anima no F5.
+    function esconderLoginGate(finalizar) {
+      let feito = false;
+      const rodarUmaVez = () => {
+        if (feito) return;
+        feito = true;
+        finalizar();
+      };
+      gate.addEventListener(
+        "transitionend",
+        (e) => {
+          if (e.target === gate && e.propertyName === "opacity") rodarUmaVez();
+        },
+        { once: true }
+      );
+      // Guarda obrigatória: se o transitionend nunca disparar (aba em 2º
+      // plano, prefers-reduced-motion, elemento sem transição computada),
+      // o usuário não pode ficar preso na tela de login já autenticado.
+      setTimeout(rodarUmaVez, 400);
+      gate.classList.add("is-leaving");
+    }
+
+    function entrarNoApp() {
+      if (!appShell) return;
+      let feito = false;
+      const limpar = () => {
+        if (feito) return;
+        feito = true;
+        // Obrigatório: um elemento com transform vira containing block dos
+        // descendentes position:fixed. Se a classe ficasse no DOM, qualquer
+        // fixed dentro de #appShell passaria a se posicionar errado.
+        appShell.classList.remove("app-entrando");
+      };
+      appShell.addEventListener("animationend", limpar, { once: true });
+      setTimeout(limpar, 500);
+      appShell.classList.add("app-entrando");
+    }
+
+    if (Auth.usuarioLogado()) esconderPortao();
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const ok = Auth.tentarLogin(userInput.value, passInput.value);
+      passInput.value = "";
+      if (ok) {
+        errorMsg.classList.add("hidden");
+        // Login feito: sempre abre na tela principal (Sementes & Adubação)
+        // com a Soja selecionada, independente do que estava marcado antes
+        // do logout.
+        if (typeof window.setView === "function") window.setView("calc");
+        if (typeof window.selectCrop === "function") window.selectCrop("soja");
+        esconderLoginGate(esconderPortao);
+        entrarNoApp();
+      } else {
+        errorMsg.classList.remove("hidden");
+        passInput.focus();
+      }
+    });
+
+    if (btnLogout) {
+      btnLogout.addEventListener("click", () => {
+        Auth.logout();
+        mostrarPortao();
+        userInput.focus();
+      });
+    }
+  })();
+}
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { sha256Hex };
+}
+
 // Fórmulas de cálculo da calculadora, extraídas de app.js para serem puras (sem DOM)
 // e assim testáveis isoladamente com Vitest. Carregado como script clássico (sem
 // type="module"), antes de app.js, que consome tudo através do objeto global `Calculos`

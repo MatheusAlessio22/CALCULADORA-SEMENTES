@@ -66,6 +66,23 @@ A lógica de cálculo pura (sementes, dose, calagem/gessagem etc.) fica em
 npm test
 ```
 
+## Login (acesso restrito)
+
+A ficha só abre depois de login (usuário + senha). Como o app é 100%
+offline, a lista de usuários autorizados mora em `js/auth.js`, guardando só
+o hash SHA-256 de cada senha (nunca a senha em texto puro) — ver o
+comentário no topo do arquivo. Pra adicionar, trocar ou remover uma conta:
+
+```bash
+node scripts/gerar-hash-senha.js "a-senha-da-pessoa"
+```
+
+Cole o hash impresso numa linha de `USERS` em `js/auth.js`, depois rode
+`npm run build` pra regerar a versão `standalone/` com a lista atualizada.
+A senha em texto puro nunca fica salva em lugar nenhum do repositório — só
+o hash. O login de cada pessoa fica salvo no navegador (localStorage) até
+ela clicar em "Sair".
+
 ## Lint & Format
 
 ```bash

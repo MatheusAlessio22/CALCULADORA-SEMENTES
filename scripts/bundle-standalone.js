@@ -13,7 +13,7 @@ const ROOT = path.join(__dirname, "..");
 const INDEX_PATH = path.join(ROOT, "index.html");
 const CSS_PATH = path.join(ROOT, "css", "styles.css");
 const CSS_DIR = path.join(ROOT, "css");
-const JS_PATHS = ["js/calculos.js", "js/cultivares.js", "js/app.js"].map((p) =>
+const JS_PATHS = ["js/auth.js", "js/calculos.js", "js/cultivares.js", "js/app.js"].map((p) =>
   path.join(ROOT, p)
 );
 const LOGO_PATH = path.join(ROOT, "assets", "logo.png");
@@ -160,19 +160,20 @@ function build() {
     "<img> do logo no cabeçalho"
   );
 
-  // 4) js/calculos.js + js/cultivares.js + js/app.js -> um único <script>
-  // inline, na mesma ordem das tags originais, seguido do bootstrap
+  // 4) js/auth.js + js/calculos.js + js/cultivares.js + js/app.js -> um único
+  // <script> inline, na mesma ordem das tags originais, seguido do bootstrap
   // exclusivo do standalone (ícone/manifesto em runtime).
   const jsBundle = JS_PATHS.map((p) => fs.readFileSync(p, "utf8")).join("\n");
   html = replaceOnce(
     html,
     [
+      '<script src="js/auth.js"></script>',
       '<script src="js/calculos.js"></script>',
       '<script src="js/cultivares.js"></script>',
       '<script src="js/app.js"></script>',
     ].join(NL),
     `<script>\n${jsBundle}\n${STANDALONE_BOOTSTRAP_JS}</script>`,
-    "tags <script src=...> do calculos/cultivares/app"
+    "tags <script src=...> do auth/calculos/cultivares/app"
   );
 
   fs.writeFileSync(OUTPUT_PATH, html, "utf8");
