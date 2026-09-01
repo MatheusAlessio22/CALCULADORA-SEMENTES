@@ -25,9 +25,6 @@ import {
   identificarMelhorCustoBeneficio,
   calcularEquivalenciaAdubo,
   montarVeredicto,
-  calcularNecessidadeNutrientes,
-  pontuarFormulacao,
-  encontrarFormulacaoMaisProxima,
   montarTextoWhatsApp,
   montarTextoWhatsAppRegulagem,
   montarTextoWhatsAppCalagem,
@@ -892,88 +889,5 @@ describe("montarTextoWhatsAppCalagem", () => {
     const texto = montarTextoWhatsAppCalagem(resumoSemRef);
     expect(texto).toContain("🧪 *COASUL AGRO — RECOMENDAÇÃO DE CALAGEM E GESSAGEM*\n01/01/2026");
     expect(texto).not.toContain("undefined");
-  });
-});
-
-describe("calcularNecessidadeNutrientes", () => {
-  it("100 sacas/alq a 15-6-4 (t/ton): 6 t/alq × coef = 90 N, 36 P, 24 K, total 150", () => {
-    const r = calcularNecessidadeNutrientes({ produtividadeSacaAlq: 100, coef: { n: 15, p: 6, k: 4 } });
-    expect(r.toneladasAlq).toBeCloseTo(6, 9);
-    expect(r.nKgAlq).toBeCloseTo(90, 9);
-    expect(r.pKgAlq).toBeCloseTo(36, 9);
-    expect(r.kKgAlq).toBeCloseTo(24, 9);
-    expect(r.totalKgAlq).toBeCloseTo(150, 9);
-  });
-
-  it("produtividade 0 retorna tudo zerado", () => {
-    const r = calcularNecessidadeNutrientes({ produtividadeSacaAlq: 0, coef: { n: 15, p: 6, k: 4 } });
-    expect(r.toneladasAlq).toBe(0);
-    expect(r.nKgAlq).toBe(0);
-    expect(r.pKgAlq).toBe(0);
-    expect(r.kKgAlq).toBe(0);
-    expect(r.totalKgAlq).toBe(0);
-  });
-
-  it("coef ausente não quebra (trata como 0-0-0)", () => {
-    const r = calcularNecessidadeNutrientes({ produtividadeSacaAlq: 50 });
-    expect(r.totalKgAlq).toBe(0);
-  });
-});
-
-describe("pontuarFormulacao", () => {
-  it("formulação com a mesma razão N:P:K da necessidade tem distância 0 e dose que fecha exato nos três", () => {
-    const necessidade = { nKgAlq: 50, pKgAlq: 25, kKgAlq: 25, totalKgAlq: 100 };
-    const r = pontuarFormulacao(necessidade, [20, 10, 10]); // mesma razão 2:1:1
-    expect(r.distancia).toBeCloseTo(0, 9);
-    expect(r.doseAlq).toBeCloseTo(250, 9);
-    expect(r.fornecido.n).toBeCloseTo(50, 9);
-    expect(r.fornecido.p).toBeCloseTo(25, 9);
-    expect(r.fornecido.k).toBeCloseTo(25, 9);
-    expect(r.diferenca.n).toBeCloseTo(0, 9);
-    expect(r.diferenca.p).toBeCloseTo(0, 9);
-    expect(r.diferenca.k).toBeCloseTo(0, 9);
-  });
-
-  it("formulação sem um dos nutrientes (%=0) não entra na conta da dose e aparece como falta pura", () => {
-    const necessidade = { nKgAlq: 30, pKgAlq: 10, kKgAlq: 20, totalKgAlq: 60 };
-    const r = pontuarFormulacao(necessidade, [30, 0, 20]); // sem P
-    // dose cobre o mais exigente entre N e K (aqui P não conta)
-    expect(r.doseAlq).toBeCloseTo(Math.max(30 / 0.3, 20 / 0.2), 9);
-    expect(r.fornecido.p).toBe(0);
-    expect(r.diferenca.p).toBeCloseTo(-10, 9); // falta os 10 kg de P que a formulação não entrega
-  });
-
-  it("necessidade zerada (nada calculado ainda) retorna distância infinita, sem NaN", () => {
-    const r = pontuarFormulacao({ nKgAlq: 0, pKgAlq: 0, kKgAlq: 0, totalKgAlq: 0 }, [20, 5, 20]);
-    expect(r.distancia).toBe(Infinity);
-    expect(r.doseAlq).toBe(0);
-  });
-
-  it("formulação zerada ([0,0,0]) retorna distância infinita em vez de dividir por zero", () => {
-    const necessidade = { nKgAlq: 30, pKgAlq: 10, kKgAlq: 20, totalKgAlq: 60 };
-    const r = pontuarFormulacao(necessidade, [0, 0, 0]);
-    expect(r.distancia).toBe(Infinity);
-  });
-});
-
-describe("encontrarFormulacaoMaisProxima", () => {
-  it("rankeia a formulação de razão mais parecida em primeiro lugar", () => {
-    const necessidade = { nKgAlq: 50, pKgAlq: 25, kKgAlq: 25, totalKgAlq: 100 }; // razão 2:1:1
-    const catalogo = [
-      [8, 20, 20],  // bem torta em relação à necessidade
-      [20, 10, 10], // razão idêntica (2:1:1)
-      [30, 0, 20],  // sem P, também torta
-    ];
-    const ranking = encontrarFormulacaoMaisProxima(necessidade, catalogo);
-    expect(ranking).toHaveLength(3);
-    expect(ranking[0].npk).toEqual([20, 10, 10]);
-    expect(ranking[0].distancia).toBeCloseTo(0, 9);
-    expect(ranking[0].distancia).toBeLessThan(ranking[1].distancia);
-    expect(ranking[1].distancia).toBeLessThan(ranking[2].distancia);
-  });
-
-  it("catálogo vazio retorna lista vazia", () => {
-    const necessidade = { nKgAlq: 50, pKgAlq: 25, kKgAlq: 25, totalKgAlq: 100 };
-    expect(encontrarFormulacaoMaisProxima(necessidade, [])).toEqual([]);
   });
 });

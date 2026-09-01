@@ -1,5 +1,5 @@
 
-const APP_VERSION = "1.4.2";
+const APP_VERSION = "1.4.3";
 
 const CROPS = {
   soja: {
@@ -45,42 +45,6 @@ const FAIXA_USUAL_PLANTAS = {
   trigo:  { min: 48,  max: 72 }, // variante "semente" (sugerido: 60 plantas/m)
 };
 
-// ---- Estimativa de Produtividade (card #prodCard) ----
-// kg de nutriente exportado por TONELADA de grão colhido — valores típicos de
-// tabelas agronômicas publicadas (Embrapa/IAC/boletins de adubação e
-// calagem), não os números exatos da Coasul.
-// TODO: confirmar/ajustar com o setor agronômico antes de usar como
-// recomendação definitiva de campo (mesmo padrão de ressalva de
-// FAIXA_USUAL_PLANTAS, acima).
-const COEFICIENTES_EXTRACAO_NUTRIENTES = {
-  // grande parte do N da soja vem de fixação biológica (rizóbio) — ver aviso
-  // específico renderizado junto do resultado (renderProdutividade em app.js)
-  soja:   { n: 50, p: 12, k: 20 },
-  milho:  { n: 15, p: 6,  k: 4  },
-  feijao: { n: 35, p: 10, k: 25 },
-  trigo:  { n: 22, p: 10, k: 15 },
-};
-
-// Formulações NPK [N%, P₂O₅%, K₂O%] candidatas pra cobrir a necessidade
-// calculada — lista real de formulações que a Coasul estoca.
-const FORMULACOES_ESTOQUE = [
-  [3, 21, 21], [2, 23, 23], [4, 23, 20], [10, 15, 15],
-  [8, 20, 15], [12, 31, 17], [11, 52, 0], [10, 20, 18],
-  [5, 25, 25], [8, 20, 20], [12, 32, 18], [13, 24, 12],
-];
-
-// Metadados de exibição por formulação (nome comercial, se é NPK granulado
-// no grão com micronutriente junto) — não entra no cálculo de "mais
-// próxima" (isso segue só a proporção N-P-K, ver pontuarFormulacao em
-// calculos.js), só vira uma etiqueta informativa no card.
-const FORMULACOES_METADATA = {
-  "3-21-21": { nome: "YaraBasa", granuladoComMicro: true },
-  "13-24-12": { nome: "Yaramila", granuladoComMicro: true },
-};
-function metaFormulacao(npk){
-  return FORMULACOES_METADATA[npk.join("-")] || null;
-}
-
 // fórmulas puras (sem DOM) moram em calculos.js, carregado antes deste arquivo — ver ali
 // para as implementações e o motivo da separação (testes automatizados com Vitest)
 const {
@@ -91,7 +55,6 @@ const {
   verificarNecessidadeGessagem, calcularGessagem, nutrientesGesso,
   calcularConcentracaoTotalNutrientes, calcularCustoPorKgNutriente, identificarMelhorCustoBeneficio,
   calcularEquivalenciaAdubo, montarVeredicto,
-  calcularNecessidadeNutrientes, encontrarFormulacaoMaisProxima,
   montarTextoWhatsApp, montarTextoWhatsAppRegulagem, montarTextoWhatsAppCalagem,
 } = Calculos;
 
@@ -622,7 +585,7 @@ function renderVariantToggle(crop){
   box.classList.add("flex");
 }
 
-const STATE_FIELD_IDS = ["cultivar","area","plantas","espacamento","transpasse","sacasAlq","doseHa","doseAlq","sacasAlqAdubo","npkN","npkP","npkK","pms","popDesejada","germinacao","pureza","prodSacasAlq"];
+const STATE_FIELD_IDS = ["cultivar","area","plantas","espacamento","transpasse","sacasAlq","doseHa","doseAlq","sacasAlqAdubo","npkN","npkP","npkK","pms","popDesejada","germinacao","pureza"];
 const cropState = {}; // guarda os valores digitados em cada cultura, pra não se perderem ao trocar de aba
 
 function captureState(crop){
@@ -656,7 +619,6 @@ function selectCrop(crop){
   formatarAreaInput((saved && saved.area !== undefined) ? parseFloat(saved.area) || 0 : 0);
   const ehAdubo = crop === "adubacao";
   show($("comparadorSection"), ehAdubo);
-  show($("prodCard"), !ehAdubo);
   $("cultivarLabel").textContent = ehAdubo ? "Formulação cotada" : "Cultivar cotada";
   $("cultivar").placeholder = ehAdubo ? "Ex.: 04-14-08 ou Ureia" : "Ex.: BRS 404";
   fecharCultivarList();
@@ -664,7 +626,6 @@ function selectCrop(crop){
   renderVariantToggle(crop);
 
   const val = (id, fallback) => (saved && saved[id] !== undefined && saved[id] !== "") ? saved[id] : fallback;
-  $("prodSacasAlq").value = val("prodSacasAlq", "");
 
   show($("npkBox"), false);
   show($("pmsBox"), false);
@@ -934,82 +895,6 @@ function calc(){
   renderMemoria(c, area, total, mem);
   renderAlerts(area);
   updateComparador();
-  renderProdutividade(area);
-}
-
-// ---- Estimativa de Produtividade (card #prodCard) ----
-// A partir da produtividade-alvo digitada (sacas/alqueire), calcula a
-// exportação bruta de N-P-K pelos grãos (calcularNecessidadeNutrientes) e
-// rankeia FORMULACOES_ESTOQUE pela proporção mais parecida
-// (encontrarFormulacaoMaisProxima) — ver ambas em calculos.js. Não se aplica
-// à aba Adubação/Ureia (ela já é sobre dose de adubo, não produtividade de
-// grão): o card fica escondido nesse caso (ver selectCrop()) e esta função
-// só limpa o conteúdo sem calcular nada.
-function renderProdutividade(area){
-  const wrapN = $("prodNutrientesWrap");
-  const wrapF = $("prodFormulacaoWrap");
-  const resultado = $("prodResultado");
-  const coef = COEFICIENTES_EXTRACAO_NUTRIENTES[currentCrop];
-  const sacas = parseFloat($("prodSacasAlq").value) || 0;
-
-  if(currentCrop === "adubacao" || !coef || !(sacas > 0)){
-    resultado.classList.add("hidden");
-    wrapN.innerHTML = "";
-    wrapF.innerHTML = "";
-    return;
-  }
-
-  const necessidade = calcularNecessidadeNutrientes({ produtividadeSacaAlq: sacas, coef });
-
-  wrapN.innerHTML = "";
-  [
-    ["N", necessidade.nKgAlq],
-    ["P₂O₅", necessidade.pKgAlq],
-    ["K₂O", necessidade.kKgAlq],
-  ].forEach(([nome, porAlq]) => {
-    const div = document.createElement("div");
-    div.className = "rounded-xl border border-ink/10 bg-white px-3 py-2.5 lg:py-1.5";
-    div.innerHTML = `<div class="text-[10px] font-semibold uppercase tracking-wide text-muted">${nome}</div>` +
-      `<div class="font-mono text-[16px] font-bold tabular-nums lg:text-[15px]">${fmtDec(porAlq)} kg / alqueire</div>` +
-      `<div class="text-[10px] text-muted">${area ? fmtDec(porAlq * area) + " kg total na área" : "informe a área para o total"}</div>`;
-    wrapN.appendChild(div);
-  });
-
-  const ranking = encontrarFormulacaoMaisProxima(necessidade, FORMULACOES_ESTOQUE).filter(r => isFinite(r.distancia));
-  if(!ranking.length){
-    wrapF.innerHTML = `<p class="text-[11px] text-muted">Nenhuma formulação do catálogo cobre essa necessidade.</p>`;
-  } else {
-    const melhor = ranking[0];
-    const [n, p, k] = melhor.npk;
-    const metaMelhor = metaFormulacao(melhor.npk);
-    const faltando = Object.entries(melhor.diferenca)
-      .filter(([, v]) => v < -0.01)
-      .map(([nutriente]) => ({ n: "N", p: "P₂O₅", k: "K₂O" }[nutriente]));
-    wrapF.innerHTML = `
-      <div class="rounded-xl p-3" style="background:var(--accent-soft); border:1px solid var(--accent-border);">
-        <div class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide" style="color:var(--accent)">
-          <span aria-hidden="true">🎯</span>Formulação mais próxima no estoque
-        </div>
-        <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span class="font-mono text-[17px] font-bold tabular-nums text-ink">${n}-${p}-${k}</span>
-          ${metaMelhor ? `<span class="font-semibold text-[11px] text-muted">${metaMelhor.nome}</span>` : ""}
-          ${metaMelhor && metaMelhor.granuladoComMicro ? `<span class="rounded-full px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wide" style="background:var(--accent); color:#fff">Granulado + micro</span>` : ""}
-        </div>
-        <div class="mt-1 text-[11px] text-muted">Dose: <strong class="font-semibold text-ink">${fmtDec(melhor.doseAlq)} kg/alqueire</strong>${area ? ` · ${fmtDec(melhor.doseAlq * area)} kg total na área` : ""}</div>
-        ${faltando.length ? `<div class="mt-1.5 text-[10.5px] font-semibold" style="color:#C42A2E">⚠ Não cobre ${faltando.join(" e ")} nessa dose — combine com outra fonte.</div>` : ""}
-      </div>`;
-    if(ranking[1]){
-      const [n2, p2, k2] = ranking[1].npk;
-      const metaAlt = metaFormulacao(ranking[1].npk);
-      wrapF.innerHTML += `<p class="mt-2 text-[10.5px] text-muted">Alternativa: <strong class="font-semibold text-ink">${n2}-${p2}-${k2}</strong>${metaAlt ? ` (${metaAlt.nome})` : ""} — ${fmtDec(ranking[1].doseAlq)} kg/alqueire</p>`;
-    }
-  }
-
-  if(currentCrop === "soja"){
-    wrapF.innerHTML += `<p class="mt-2 text-[10.5px] leading-snug text-muted">A soja fixa boa parte do nitrogênio via bactérias do gênero <em>Bradyrhizobium</em> (inoculante) — a adubação nitrogenada mineral costuma não ser recomendada; o N acima é só a exportação teórica pelos grãos.</p>`;
-  }
-
-  resultado.classList.remove("hidden");
 }
 
 // ---------- Ícones da interface (Tabler, embutidos como SVG inline) ----------
@@ -1961,7 +1846,7 @@ tabs.forEach(tab => {
   tab.addEventListener("click", () => selectCrop(tab.dataset.crop));
 });
 
-["area","plantas","cliente","cultivar","sacasAlq","prodSacasAlq"].forEach(id => $(id).addEventListener("input", calc));
+["area","plantas","cliente","cultivar","sacasAlq"].forEach(id => $(id).addEventListener("input", calc));
 
 // formulação cotada -> campos NPK -> bag, nutrientes e custos, tudo junto
 $("cultivar").addEventListener("input", () => {
