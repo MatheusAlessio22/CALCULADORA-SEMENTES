@@ -313,35 +313,55 @@ const Calculos = (function () {
   // (maior kg necessário ÷ % da formulação), pra nunca deixar a lavoura curta
   // em nenhum dos três; nutriente ausente na formulação (% = 0) não entra na
   // conta da dose e aparece como falta pura em `diferenca`.
-  function pontuarFormulacao(necessidade, npk) {
+  //
+  // `ignorarN` (opcional): trata o N como se fosse 0 tanto na necessidade
+  // quanto na formulação, pra rankear e dosar só por P e K — uso pra soja
+  // (e outras leguminosas fortemente inoculadas), cujo N exportado pelo grão
+  // vem majoritariamente de fixação biológica (Bradyrhizobium), não de
+  // adubo: sem isso, a exportação bruta de N (bem maior que P/K) dominava a
+  // razão e fazia o ranking preferir a formulação com mais N% do catálogo,
+  // em vez da mais adequada pra P e K — e a dose calculada (que cobre o
+  // nutriente mais exigente) inflava junto, sugerindo uma quantidade de
+  // adubo muito acima do que a lavoura realmente precisa aplicar. `fornecido.n`
+  // e `diferenca.n` continuam calculados (informam quanto de N a dose de P/K
+  // escolhida acaba trazendo de carona), só não entram mais na razão nem na
+  // dose — quem chama decide se/como exibir essa diferença de N (ver
+  // renderProdutividade em app.js, que não trata falta de N como alerta
+  // quando ignorarN está ativo).
+  function pontuarFormulacao(necessidade, npk, { ignorarN = false } = {}) {
     const [n, p, k] = npk;
-    const somaFormulacao = n + p + k;
-    const somaNecessidade = necessidade ? necessidade.totalKgAlq : 0;
+    const necessidadeN = necessidade ? necessidade.nKgAlq : 0;
+    const necessidadeP = necessidade ? necessidade.pKgAlq : 0;
+    const necessidadeK = necessidade ? necessidade.kKgAlq : 0;
+    const nRazao = ignorarN ? 0 : n;
+    const necessidadeNRazao = ignorarN ? 0 : necessidadeN;
+    const somaFormulacao = nRazao + p + k;
+    const somaNecessidade = necessidadeNRazao + necessidadeP + necessidadeK;
     if (somaFormulacao <= 0 || !(somaNecessidade > 0)) {
       return { npk, distancia: Infinity, doseAlq: 0, fornecido: { n: 0, p: 0, k: 0 }, diferenca: { n: 0, p: 0, k: 0 } };
     }
 
-    const razaoForm = { n: n / somaFormulacao, p: p / somaFormulacao, k: k / somaFormulacao };
+    const razaoForm = { n: nRazao / somaFormulacao, p: p / somaFormulacao, k: k / somaFormulacao };
     const razaoNec = {
-      n: necessidade.nKgAlq / somaNecessidade,
-      p: necessidade.pKgAlq / somaNecessidade,
-      k: necessidade.kKgAlq / somaNecessidade,
+      n: necessidadeNRazao / somaNecessidade,
+      p: necessidadeP / somaNecessidade,
+      k: necessidadeK / somaNecessidade,
     };
     const distancia = Math.sqrt(
       (razaoForm.n - razaoNec.n) ** 2 + (razaoForm.p - razaoNec.p) ** 2 + (razaoForm.k - razaoNec.k) ** 2
     );
 
     const doseAlq = Math.max(
-      n > 0 ? necessidade.nKgAlq / (n / 100) : 0,
-      p > 0 ? necessidade.pKgAlq / (p / 100) : 0,
-      k > 0 ? necessidade.kKgAlq / (k / 100) : 0
+      !ignorarN && n > 0 ? necessidadeN / (n / 100) : 0,
+      p > 0 ? necessidadeP / (p / 100) : 0,
+      k > 0 ? necessidadeK / (k / 100) : 0
     );
 
     const fornecido = { n: doseAlq * (n / 100), p: doseAlq * (p / 100), k: doseAlq * (k / 100) };
     const diferenca = {
-      n: fornecido.n - necessidade.nKgAlq,
-      p: fornecido.p - necessidade.pKgAlq,
-      k: fornecido.k - necessidade.kKgAlq,
+      n: fornecido.n - necessidadeN,
+      p: fornecido.p - necessidadeP,
+      k: fornecido.k - necessidadeK,
     };
 
     return { npk, distancia, doseAlq, fornecido, diferenca };
@@ -350,9 +370,11 @@ const Calculos = (function () {
   // Rankeia um catálogo de formulações [N%, P%, K%] pela distância à
   // necessidade (menor primeiro) — quem chama usa o primeiro item como
   // recomendação principal e pode mostrar os seguintes como alternativa.
-  function encontrarFormulacaoMaisProxima(necessidade, catalogo) {
+  // `opts` (ex.: `{ ignorarN: true }`) é repassado direto pra
+  // pontuarFormulacao acima.
+  function encontrarFormulacaoMaisProxima(necessidade, catalogo, opts) {
     return (catalogo || [])
-      .map((npk) => pontuarFormulacao(necessidade, npk))
+      .map((npk) => pontuarFormulacao(necessidade, npk, opts))
       .sort((a, b) => a.distancia - b.distancia);
   }
 

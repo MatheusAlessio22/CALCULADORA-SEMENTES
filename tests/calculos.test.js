@@ -954,6 +954,23 @@ describe("pontuarFormulacao", () => {
     const r = pontuarFormulacao(necessidade, [0, 0, 0]);
     expect(r.distancia).toBe(Infinity);
   });
+
+  it("ignorarN: exportação de N alta (ex.: soja) não puxa a razão nem a dose — só P e K contam", () => {
+    // N bem maior que P/K na necessidade (como a soja, que fixa N via inoculante) —
+    // sem ignorarN isso dominaria a razão e a dose (ver teste seguinte).
+    const necessidade = { nKgAlq: 300, pKgAlq: 40, kKgAlq: 20, totalKgAlq: 360 };
+    const r = pontuarFormulacao(necessidade, [10, 20, 10], { ignorarN: true }); // mesma razão P:K (2:1) da necessidade
+    expect(r.distancia).toBeCloseTo(0, 9); // razão P:K bate exato, N não entra na conta
+    expect(r.doseAlq).toBeCloseTo(200, 9); // dose que cobre P e K (40/0,20 e 20/0,10) — N (300/0,10=3000) não conta mais
+    expect(r.fornecido.n).toBeCloseTo(20, 9); // N que essa dose de P/K acaba trazendo de carona (informativo)
+    expect(r.diferenca.n).toBeCloseTo(-280, 9); // "falta" de N é esperada e não deve ser tratada como alerta
+  });
+
+  it("ignorarN ausente/false preserva o comportamento padrão (N entra na razão e na dose)", () => {
+    const necessidade = { nKgAlq: 300, pKgAlq: 40, kKgAlq: 20, totalKgAlq: 360 };
+    const r = pontuarFormulacao(necessidade, [10, 20, 10]);
+    expect(r.doseAlq).toBeCloseTo(3000, 9); // sem ignorarN, N (300/0,10) domina a dose
+  });
 });
 
 describe("encontrarFormulacaoMaisProxima", () => {
@@ -975,5 +992,19 @@ describe("encontrarFormulacaoMaisProxima", () => {
   it("catálogo vazio retorna lista vazia", () => {
     const necessidade = { nKgAlq: 50, pKgAlq: 25, kKgAlq: 25, totalKgAlq: 100 };
     expect(encontrarFormulacaoMaisProxima(necessidade, [])).toEqual([]);
+  });
+
+  it("ignorarN muda o 1º colocado: sem o filtro, o catálogo mais rico em N vence mesmo com P:K invertido", () => {
+    const necessidade = { nKgAlq: 300, pKgAlq: 40, kKgAlq: 20, totalKgAlq: 360 }; // P:K real = 2:1
+    const catalogo = [
+      [10, 20, 10], // P:K = 2:1 (igual à necessidade), pouco N
+      [30, 10, 20], // P:K = 1:2 (invertido!), N próximo do necessário
+    ];
+    const semFiltro = encontrarFormulacaoMaisProxima(necessidade, catalogo);
+    expect(semFiltro[0].npk).toEqual([30, 10, 20]); // vence só por causa do N, apesar do P:K errado
+
+    const comFiltro = encontrarFormulacaoMaisProxima(necessidade, catalogo, { ignorarN: true });
+    expect(comFiltro[0].npk).toEqual([10, 20, 10]); // agora vence quem tem o P:K certo
+    expect(comFiltro[0].distancia).toBeCloseTo(0, 9);
   });
 });

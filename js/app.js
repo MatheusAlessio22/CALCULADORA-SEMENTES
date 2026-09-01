@@ -975,7 +975,12 @@ function renderProdutividade(area){
     wrapN.appendChild(div);
   });
 
-  const ranking = encontrarFormulacaoMaisProxima(necessidade, FORMULACOES_ESTOQUE).filter(r => isFinite(r.distancia));
+  // Soja fixa a maior parte do N via inoculante (ver aviso mais abaixo) — o
+  // N exportado pelo grão não deve pesar na escolha da formulação nem na
+  // dose sugerida, senão o ranking e a dose ficam puxados pelo N em vez de
+  // P e K (ver comentário de `ignorarN` em pontuarFormulacao, calculos.js).
+  const ignorarN = currentCrop === "soja";
+  const ranking = encontrarFormulacaoMaisProxima(necessidade, FORMULACOES_ESTOQUE, { ignorarN }).filter(r => isFinite(r.distancia));
   if(!ranking.length){
     wrapF.innerHTML = `<p class="text-[11px] text-muted">Nenhuma formulação do catálogo cobre essa necessidade.</p>`;
   } else {
@@ -983,7 +988,7 @@ function renderProdutividade(area){
     const [n, p, k] = melhor.npk;
     const metaMelhor = metaFormulacao(melhor.npk);
     const faltando = Object.entries(melhor.diferenca)
-      .filter(([, v]) => v < -0.01)
+      .filter(([nutriente, v]) => v < -0.01 && !(ignorarN && nutriente === "n"))
       .map(([nutriente]) => ({ n: "N", p: "P₂O₅", k: "K₂O" }[nutriente]));
     wrapF.innerHTML = `
       <div class="rounded-xl p-3" style="background:var(--accent-soft); border:1px solid var(--accent-border);">
@@ -1006,7 +1011,7 @@ function renderProdutividade(area){
   }
 
   if(currentCrop === "soja"){
-    wrapF.innerHTML += `<p class="mt-2 text-[10.5px] leading-snug text-muted">A soja fixa boa parte do nitrogênio via bactérias do gênero <em>Bradyrhizobium</em> (inoculante) — a adubação nitrogenada mineral costuma não ser recomendada; o N acima é só a exportação teórica pelos grãos.</p>`;
+    wrapF.innerHTML += `<p class="mt-2 text-[10.5px] leading-snug text-muted">A soja fixa boa parte do nitrogênio via bactérias do gênero <em>Bradyrhizobium</em> (inoculante) — a adubação nitrogenada mineral costuma não ser recomendada; o N acima é só a exportação teórica pelos grãos e não entra na escolha da formulação nem na dose sugerida (que consideram só P₂O₅ e K₂O).</p>`;
   }
 
   resultado.classList.remove("hidden");
