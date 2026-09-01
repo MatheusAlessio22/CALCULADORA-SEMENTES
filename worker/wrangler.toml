@@ -1,3 +1,15 @@
 name = "calculadora-coasul-gemini-proxy"
 main = "src/index.js"
 compatibility_date = "2026-08-31"
+
+# Freio de custo/abuso por IP: a checagem de Origin em src/index.js só barra
+# navegadores (o header Origin é livremente forjável por script/curl), então
+# sem isso qualquer um que descobrisse a URL do Worker poderia bater sem
+# limite na API paga do Gemini usando a chave secreta guardada aqui. Não é
+# autenticação — 20 req/60s por IP é folgado pro uso real (poucas pessoas da
+# equipe, um laudo por vez) e barato de rejeitar o resto.
+[[unsafe.bindings]]
+name = "LAUDO_RATE_LIMITER"
+type = "ratelimit"
+namespace_id = "1001"
+simple = { limit = 20, period = 60 }

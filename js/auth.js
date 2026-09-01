@@ -103,9 +103,20 @@ function sha256Hex(texto) {
 const Auth = (() => {
   const SESSION_KEY = "coasulAuthUser";
 
+  // Além de existir no localStorage, o usuário salvo precisa continuar em
+  // USERS: se a conta foi removida (funcionário desligado, ver instruções no
+  // topo do arquivo), a sessão salva num aparelho fica invalidada na próxima
+  // vez que a ficha é aberta ali, em vez de continuar liberada pra sempre.
   function usuarioLogado() {
     try {
-      return localStorage.getItem(SESSION_KEY);
+      const salvo = localStorage.getItem(SESSION_KEY);
+      if (!salvo) return null;
+      const aindaValido = USERS.some((u) => u.user === salvo);
+      if (!aindaValido) {
+        localStorage.removeItem(SESSION_KEY);
+        return null;
+      }
+      return salvo;
     } catch (e) {
       return null;
     }
@@ -156,11 +167,18 @@ if (typeof document !== "undefined") {
 
     function esconderPortao() {
       gate.classList.add("hidden");
+      // appShell só fica atrás do portão visualmente (z-index) — sem inert,
+      // Tab alcançaria os controles do app (ex.: "Sair") antes de um login
+      // válido. Ver esconderLoginGate()/entrarNoApp() abaixo: no login
+      // efetivo, tirar o inert só depois da transição de saída evita que o
+      // app "salte" à frente do cartão de login ainda visível.
+      if (appShell) appShell.inert = false;
     }
 
     function mostrarPortao() {
       gate.classList.remove("hidden");
       gate.classList.remove("is-leaving"); // sem isso, o 2º login abriria com o cartão invisível
+      if (appShell) appShell.inert = true;
       if (userInput) userInput.value = "";
       if (passInput) passInput.value = "";
       if (errorMsg) errorMsg.classList.add("hidden");
@@ -207,7 +225,12 @@ if (typeof document !== "undefined") {
       appShell.classList.add("app-entrando");
     }
 
+    // Estado inicial: o HTML já vem com o portão visível por padrão (ver
+    // comentário em index.html), então appShell começa inert até confirmar
+    // sessão salva — sem isso, a 1ª carga da página (sem login ainda) deixa
+    // os controles do app alcançáveis por Tab por trás do portão.
     if (Auth.usuarioLogado()) esconderPortao();
+    else if (appShell) appShell.inert = true;
 
     form.addEventListener("submit", (e) => {
       e.preventDefault();

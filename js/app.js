@@ -1,5 +1,5 @@
 
-const APP_VERSION = "1.4.1";
+const APP_VERSION = "1.4.2";
 
 const CROPS = {
   soja: {
@@ -3249,8 +3249,9 @@ $("calMetodoGessagem").addEventListener("change", calcCalagem);
 // de uma leitura antiga sem os valores anteriores se misturarem.
 $("btnLimparMatriz").addEventListener("click", () => {
   if(!window.confirm("Limpar todos os valores da Matriz Técnica de Solo (Ca, Mg, K, Al, H+Al, pH, argila)?")) return;
-  CAL_MATRIX_IDS.forEach(id => { $(id).value = ""; });
-  $("calKUnidade020").value = "cmolc";
+  CAL_MATRIX_IDS.forEach(id => { const el = $(id); if(el) el.value = ""; });
+  const kUnidade = $("calKUnidade020");
+  if(kUnidade) kUnidade.value = "cmolc";
   calcCalagem();
   mostrarToast("Matriz técnica limpa.");
 });

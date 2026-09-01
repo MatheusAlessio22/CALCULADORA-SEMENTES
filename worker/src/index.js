@@ -45,6 +45,15 @@ export default {
       return new Response("Origem nao permitida", { status: 403, headers: cors });
     }
 
+    // Ver LAUDO_RATE_LIMITER em wrangler.toml: o header Origin acima só barra
+    // navegadores, então este é o freio de verdade contra abuso de custo/quota
+    // da chave do Gemini caso a URL do Worker vaze fora do app.
+    const ip = request.headers.get("CF-Connecting-IP") || "desconhecido";
+    const { success } = await env.LAUDO_RATE_LIMITER.limit({ key: ip });
+    if (!success) {
+      return new Response("Muitas requisicoes, tente novamente em instantes.", { status: 429, headers: cors });
+    }
+
     let corpo;
     try {
       corpo = await request.json();

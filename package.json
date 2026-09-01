@@ -1,6 +1,6 @@
 {
   "name": "calculadora-coasul-pwa",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Ficha de campo para calcular necessidade de sementes, adubação e custo por embalagem (Soja, Milho, Feijão, Trigo e Adubação/Ureia), além de uma calculadora de regulagem de plantadeira. Funciona 100% offline — não faz nenhuma chamada de rede.",
   "main": "service-worker.js",
   "scripts": {

@@ -40,6 +40,13 @@ cd worker
 npx wrangler deploy
 ```
 
+## Limite de requisições (rate limiting)
+
+O Worker limita a 20 requisições por IP a cada 60s (`LAUDO_RATE_LIMITER` em
+`wrangler.toml`) — é só um freio de custo/abuso caso a URL do Worker vaze
+fora do app, não autenticação. Provisionado automaticamente pelo Cloudflare
+no `wrangler deploy`, sem precisar criar nada à parte (diferente de KV/D1).
+
 ## Trocar a chave
 
 ```bash
