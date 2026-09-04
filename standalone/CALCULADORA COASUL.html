@@ -994,6 +994,37 @@
   .ctc-subgauge-fill.is-ok{ background:#5C8A26; }
   .ctc-subgauge-fill.is-alerta{ background:#9C2B22; }
 
+  /* Parecer Técnico Automatizado (aba Calagem & Gessagem) — três blocos de
+     texto (Acidez, Equilíbrio de Cátions, Alerta de Subsolo) seguidos da
+     indicação final de correção (grid de cards, um por corretivo/nutriente). */
+  .parecer-block{ margin-top:14px; }
+  .parecer-block-title{
+    display:flex; align-items:center; gap:6px;
+    font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:.04em;
+    color:var(--accent);
+  }
+  .parecer-block-title.is-alerta{ color:#9C2B22; }
+  .parecer-block-text{ margin-top:4px; font-size:13px; line-height:1.6; color:var(--ink-secondary); }
+
+  .parecer-final-title{
+    margin-top:20px; margin-bottom:10px;
+    font-size:14px; font-weight:800; color:var(--ink-primary);
+    display:flex; align-items:center; gap:6px;
+  }
+  .parecer-indic-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
+  .parecer-indic-card{
+    border-radius:12px; padding:13px 14px;
+    border:1.5px solid var(--accent-border); background:var(--accent-surface);
+  }
+  .parecer-indic-card-title{ font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; color:var(--ink-secondary); }
+  .parecer-indic-dose{ margin-top:4px; font-size:19px; font-weight:900; color:var(--accent); line-height:1.15; font-family:"SFMono-Regular",Consolas,monospace; }
+  .parecer-indic-produto{ margin-top:3px; font-size:11.5px; color:var(--ink-muted); line-height:1.4; }
+  .parecer-indic-total{ margin-top:7px; padding-top:7px; border-top:1px dashed var(--border-subtle); font-size:11.5px; color:var(--ink-muted); }
+  .parecer-empty-note{
+    border-radius:12px; padding:13px 14px; border:1.5px solid #CFE6C8; background:#F3FAF1;
+    font-size:13px; font-style:italic; color:var(--ink-muted); line-height:1.5;
+  }
+
   /* Utilities de superfície/borda a partir dos design tokens — pra componentes
      JS (calAddEmbalagem() em app.js) que não precisam de uma classe própria. */
   .bg-surface-subtle{ background:var(--surface-subtle); }
@@ -2862,9 +2893,15 @@ tailwind.config = {
               </tr>
               <tr>
                 <td>Argila</td>
-                <td class="sm-unit sm-dash" aria-hidden="true">—</td>
+                <td><input type="number" id="calArgila020" class="inp inp-sm inp-num" step="1" min="0" max="100" inputmode="decimal" placeholder="0"></td>
                 <td><input type="number" id="calArgila2040" class="inp inp-sm inp-num" step="1" min="0" max="100" inputmode="decimal" placeholder="0"></td>
                 <td class="sm-unit">%</td>
+              </tr>
+              <tr>
+                <td>P disponível</td>
+                <td><input type="number" id="calP020" class="inp inp-sm inp-num" step="0.1" min="0" inputmode="decimal" placeholder="0"></td>
+                <td class="sm-unit sm-dash" aria-hidden="true">—</td>
+                <td class="sm-unit">mg/dm³</td>
               </tr>
             </tbody>
           </table>
@@ -2993,6 +3030,31 @@ tailwind.config = {
         </div>
       </section>
       </div>
+
+      <section id="calParecerSection" class="crm-card mt-4 hidden">
+        <div class="crm-card-header flex-wrap gap-x-3 gap-y-2">
+          <h2 class="crm-card-title"><span aria-hidden="true"><svg class="ti ti-file-report icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /><path d="M9 9l1 0" /><path d="M9 13l6 0" /><path d="M9 17l6 0" /></svg></span>Parecer Técnico Automatizado</h2>
+          <div class="ctc-badges" id="calParecerBadges"></div>
+        </div>
+
+        <div class="parecer-block">
+          <div class="parecer-block-title"><svg class="ti ti-flask icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3l6 0" /><path d="M10 9l4 0" /><path d="M10 3v6l-4 11a.7 .7 0 0 0 .5 1h11a.7 .7 0 0 0 .5 -1l-4 -11v-6" /></svg>Acidez</div>
+          <p class="parecer-block-text" id="calParecerAcidez">—</p>
+        </div>
+        <div class="parecer-block">
+          <div class="parecer-block-title"><svg class="ti ti-triangle-square-circle icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M15 3l6 9l-6 9h-6" /></svg>Equilíbrio de Cátions</div>
+          <p class="parecer-block-text" id="calParecerCations">—</p>
+        </div>
+        <div class="parecer-block">
+          <div class="parecer-block-title" id="calParecerSubsoloTitle"><svg class="ti ti-alert-triangle icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4" /><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z" /><path d="M12 16h.01" /></svg>Alerta de Subsolo</div>
+          <p class="parecer-block-text" id="calParecerSubsolo">—</p>
+        </div>
+
+        <div class="parecer-final-title">Indicação Final — O que aplicar para corrigir o solo</div>
+        <div id="calParecerIndicacoes"></div>
+
+        <p class="mt-3 text-[10.5px] leading-snug text-muted">Faixas de referência de Fósforo e Potássio e doses de correção simplificadas — não variam por cultura; confira e calibre com o engenheiro agrônomo responsável antes da aplicação.</p>
+      </section>
 
       <section id="calMemoriaBox" class="mt-4">
         <button type="button" id="calMemoriaToggle" class="mem-toggle flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-[13px] font-extrabold text-ink" aria-expanded="false" aria-controls="calMemoriaPanel">
@@ -3597,6 +3659,193 @@ const Calculos = (function () {
     return { enxofreKgHa: d * 0.15, calcioKgHa: d * 0.18 };
   }
 
+  // ---------- Parecer Técnico: Indicação de Correção de Fósforo e Potássio ----------
+  // Complementa a Calagem & Gessagem acima (que já resolve Ca/Mg/Al/pH) com a
+  // leitura de P e K do laudo e a indicação final de quanto adubo corretivo
+  // aplicar. PROTÓTIPO/DEV: as faixas de interpretação e as doses de correção
+  // abaixo são valores de referência simplificados (não variam por cultura),
+  // inspirados no Manual de Adubação e Calagem para os Estados do RS/SC e no
+  // Manual SBCS-NEPAR/PR — como todo o resto desta aba, são estimativa técnica
+  // e precisam ser conferidos/calibrados pelo engenheiro agrônomo responsável
+  // antes de qualquer uso em laudo real ou aplicação em campo.
+
+  // Classe textural do solo pela % de argila — define a faixa de leitura do
+  // Fósforo (solo mais argiloso "segura" mais P adsorvido, então precisa de
+  // teor mais alto no laudo pra ser considerado bem suprido).
+  function classeTextural(argilaPct) {
+    const a = Number(argilaPct) || 0;
+    if (a > 60) return 1;
+    if (a > 40) return 2;
+    if (a > 20) return 3;
+    return 4;
+  }
+
+  // Faixas de P disponível (mg/dm³, extrator Mehlich-1) por classe textural —
+  // limite superior de cada faixa (Muito Baixo/Baixo/Médio/Alto; acima do
+  // último limite é Muito Alto).
+  const FAIXAS_FOSFORO = {
+    1: { baixo: 2.7, medio: 5.4, alto: 8.0, muitoAlto: 16.0 },
+    2: { baixo: 4.0, medio: 8.0, alto: 12.0, muitoAlto: 24.0 },
+    3: { baixo: 6.6, medio: 13.2, alto: 20.0, muitoAlto: 40.0 },
+    4: { baixo: 10.0, medio: 20.0, alto: 30.0, muitoAlto: 60.0 },
+  };
+
+  // Classe de CTC a pH 7,0 (cmolc/dm³) — define a faixa de leitura do
+  // Potássio trocável (CTC maior retém mais K, então precisa de teor mais
+  // alto no laudo pra ser considerado bem suprido).
+  function classeCtc(ctcPh7) {
+    const t = Number(ctcPh7) || 0;
+    if (t <= 7.5) return 1;
+    if (t <= 15.0) return 2;
+    if (t <= 22.5) return 3;
+    return 4;
+  }
+
+  // Faixas de K trocável (cmolc/dm³) por classe de CTC — mesmo formato de FAIXAS_FOSFORO.
+  const FAIXAS_POTASSIO = {
+    1: { baixo: 0.10, medio: 0.20, alto: 0.30, muitoAlto: 0.60 },
+    2: { baixo: 0.15, medio: 0.30, alto: 0.45, muitoAlto: 0.90 },
+    3: { baixo: 0.20, medio: 0.40, alto: 0.60, muitoAlto: 1.20 },
+    4: { baixo: 0.25, medio: 0.50, alto: 0.75, muitoAlto: 1.50 },
+  };
+
+  // Aplica uma faixa {baixo, medio, alto, muitoAlto} a um valor lido do laudo,
+  // devolvendo a classe de suficiência do nutriente.
+  function classificarFaixa(valor, faixa) {
+    const v = Number(valor) || 0;
+    if (v <= faixa.baixo) return "Muito Baixo";
+    if (v <= faixa.medio) return "Baixo";
+    if (v <= faixa.alto) return "Médio";
+    if (v <= faixa.muitoAlto) return "Alto";
+    return "Muito Alto";
+  }
+
+  function interpretarFosforo({ p = 0, argila = 0 } = {}) {
+    const classeArgila = classeTextural(argila);
+    return { classe: classificarFaixa(p, FAIXAS_FOSFORO[classeArgila]), classeTextural: classeArgila, p: Number(p) || 0 };
+  }
+
+  function interpretarPotassio({ kCmolc = 0, ctcPh7 = 0 } = {}) {
+    const classeCtcSolo = classeCtc(ctcPh7);
+    return { classe: classificarFaixa(kCmolc, FAIXAS_POTASSIO[classeCtcSolo]), classeCtc: classeCtcSolo, kCmolc: Number(kCmolc) || 0 };
+  }
+
+  // Dose de correção (kg/ha do nutriente puro) pra elevar a faixa atual até
+  // "Alto" — valores fixos de referência, iguais para qualquer cultura; "Alto"
+  // e "Muito Alto" não entram em correção, só em adubação de manutenção (fora
+  // do escopo desta função — ver calcularNecessidadeNutrientes, que cobre a
+  // exportação pela produtividade-alvo).
+  const DOSE_CORRECAO_P2O5 = { "Muito Baixo": 120, "Baixo": 80, "Médio": 40, "Alto": 0, "Muito Alto": 0 };
+  const DOSE_CORRECAO_K2O = { "Muito Baixo": 100, "Baixo": 60, "Médio": 30, "Alto": 0, "Muito Alto": 0 };
+
+  // Teor de nutriente ativo dos corretivos mais comuns — converte kg/ha de
+  // P₂O₅/K₂O puro em kg/ha de produto comercial.
+  const TEOR_SUPER_SIMPLES_P2O5 = 0.18; // Superfosfato Simples (SSP), 18% P₂O₅
+  const TEOR_MAP_P2O5 = 0.52;           // MAP, 52% P₂O₅
+  const TEOR_KCL_K2O = 0.60;            // Cloreto de Potássio (KCl), 60% K₂O
+
+  function calcularCorrecaoFosforo({ classe, area = 0 } = {}) {
+    const doseP2O5HaKg = DOSE_CORRECAO_P2O5[classe] || 0;
+    const areaN = Number(area) || 0;
+    return {
+      necessario: doseP2O5HaKg > 0,
+      doseP2O5HaKg,
+      superSimplesHaKg: doseP2O5HaKg / TEOR_SUPER_SIMPLES_P2O5,
+      mapHaKg: doseP2O5HaKg / TEOR_MAP_P2O5,
+      totalSuperSimplesKg: (doseP2O5HaKg / TEOR_SUPER_SIMPLES_P2O5) * areaN,
+      totalMapKg: (doseP2O5HaKg / TEOR_MAP_P2O5) * areaN,
+    };
+  }
+
+  function calcularCorrecaoPotassio({ classe, area = 0 } = {}) {
+    const doseK2OHaKg = DOSE_CORRECAO_K2O[classe] || 0;
+    const areaN = Number(area) || 0;
+    return {
+      necessario: doseK2OHaKg > 0,
+      doseK2OHaKg,
+      kclHaKg: doseK2OHaKg / TEOR_KCL_K2O,
+      totalKclKg: (doseK2OHaKg / TEOR_KCL_K2O) * areaN,
+    };
+  }
+
+  // pH em CaCl₂ — faixas de interpretação padrão (Embrapa/SBCS), usadas no
+  // Parecer Técnico Automatizado abaixo.
+  function interpretarPhCaCl2(ph) {
+    const v = Number(ph) || 0;
+    if (!v) return "não informado";
+    if (v < 4.5) return "extremamente ácido";
+    if (v < 5.0) return "muito ácido";
+    if (v < 5.5) return "ácido";
+    if (v < 6.0) return "levemente ácido";
+    if (v < 7.0) return "neutro";
+    return "alcalino";
+  }
+
+  // Parecer Técnico Automatizado (item 4.2): a partir de tudo que a aba de
+  // Calagem & Gessagem já calculou (índices, calagem, gessagem, correção de P
+  // e K), monta os três blocos de texto — Acidez, Equilíbrio de Cátions,
+  // Alerta de Subsolo — e a lista de indicações finais de correção. Devolve
+  // texto plano (sem HTML/markdown), pronto pra ser embutido tanto na tela
+  // quanto no PDF e na mensagem de WhatsApp — cada um decide só a
+  // formatação/markup ao redor (negrito, badge, cor). `fmtDec(n, casas)` é o
+  // formatador de número (pt-BR) do chamador — mesma ideia de
+  // montarVeredicto() acima, pra manter esta função pura e testável sem
+  // depender de locale.
+  function gerarParecerTecnico(d, fmtDec) {
+    const fd = fmtDec || ((n, casas = 2) => (Number(n) || 0).toFixed(casas));
+    const classePh = interpretarPhCaCl2(d.phCaCl2);
+    const gapV = (Number(d.v2) || 0) - (Number(d.v1) || 0);
+    const textoAcidez = gapV <= 0
+      ? `pH ${classePh} (${fd(d.phCaCl2, 2)}) · V₁ ${fd(d.v1, 1)}% — meta V₂ ${fd(d.v2, 1)}% já atingida.`
+      : `pH ${classePh} (${fd(d.phCaCl2, 2)}) · V₁ ${fd(d.v1, 1)}% → V₂ ${fd(d.v2, 1)}% (faltam ${fd(gapV, 1)} pts).`;
+
+    const caMgN = Number(d.caMg) || 0;
+    const faixaCaMg = caMgN > 4 ? "alto" : caMgN < 2 ? "baixo" : "equilibrado";
+    const textoCations =
+      `Ca:Mg ${fd(d.caMg, 1)}:1 (${faixaCaMg}) · K ${d.classeK} (${fd(d.pctK, 1)}% da CTC)` +
+      (d.necessitaK ? " — abaixo do suficiente." : " — suficiente.");
+
+    const textoSubsolo = d.gessagemNecessaria
+      ? `Impedimento químico no subsolo (${(d.motivosGessagem || []).length} critério(s) — ver Gessagem).`
+      : "Sem impedimento químico no subsolo.";
+
+    const indicacoes = [];
+    if (d.necessitaCalagem && d.calagem) {
+      indicacoes.push({
+        chave: "calagem", titulo: "Calagem",
+        dose: `${fd(d.calagem.ncAplicar, 2)} t/ha`,
+        produto: `Calcário ${d.calagem.tipo} (PRNT ${fd(d.calagem.prnt, 0)}%)`,
+        total: `Total: ${fd(d.calagem.totalT, 2)} t`,
+      });
+    }
+    if (d.gessagemNecessaria && d.gesso) {
+      indicacoes.push({
+        chave: "gessagem", titulo: "Gessagem",
+        dose: `${fd(d.gesso.doseKgHa, 0)} kg/ha`,
+        produto: `~${fd(d.gesso.enxofreKgHa, 0)} kg/ha S · ~${fd(d.gesso.calcioKgHa, 0)} kg/ha Ca`,
+        total: `Total: ${fd(d.gesso.totalT, 2)} t`,
+      });
+    }
+    if (d.necessitaP && d.correcaoP) {
+      indicacoes.push({
+        chave: "fosforo", titulo: `Fósforo — classe ${d.classeP}`,
+        dose: `${fd(d.correcaoP.doseP2O5HaKg, 0)} kg/ha P₂O₅`,
+        produto: `≈ ${fd(d.correcaoP.superSimplesHaKg, 0)} kg/ha SSP (18%) ou ${fd(d.correcaoP.mapHaKg, 0)} kg/ha MAP (52%)`,
+        total: `Total: ${fd(d.correcaoP.totalSuperSimplesKg / 1000, 2)} t SSP`,
+      });
+    }
+    if (d.necessitaK && d.correcaoK) {
+      indicacoes.push({
+        chave: "potassio", titulo: `Potássio — classe ${d.classeK}`,
+        dose: `${fd(d.correcaoK.doseK2OHaKg, 0)} kg/ha K₂O`,
+        produto: `≈ ${fd(d.correcaoK.kclHaKg, 0)} kg/ha KCl (60%)`,
+        total: `Total: ${fd(d.correcaoK.totalKclKg / 1000, 2)} t KCl`,
+      });
+    }
+
+    return { classePh, textoAcidez, textoCations, textoSubsolo, indicacoes, semNecessidadeCorrecao: indicacoes.length === 0 };
+  }
+
   // ---------- Comparador de Formulações: Custo por Ponto de Nutriente ----------
   // Ajuda a comparar adubos comerciais não só pelo preço da embalagem, mas pelo
   // custo real de cada kg de nutriente ativo (N + P₂O₅ + K₂O) que ela entrega —
@@ -3906,6 +4155,20 @@ const Calculos = (function () {
       : `• _Subsolo sem impedimento químico crítico — gessagem dispensada._`;
     blocos.push(gessagemTexto);
 
+    if (r.parecer) {
+      blocos.push(
+        `📋 *PARECER TÉCNICO*\n` +
+        `🧪 _Acidez:_ ${r.parecer.textoAcidez}\n\n` +
+        `⚖️ _Equilíbrio de Cátions:_ ${r.parecer.textoCations}\n\n` +
+        `${r.parecer.textoSubsolo.startsWith("Sem") ? "✅" : "⚠️"} _Subsolo:_ ${r.parecer.textoSubsolo}`
+      );
+      let indicacaoTexto = `🎯 *INDICAÇÃO FINAL — O QUE APLICAR:*`;
+      indicacaoTexto += r.parecer.semNecessidadeCorrecao
+        ? `\n_Solo bem suprido em todos os parâmetros avaliados — sem necessidade de correção além do já indicado acima._`
+        : "\n" + r.parecer.indicacoes.map((i) => `• *${i.titulo}:* ${i.dose}\n  ↳ ${i.produto}\n  ↳ ${i.total}`).join("\n");
+      blocos.push(indicacaoTexto);
+    }
+
     blocos.push(`──────────────────────\n_Baseado no Manual de Adubação e Calagem para o Estado do Paraná (SBCS-NEPAR)_`);
     return blocos.join("\n\n");
   }
@@ -3932,6 +4195,19 @@ const Calculos = (function () {
     verificarNecessidadeGessagem,
     calcularGessagem,
     nutrientesGesso,
+    classeTextural,
+    classeCtc,
+    classificarFaixa,
+    FAIXAS_FOSFORO,
+    FAIXAS_POTASSIO,
+    interpretarFosforo,
+    interpretarPotassio,
+    DOSE_CORRECAO_P2O5,
+    DOSE_CORRECAO_K2O,
+    calcularCorrecaoFosforo,
+    calcularCorrecaoPotassio,
+    interpretarPhCaCl2,
+    gerarParecerTecnico,
     calcularConcentracaoTotalNutrientes,
     calcularCustoPorKgNutriente,
     identificarMelhorCustoBeneficio,
@@ -4049,8 +4325,99 @@ const CULTIVARES = {
     { nome: "SYN7G17 (DEFENDER)", pms: null },
   ],
 
-  feijao: [],
-  trigo: [],
+  feijao: [
+    { nome: "ANFC5 (CARIOCA)", pms: null },
+    { nome: "ANFC9 (CARIOCA)", pms: null },
+    { nome: "ANFC22 (CARIOCA)", pms: null },
+    { nome: "ANFC29 (CARIOCA)", pms: null },
+    { nome: "BRS ESTEIO (PRETO)", pms: null },
+    { nome: "BRS FP403 (PRETO)", pms: null },
+    { nome: "BRS FS311 (RAJADO)", pms: null },
+    { nome: "IAC NELORE (CARIOCA)", pms: null },
+    { nome: "IAC VELOZ (PRETO)", pms: null },
+    { nome: "IAC-1849 POLACO (CARIOCA)", pms: null },
+    { nome: "IAC-1850 (CARIOCA)", pms: null },
+    { nome: "IAC-2051 (CARIOCA)", pms: null },
+    { nome: "IAC-2358 UNAMAX (PRETO)", pms: null },
+    { nome: "IPR AGUIA (CARIOCA)", pms: null },
+    { nome: "IPR QUIRIQUIRI (CARIOCA)", pms: null },
+    { nome: "IPR SABIA (CARIOCA)", pms: null },
+    { nome: "IPR TAPICURU (PRETO)", pms: null },
+    { nome: "IPR TUIUIU (PRETO)", pms: null },
+    { nome: "IPR URUTAU (PRETO)", pms: null },
+  ],
+  trigo: [
+    { nome: "ORS BLINDADO", pms: null },
+    { nome: "ORS FALCAO", pms: null },
+    { nome: "ORS FEROZ", pms: null },
+    { nome: "ORS FERRARI", pms: null },
+    { nome: "ORS GUARDIAO", pms: null },
+    { nome: "ORS SENNA", pms: null },
+    { nome: "TBIO ASTRO", pms: null },
+    { nome: "TBIO ATON", pms: null },
+    { nome: "TBIO AUDAZ", pms: null },
+    { nome: "TBIO BIO182385 (TALISMA)", pms: null },
+    { nome: "TBIO BIO182455 (TITAN)", pms: null },
+    { nome: "TBIO BIO198020 (ENERGIX 8020)", pms: null },
+    { nome: "TBIO CALIBRE", pms: null },
+    { nome: "TBIO ENERGIX 201", pms: null },
+    { nome: "TBIO ENERGIX 202", pms: null },
+    { nome: "TBIO ENERGIX 203", pms: null },
+    { nome: "TBIO ENERGIX 204", pms: null },
+    { nome: "TBIO LENOX (PASTEJO)", pms: null },
+    { nome: "TBIO MOTRIZ", pms: null },
+    { nome: "TBIO PONTEIRO", pms: null },
+    { nome: "TBIO SONIC", pms: null },
+    { nome: "TBIO TORUK", pms: null },
+    { nome: "TBIO TRUNFO", pms: null },
+    { nome: "TBIO WBC201347 (VELOZ)", pms: null },
+    { nome: "TBIO WBC221301 (DINAMO)", pms: null },
+  ],
+
+  // Formulações/produtos de adubo cotados pelo cliente — pms não se aplica
+  // aqui (fica sempre null), é só pra reaproveitar o mesmo mecanismo de
+  // busca/sugestão do campo. O NPK é lido do próprio nome quando presente
+  // (ver lerFormulacao() em app.js); itens sem número no nome (ex.: "Ureia
+  // Granulada", produtos foliares) continuam pesquisáveis mas não preenchem
+  // N/P/K sozinhos — o usuário completa manualmente.
+  adubacao: [
+    { nome: "02.23.23 CIBRA/BRFERTIL", pms: null },
+    { nome: "02.23.23 MISTURA DE GRANULOS", pms: null },
+    { nome: "02.23.23 STRATUN MOSAIC", pms: null },
+    { nome: "02.23.23 EVOLUTION TOPMIX YARA", pms: null },
+    { nome: "04.23.20 +0,18B PLUS BAG COASUL/MOSAIC", pms: null },
+    { nome: "04.30.10 MISTURA DE GRANULOS", pms: null },
+    { nome: "HAKAPHOS AZUL 20.05.05 COMPO", pms: null },
+    { nome: "11.52.00 MAP", pms: null },
+    { nome: "12.31.17 EVOLUTION TOPMIX YARA", pms: null },
+    { nome: "12.32.18 MISTURA DE GRANULOS", pms: null },
+    { nome: "13.24.12 YARAMILA", pms: null },
+    { nome: "YARAMILA PRATICALE 22.10.10 2%S 0,1%ZN", pms: null },
+    { nome: "08.20.15 MG BRFERTIL/COONAGRO/FERTIPAR", pms: null },
+    { nome: "08.20.15 YARA/MOSAIC MISTURA DE GRANULOS", pms: null },
+    { nome: "09.15.15 YARABASA POWERSTART", pms: null },
+    { nome: "10.15.15 MG CIBRA/BRFERTIL/CONAGRO/FERTIPAR", pms: null },
+    { nome: "10.15.15 MISTURA DE GRANULOS", pms: null },
+    { nome: "10.20.18 +0,16B PERFORMA PLUS MOSAIC", pms: null },
+    { nome: "03.21.21 NPK 7CA 5S+MICROS YARABASA", pms: null },
+    { nome: "ASPIRE 00.00.58+0,5B (KCL+B) MOSAIC", pms: null },
+    { nome: "BAKPRO", pms: null },
+    { nome: "BASFOLIAR BLACK EVOLUTION COMPO", pms: null },
+    { nome: "BASFOLIAR CITOBOR COMPO", pms: null },
+    { nome: "BASFOLIAR COMOL HC (Mo12% Co0,2%) COMPO", pms: null },
+    { nome: "BASFOLIAR COMOL TOP (Mo12% Co0,2%) COMPO", pms: null },
+    { nome: "BIOATIVADOR FOLHA (Mn0,85% Zn0,85% Mg1% N2,5% S21% COT4,7%)", pms: null },
+    { nome: "BIOATIVADOR RAIZ (N4,7% Zn0,75% COT4,7%) NORTOX", pms: null },
+    { nome: "CLORETO DE POTASSIO", pms: null },
+    { nome: "33.00.00 UREIA PROTEGIDA", pms: null },
+    { nome: "UREIA PROTEGIDA 45.00.00", pms: null },
+    { nome: "UREIA GRANULADA", pms: null },
+    { nome: "COOPER N 33.00.00 FECOAGRO", pms: null },
+    { nome: "COOPER N 40.00.00 FECOAGRO", pms: null },
+    { nome: "SULFATO DE AMONIA GRANULADO", pms: null },
+    { nome: "YARA BELA 27.00.00", pms: null },
+    { nome: "SUPERFOSFATO SIMPLES", pms: null },
+  ],
 };
 
 
@@ -4122,6 +4489,7 @@ const FORMULACOES_ESTOQUE = [
   [3, 21, 21], [2, 23, 23], [4, 23, 20], [10, 15, 15],
   [8, 20, 15], [12, 31, 17], [11, 52, 0], [10, 20, 18],
   [5, 25, 25], [8, 20, 20], [12, 32, 18], [13, 24, 12],
+  [4, 30, 10], [9, 15, 15], [22, 10, 10],
 ];
 
 // Metadados de exibição por formulação (nome comercial, se é NPK granulado
@@ -4144,6 +4512,7 @@ const {
   montarCombo, bagSizeFromNpk, calcularCusto, formatarPrecoResumo, precisaAlertarPrazoAusente,
   converterKMgParaCmolc, calcularIndicesSolo, calcularCalagem, determinarTipoCalcario,
   verificarNecessidadeGessagem, calcularGessagem, nutrientesGesso,
+  interpretarFosforo, interpretarPotassio, calcularCorrecaoFosforo, calcularCorrecaoPotassio, gerarParecerTecnico,
   calcularConcentracaoTotalNutrientes, calcularCustoPorKgNutriente, identificarMelhorCustoBeneficio,
   calcularEquivalenciaAdubo, montarVeredicto,
   calcularNecessidadeNutrientes, encontrarFormulacaoMaisProxima,
@@ -4219,6 +4588,18 @@ let currentCrop = "soja";
 const cropVariant = {}; // guarda a variante escolhida por cultura (ex.: milho -> 'sacas')
 
 const tabs = document.querySelectorAll(".tab-btn");
+
+// Altura da área realmente visível da tela, usada pelas listas suspensas
+// (seletor personalizado e sugestão de cultivar/formulação) pra decidir
+// quanto espaço têm embaixo do campo. window.innerHeight não serve pra isso
+// no celular: no Android costuma encolher junto com o teclado virtual (então
+// listas perto do topo da tela achavam que não tinham espaço embaixo e
+// abriam pra cima sem necessidade), e no iOS Safari não encolhe nunca (o
+// teclado só cobre por cima, sem entrar na conta) — em ambos os casos a
+// altura "de verdade" é a do visualViewport, não a do innerHeight.
+function alturaViewportVisivel(){
+  return window.visualViewport ? (window.visualViewport.offsetTop + window.visualViewport.height) : window.innerHeight;
+}
 
 // Seletor personalizado: troca a lista nativa do <select> (impossível de
 // estilizar de verdade em todo navegador — no iPhone vira sempre uma rodinha
@@ -4308,7 +4689,7 @@ function enhanceSelect(selectEl){
     list.style.width = minW + "px";
     const leftPos = Math.min(Math.max(8, rect.left), window.innerWidth - minW - 8);
     list.style.left = leftPos + "px";
-    const espacoAbaixo = window.innerHeight - rect.bottom;
+    const espacoAbaixo = alturaViewportVisivel() - rect.bottom;
     const abrePraCima = espacoAbaixo < list.offsetHeight + 6 && rect.top > list.offsetHeight + 6;
     list.style.top = abrePraCima ? (rect.top - list.offsetHeight - 6) + "px" : (rect.bottom + 6) + "px";
   }
@@ -4340,6 +4721,11 @@ function enhanceSelect(selectEl){
     document.addEventListener("click", onOutsideClick);
     window.addEventListener("scroll", closeOnScroll, { capture: true, once: true, passive: true });
     window.addEventListener("resize", positionList);
+    // No celular, abrir/fechar o teclado (ex.: campo de texto perdendo o foco
+    // pra este botão) muda o visualViewport sem disparar "resize" no window
+    // no iOS Safari — sem isso a lista podia ficar reposicionada com base numa
+    // altura de tela que já não vale mais.
+    if(window.visualViewport) window.visualViewport.addEventListener("resize", positionList);
   }
   function close(){
     if(!isOpen()) return;
@@ -4360,6 +4746,7 @@ function enhanceSelect(selectEl){
     document.removeEventListener("click", onOutsideClick);
     window.removeEventListener("scroll", closeOnScroll, true);
     window.removeEventListener("resize", positionList);
+    if(window.visualViewport) window.visualViewport.removeEventListener("resize", positionList);
   }
   function onOutsideClick(e){
     if(!wrap.contains(e.target)) close();
@@ -4407,11 +4794,12 @@ for(let t=5;t<=10;t++){
 enhanceSelect(transSel);
 enhanceSelect($("espacamento"));
 
-// ---------- Busca/sugestão de cultivar (soja, milho, feijão, trigo) ----------
-// Catálogo em js/cultivares.js — ainda vazio, então a lista nunca aparece
-// hoje; o campo continua um texto livre normal, pronto pra quando os dados
-// forem cadastrados. Não se aplica à adubação: lá o campo é a formulação NPK
-// (aplicarFormulacao() já cuida disso, sem nenhuma relação com este código).
+// ---------- Busca/sugestão de cultivar (soja, milho, feijão, trigo, adubação) ----------
+// Catálogo em js/cultivares.js. Na adubação o campo é a "Formulação cotada":
+// a busca sugere os produtos do catálogo, e escolher um da lista também
+// aciona aplicarFormulacao() pra preencher N/P/K a partir do NPK embutido no
+// nome (quando o nome não traz número — ex.: produtos foliares — a
+// formulação continua pesquisável, só não preenche N/P/K sozinha).
 // A lista de sugestões abre "flutuando" fixa na tela (portada pro <body>),
 // mesmo esquema do seletor de espaçamento/transpasse — assim não vira scroll
 // da coluna quando abre perto da borda inferior.
@@ -4431,7 +4819,7 @@ if(cultivarSupportsPopover){
 }
 
 function cultivarCatalogo(){
-  return currentCrop !== "adubacao" ? (CULTIVARES[currentCrop] || []) : [];
+  return CULTIVARES[currentCrop] || [];
 }
 
 function posicionarCultivarList(){
@@ -4439,14 +4827,28 @@ function posicionarCultivarList(){
   cultivarList.style.left = rect.left + "px";
   cultivarList.style.width = rect.width + "px";
   cultivarList.style.top = (rect.bottom + 6) + "px";
+  // Trava a altura máxima pelo espaço realmente livre abaixo do campo (ver
+  // alturaViewportVisivel) — sem isso, com o teclado do celular aberto, a
+  // lista podia nascer com altura de sobra e ficar com metade escondida atrás
+  // do teclado, dando a impressão de que ela "sumiu" ou abriu no lugar errado.
+  const espacoAbaixo = alturaViewportVisivel() - (rect.bottom + 6) - 8;
+  cultivarList.style.maxHeight = Math.max(120, espacoAbaixo) + "px";
 }
 
 function cultivarListaAberta(){
   return cultivarSupportsPopover ? cultivarList.matches(":popover-open") : !cultivarList.classList.contains("hidden");
 }
-// Mesma lógica de enhanceSelect(): fecha na primeira rolagem detectada em vez
-// de perseguir o campo pela tela a cada evento de scroll (reflow síncrono).
-function fecharCultivarListOnScroll(){ fecharCultivarList(); }
+// Mesma lógica de enhanceSelect(): fecha na primeira rolagem detectada fora da
+// própria lista, em vez de perseguir o campo pela tela a cada evento de scroll
+// (reflow síncrono). Como scroll não borbulha mas a fase de captura passa por
+// window a caminho de qualquer alvo, rolar dentro da lista (que tem overflow
+// próprio) também dispara esse listener — por isso ignoramos quando o alvo é
+// a própria cultivarList, senão a lista fecharia assim que o usuário tentasse
+// rolar as sugestões.
+function fecharCultivarListOnScroll(e){
+  if(cultivarList.contains(e.target)) return;
+  fecharCultivarList();
+}
 function fecharCultivarList(){
   if(!cultivarListaAberta()){ cultivarActiveIndex = -1; return; }
   if(cultivarSupportsPopover){
@@ -4462,8 +4864,10 @@ function fecharCultivarList(){
   cultivarList.style.left = "";
   cultivarList.style.top = "";
   cultivarList.style.width = "";
+  cultivarList.style.maxHeight = "";
   window.removeEventListener("scroll", fecharCultivarListOnScroll, true);
   window.removeEventListener("resize", posicionarCultivarList);
+  if(window.visualViewport) window.visualViewport.removeEventListener("resize", posicionarCultivarList);
   document.removeEventListener("click", onCultivarOutsideClick);
 }
 function onCultivarOutsideClick(e){
@@ -4487,6 +4891,7 @@ function selecionarCultivar(item){
   cultivarInput.value = item.nome;
   fecharCultivarList();
   mostrarPmsCultivar(item);
+  aplicarFormulacao(); // na adubação, o NPK embutido no nome escolhido preenche os campos
   calc();
 }
 // PMS/PMG só aparece quando o texto digitado bate exatamente com um item do
@@ -4529,12 +4934,15 @@ function renderCultivarSugestoes(){
   posicionarCultivarList();
   const ativo = cultivarList.children[cultivarActiveIndex];
   cultivarInput.setAttribute("aria-activedescendant", ativo ? ativo.id : "");
-  window.addEventListener("scroll", fecharCultivarListOnScroll, { capture: true, once: true, passive: true });
+  window.addEventListener("scroll", fecharCultivarListOnScroll, { capture: true, passive: true });
   window.addEventListener("resize", posicionarCultivarList);
+  // iOS Safari não dispara "resize" no window quando o teclado abre/fecha —
+  // só no visualViewport. Sem isso, no celular a lista ficava presa na
+  // posição/altura calculada antes do teclado abrir.
+  if(window.visualViewport) window.visualViewport.addEventListener("resize", posicionarCultivarList);
   document.addEventListener("click", onCultivarOutsideClick);
 }
 cultivarInput.addEventListener("input", () => {
-  if(currentCrop === "adubacao") return; // aqui o campo é a formulação NPK, sem busca
   cultivarActiveIndex = -1;
   renderCultivarSugestoes();
   const exato = cultivarCatalogo().find(i => i.nome.toLowerCase() === cultivarInput.value.trim().toLowerCase());
@@ -7289,7 +7697,7 @@ $("calManejo").addEventListener("change", () => {
 // PRNT, profundidade e área aplicada, que são parâmetros de manejo/decisão
 // e não do laudo em si) — ver btnLimparMatriz abaixo.
 const CAL_MATRIX_IDS = [
-  "calPhCaCl2020","calPhH2O020","calCa020","calMg020","calK020","calAl020","calHAl020",
+  "calPhCaCl2020","calPhH2O020","calCa020","calMg020","calK020","calAl020","calHAl020","calArgila020","calP020",
   "calCa2040","calMg2040","calK2040","calAl2040","calHAl2040","calArgila2040",
 ];
 const CAL_INPUT_IDS = [
@@ -7308,7 +7716,7 @@ $("calMetodoGessagem").addEventListener("change", calcCalagem);
 // V₂/PRNT/profundidade/área — pra anexar um laudo novo/atualizado por cima
 // de uma leitura antiga sem os valores anteriores se misturarem.
 $("btnLimparMatriz").addEventListener("click", () => {
-  if(!window.confirm("Limpar todos os valores da Matriz Técnica de Solo (Ca, Mg, K, Al, H+Al, pH, argila)?")) return;
+  if(!window.confirm("Limpar todos os valores da Matriz Técnica de Solo (Ca, Mg, K, Al, H+Al, pH, argila, P)?")) return;
   CAL_MATRIX_IDS.forEach(id => { const el = $(id); if(el) el.value = ""; });
   const kUnidade = $("calKUnidade020");
   if(kUnidade) kUnidade.value = "cmolc";
@@ -7351,6 +7759,11 @@ function calcCalagem(){
   const areaHa = alqParaHa(areaAlq);
   const gesso = calcularGessagem({ argila: v("calArgila2040"), metodo: metodoGessagem, tSub: idx2040.ctcPh7, caSub: v("calCa2040"), area: areaHa });
   const nutrientes = nutrientesGesso(gesso.doseKgHa);
+
+  const fosforo = interpretarFosforo({ p: v("calP020"), argila: v("calArgila020") });
+  const potassio = interpretarPotassio({ kCmolc: idx020.kCmolc, ctcPh7: idx020.ctcPh7 });
+  const correcaoP = calcularCorrecaoFosforo({ classe: fosforo.classe, area: areaHa });
+  const correcaoK = calcularCorrecaoPotassio({ classe: potassio.classe, area: areaHa });
 
   calAtualizarAreaHint(areaAlq);
 
@@ -7439,10 +7852,60 @@ function calcCalagem(){
     gessoBox.innerHTML = `<div class="alert-item alert-info"><svg class="ti ti-${meta.icon} alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${meta.paths}</svg><span class="alert-text">Nenhum dos 4 critérios do subsolo foi disparado — gessagem dispensada pelos dados informados.</span></div>`;
   }
 
+  // ---- parecer técnico automatizado (item 4.2) ----
+  // Só faz sentido gerar o parecer depois que um laudo de verdade foi
+  // preenchido (digitado ou anexado via IA) — sem isso, os índices vêm todos
+  // zerados e o parecer ficaria dando diagnóstico em cima de "solo vazio".
+  const temLaudo020 = v("calPhCaCl2020") > 0 || v("calCa020") > 0 || v("calMg020") > 0 || v("calK020") > 0 || v("calHAl020") > 0;
+  const parecer = temLaudo020 ? gerarParecerTecnico({
+    phCaCl2: v("calPhCaCl2020"), v1: idx020.v, v2,
+    caMg: idx020.caMg, pctK: idx020.pctK, classeK: potassio.classe, classeP: fosforo.classe,
+    necessitaK: correcaoK.necessario, necessitaP: correcaoP.necessario,
+    necessitaCalagem: calagem.ncAplicar > 0,
+    gessagemNecessaria: gessagem.necessaria, motivosGessagem: gessagem.motivos,
+    calagem: { ncAplicar: calagem.ncAplicar, tipo: tipoCalcario.tipo, prnt, totalT: totalCalcarioT },
+    gesso: { doseKgHa: gesso.doseKgHa, enxofreKgHa: nutrientes.enxofreKgHa, calcioKgHa: nutrientes.calcioKgHa, totalT: totalGessoT },
+    correcaoP, correcaoK,
+  }, fmtDecCasas) : null;
+  calRenderParecer(parecer, fosforo, potassio);
+
   // ---- memória de cálculo ----
-  const dadosMemoria = { idx020, idx2040, al2040: v("calAl2040"), v2, prnt, profundidade, areaAplicadaPct, calagem, tipoCalcario, gessagem, metodoGessagem, gesso, nutrientes, areaAlq, areaHa, totalCalcarioT, totalGessoT };
+  const dadosMemoria = { idx020, idx2040, al2040: v("calAl2040"), v2, prnt, profundidade, areaAplicadaPct, calagem, tipoCalcario, gessagem, metodoGessagem, gesso, nutrientes, areaAlq, areaHa, totalCalcarioT, totalGessoT, fosforo, potassio, correcaoP, correcaoK, parecer };
   calRenderMemoria(dadosMemoria);
   calUltimoResultado = dadosMemoria;
+}
+
+// Badges (classe de P e K), os três blocos de texto e a grade de indicação
+// final de correção — tudo já pronto em `parecer` (gerarParecerTecnico, em
+// calculos.js); aqui só decide o HTML/classe CSS ao redor de cada trecho.
+function calBadgeClasseNutriente(classe){
+  return (classe === "Muito Baixo" || classe === "Baixo" || classe === "Médio") ? "ctc-badge-warn" : "ctc-badge-ok";
+}
+function calRenderParecer(parecer, fosforo, potassio){
+  show($("calParecerSection"), !!parecer);
+  if(!parecer) return;
+
+  $("calParecerBadges").innerHTML =
+    `<span class="ctc-badge ${calBadgeClasseNutriente(potassio.classe)}">K: ${potassio.classe}</span>` +
+    `<span class="ctc-badge ${calBadgeClasseNutriente(fosforo.classe)}">P: ${fosforo.classe}</span>`;
+
+  $("calParecerAcidez").textContent = parecer.textoAcidez;
+  $("calParecerCations").textContent = parecer.textoCations;
+  $("calParecerSubsolo").textContent = parecer.textoSubsolo;
+  $("calParecerSubsoloTitle").classList.toggle("is-alerta", !parecer.textoSubsolo.startsWith("Sem"));
+
+  const wrap = $("calParecerIndicacoes");
+  if(parecer.semNecessidadeCorrecao){
+    wrap.innerHTML = `<div class="parecer-empty-note">Solo bem suprido — sem necessidade de correção. Manter só a adubação de manutenção.</div>`;
+    return;
+  }
+  wrap.innerHTML = `<div class="parecer-indic-grid">${parecer.indicacoes.map(i => `
+    <div class="parecer-indic-card">
+      <div class="parecer-indic-card-title">${i.titulo}</div>
+      <div class="parecer-indic-dose">${i.dose}</div>
+      <div class="parecer-indic-produto">${i.produto}</div>
+      <div class="parecer-indic-total">${i.total}</div>
+    </div>`).join("")}</div>`;
 }
 
 function calRenderMemoria(d){
@@ -7478,6 +7941,14 @@ function calRenderMemoria(d){
   addStep("Gatilhos de gessagem", d.gessagem.necessaria ? `${d.gessagem.motivos.length} critério(s) disparado(s)` : "nenhum critério disparado", "Al > 0,3 · m% > 20 · Ca < 1,5 · V% < 35 (qualquer um já indica gesso)");
   addStep("Dose de gesso", `${fmtDec(d.gesso.doseKgHa)} kg/ha`, d.metodoGessagem === "saturacaoCa" ? "[0,6 × T subsolo − Ca subsolo] × 640" : "50 × argila% do subsolo");
   addResult("Gesso agrícola recomendado", `${fmtDec(d.totalGessoT)} t na área`, `S: ${fmtDec(d.nutrientes.enxofreKgHa)} kg/ha · Ca: ${fmtDec(d.nutrientes.calcioKgHa)} kg/ha fornecidos`);
+
+  addStep("Classificação de Fósforo e Potássio", `P: ${d.fosforo.classe} · K: ${d.potassio.classe}`, `P por classe textural (argila) · K por classe de CTC a pH 7,0`);
+  if(d.correcaoP.necessario){
+    addResult("Correção de Fósforo recomendada", `${fmtDec(d.correcaoP.doseP2O5HaKg)} kg/ha de P₂O₅`, `≈ ${fmtDec(d.correcaoP.superSimplesHaKg)} kg/ha de Superfosfato Simples (18%) — total: ${fmtDec(d.correcaoP.totalSuperSimplesKg / 1000)} t na área`);
+  }
+  if(d.correcaoK.necessario){
+    addResult("Correção de Potássio recomendada", `${fmtDec(d.correcaoK.doseK2OHaKg)} kg/ha de K₂O`, `≈ ${fmtDec(d.correcaoK.kclHaKg)} kg/ha de Cloreto de Potássio — total: ${fmtDec(d.correcaoK.totalKclKg / 1000)} t na área`);
+  }
 }
 
 // abrir/fechar o painel da memória de cálculo (mesma animação max-height do card de Sementes & Adubação)
@@ -7670,13 +8141,11 @@ async function laudoChamarGemini(base64, mimeType, onTentativa){
   }
 }
 
-// Mapa parâmetro do JSON da IA -> id do input na matriz técnica (só os campos
-// que a calculadora realmente usa em calcCalagem(); "p" e a argila da camada
-// 0-20 não têm campo próprio na ficha e ficam de fora do preenchimento. O
-// "ph" do JSON não distingue o método — mapeado pro campo CaCl₂ por ser o
-// mais comum nos laudos da região (Paraná); confira e ajuste manualmente se
-// o laudo anexado trouxer pH em H₂O.
-const LAUDO_CAMPOS_020 = { ca: "calCa020", mg: "calMg020", k: "calK020", al: "calAl020", h_al: "calHAl020", ph: "calPhCaCl2020" };
+// Mapa parâmetro do JSON da IA -> id do input na matriz técnica. O "ph" do
+// JSON não distingue o método — mapeado pro campo CaCl₂ por ser o mais comum
+// nos laudos da região (Paraná); confira e ajuste manualmente se o laudo
+// anexado trouxer pH em H₂O.
+const LAUDO_CAMPOS_020 = { ca: "calCa020", mg: "calMg020", k: "calK020", al: "calAl020", h_al: "calHAl020", ph: "calPhCaCl2020", p: "calP020", argila_pct: "calArgila020" };
 const LAUDO_CAMPOS_2040 = { ca: "calCa2040", mg: "calMg2040", k: "calK2040", al: "calAl2040", h_al: "calHAl2040", argila_pct: "calArgila2040" };
 
 function laudoAplicarPulso(el){
@@ -7798,6 +8267,10 @@ function coletarResumoCalagem(){
     area: calFmtAreaRelatorio(d.areaAlq || 0),
     laudo020: [["Ca²⁺", num("calCa020")], ["Mg²⁺", num("calMg020")], ["K⁺", num("calK020")], ["Al³⁺", num("calAl020")], ["H+Al", num("calHAl020")]],
     laudo2040: [["Ca²⁺", num("calCa2040")], ["Mg²⁺", num("calMg2040")], ["K⁺", num("calK2040")], ["Al³⁺", num("calAl2040")], ["H+Al", num("calHAl2040")], ["Argila %", num("calArgila2040")]],
+    argila020: num("calArgila020"),
+    p020: num("calP020"),
+    classeFosforo: d.fosforo ? d.fosforo.classe : "—",
+    classePotassio: d.potassio ? d.potassio.classe : "—",
     indices020: d.idx020 ? `SB ${fmtDec(d.idx020.sb)} · CTC efetiva ${fmtDec(d.idx020.ctcEfetiva)} · CTC a pH 7,0 ${fmtDec(d.idx020.ctcPh7)} · V ${fmtDec(d.idx020.v)}% · m ${fmtDec(d.idx020.m)}%` : "—",
     indices2040: d.idx2040 ? `V ${fmtDec(d.idx2040.v)}% · m ${fmtDec(d.idx2040.m)}%` : "—",
     v1: d.idx020 ? fmtDec(d.idx020.v) : "0,00",
@@ -7821,6 +8294,7 @@ function coletarResumoCalagem(){
     totalGesso: d.totalGessoT !== undefined ? fmtDec(d.totalGessoT) : "0,00",
     enxofre: d.nutrientes ? fmtDec(d.nutrientes.enxofreKgHa) : "0,00",
     calcio: d.nutrientes ? fmtDec(d.nutrientes.calcioKgHa) : "0,00",
+    parecer: d.parecer || null,
     data: agora.toLocaleDateString("pt-BR"),
     ref: gerarCodigoRef(agora),
     horaGeracao: agora.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"}),
@@ -7865,7 +8339,7 @@ function montarFolhaCalagem(r){
     </table>
 
     ${laudoLinha("Laudo de solo — camada 0-20 cm", r.laudo020.filter(([k]) => k !== "Argila %"))}
-    <div style="margin-top:4px;font-size:10px;color:#4B554F;">${esc(r.indices020)}</div>
+    <div style="margin-top:4px;font-size:10px;color:#4B554F;">${esc(r.indices020)} · Argila: ${esc(r.argila020)}% · P (Mehlich-1): ${esc(r.p020)} mg/dm³ (classe ${esc(r.classeFosforo)}) · K: classe ${esc(r.classePotassio)}</div>
     ${laudoLinha("Laudo de solo — subsolo 20-40 cm", r.laudo2040)}
     <div style="margin-top:4px;font-size:10px;color:#4B554F;">${esc(r.indices2040)}</div>
 
@@ -7887,6 +8361,25 @@ function montarFolhaCalagem(r){
           : `<strong style="color:#1B4E82;">Gessagem dispensada</strong> pelos critérios do subsolo (20-40 cm).`}
       </div>
     </div>
+
+    ${r.parecer ? `
+    <div style="margin-top:14px;background:#FFFFFF;border:1px solid #DCE3D6;border-radius:10px;padding:14px 16px;">
+      <div style="font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#4B554F;">Parecer Técnico Automatizado</div>
+      <div style="margin-top:8px;font-size:11px;"><strong>Acidez:</strong> ${esc(r.parecer.textoAcidez)}</div>
+      <div style="margin-top:6px;font-size:11px;"><strong>Equilíbrio de Cátions:</strong> ${esc(r.parecer.textoCations)}</div>
+      <div style="margin-top:6px;font-size:11px;"><strong>Alerta de Subsolo:</strong> ${esc(r.parecer.textoSubsolo)}</div>
+
+      <div style="margin-top:12px;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#4B554F;">Indicação final — o que aplicar</div>
+      ${r.parecer.semNecessidadeCorrecao
+        ? `<div style="margin-top:6px;font-size:11px;font-style:italic;color:#4B554F;">Solo bem suprido em todos os parâmetros avaliados — sem necessidade de correção além do já indicado acima.</div>`
+        : `<table style="width:100%;margin-top:8px;border-collapse:separate;border-spacing:8px 0;"><tr>${r.parecer.indicacoes.map(i => `
+          <td style="vertical-align:top;padding:10px 12px;background:#F7FAF5;border:1px solid #DCE3D6;border-radius:8px;">
+            <div style="font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:#4B554F;font-weight:700;">${esc(i.titulo)}</div>
+            <div style="font-size:15px;font-weight:800;margin-top:3px;color:#1E2420;">${esc(i.dose)}</div>
+            <div style="font-size:9.5px;color:#4B554F;margin-top:3px;">${esc(i.produto)}</div>
+            <div style="font-size:9.5px;color:#4B554F;margin-top:5px;padding-top:5px;border-top:1px dashed #DCE3D6;">${esc(i.total)}</div>
+          </td>`).join("")}</tr></table>`}
+    </div>` : ""}
 
     <div style="margin-top:16px;border-top:1px solid #DCE3D6;padding-top:8px;font-size:9.5px;color:#4B554F;">
       <div>Calculadora Coasul — versão ${APP_VERSION}</div>
@@ -7955,6 +8448,57 @@ function layoutFichaCalagem(ctx, draw, r, logo){
     [r.gessagemNecessaria ? ("Gessagem recomendada — " + r.gessagemMotivos.join(" · ")) : "Gessagem dispensada pelos critérios do subsolo (20-40 cm)."],
     r.gessagemNecessaria ? "#9C2B22" : "#1B4E82"
   );
+
+  // Parecer Técnico Automatizado — um card com os três blocos de texto
+  // (Acidez, Equilíbrio de Cátions, Alerta de Subsolo), seguido de um card
+  // por indicação de correção (mesmo padrão visual dos boxResultado acima).
+  if(r.parecer){
+    const wTextoParecer = dir - P - 28;
+
+    function boxParecerTextos(p){
+      ctx.font = "10.5px " + FONTE;
+      const blocos = [
+        ["Acidez", p.textoAcidez],
+        ["Equilíbrio de Cátions", p.textoCations],
+        ["Alerta de Subsolo", p.textoSubsolo],
+      ].map(([label, txt]) => [label, quebraTexto(ctx, txt, wTextoParecer)]);
+      const totalLinhas = blocos.reduce((s, [, l]) => s + l.length, 0);
+      const altura = 34 + blocos.length * 16 + totalLinhas * 15;
+      caixa(ctx, draw, P, y, dir - P, altura, 10, "#FFFFFF", "#DCE3D6");
+      texto(ctx, draw, "PARECER TÉCNICO AUTOMATIZADO", P + 14, y + 20, {font:"bold 10px " + FONTE, cor:"#4B554F", espaco:"1.2px"});
+      let ly = y + 40;
+      blocos.forEach(([label, linhas]) => {
+        texto(ctx, draw, label + ":", P + 14, ly, {font:"700 10.5px " + FONTE, cor:"#5C8A26"});
+        ly += 15;
+        linhas.forEach(l => { texto(ctx, draw, l, P + 14, ly, {font:"10.5px " + FONTE, cor:"#1E2420"}); ly += 15; });
+      });
+      y += altura + 14;
+    }
+
+    function boxIndicacao(item, accent){
+      ctx.font = "10px " + FONTE;
+      const linhasProduto = quebraTexto(ctx, item.produto, wTextoParecer);
+      const altura = 20 + 24 + linhasProduto.length * 14 + 18;
+      caixa(ctx, draw, P, y, dir - P, altura, 10, "#F7FAF5", "#DCE3D6");
+      texto(ctx, draw, item.titulo.toUpperCase(), P + 14, y + 17, {font:"bold 9.5px " + FONTE, cor:"#4B554F", espaco:"0.6px", maxW: wTextoParecer});
+      texto(ctx, draw, item.dose, P + 14, y + 38, {font:"bold 17px " + FONTE, cor: accent || "#1E2420"});
+      let ly = y + 38 + 15;
+      linhasProduto.forEach(l => { texto(ctx, draw, l, P + 14, ly, {font:"10px " + FONTE, cor:"#4B554F"}); ly += 14; });
+      texto(ctx, draw, item.total, P + 14, ly + 3, {font:"600 10px " + FONTE, cor:"#1E2420"});
+      y += altura + 10;
+    }
+
+    boxParecerTextos(r.parecer);
+    texto(ctx, draw, "INDICAÇÃO FINAL — O QUE APLICAR", P, y + 4, {font:"bold 11px " + FONTE, cor:"#1E2420", espaco:"0.4px"});
+    y += 22;
+    if(r.parecer.semNecessidadeCorrecao){
+      caixa(ctx, draw, P, y, dir - P, 40, 10, "#F3FAF1", "#CFE6C8");
+      texto(ctx, draw, "Solo bem suprido em todos os parâmetros avaliados — sem necessidade de correção.", P + 14, y + 24, {font:"italic 11px " + FONTE, cor:"#4B554F", maxW: wTextoParecer});
+      y += 40 + 14;
+    } else {
+      r.parecer.indicacoes.forEach(item => boxIndicacao(item, "#5C8A26"));
+    }
+  }
 
   risco(ctx, draw, P, y, dir);
   y += 10;

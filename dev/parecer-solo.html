@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DEV — Parecer Técnico &amp; Indicação de Correção</title>
+<link rel="stylesheet" href="../css/styles.css">
+<style>
+  body{ background:var(--surface-subtle); color:var(--ink-primary); padding:20px 16px 60px; }
+  .devwrap{ max-width:960px; margin:0 auto; }
+  .devbanner{
+    background:#FCF3DC; border:1px solid #E9CE8A; color:#8A5A00;
+    border-radius:12px; padding:12px 16px; font-size:13px; font-weight:600;
+    margin-bottom:20px; line-height:1.5;
+  }
+  h1{ font-size:20px; font-weight:800; margin:0 0 4px; }
+  .sub{ color:var(--ink-muted); font-size:13px; margin-bottom:20px; }
+  .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
+  fieldset{
+    border:1px solid var(--border-subtle); border-radius:14px; padding:14px 16px 16px;
+    margin:0 0 16px; background:var(--surface);
+  }
+  legend{ font-size:12.5px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; color:var(--accent); padding:0 6px; }
+  label{ display:block; font-size:11.5px; font-weight:700; color:var(--ink-muted); margin-bottom:3px; }
+  input,select{
+    width:100%; box-sizing:border-box; border:1px solid var(--border-subtle); border-radius:8px;
+    padding:7px 8px; font-size:13.5px; font-family:inherit; color:var(--ink-primary); background:var(--surface);
+  }
+  input:focus,select:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  .field{ margin-bottom:2px; }
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  button{
+    background:var(--accent); color:#fff; border:none; border-radius:10px; padding:11px 20px;
+    font-size:14px; font-weight:800; cursor:pointer; margin-top:4px;
+  }
+  button:hover{ background:var(--accent-hover); }
+
+  .resultado{ margin-top:24px; }
+  .parecer-card{
+    background:var(--surface); border:1px solid var(--border-subtle); border-radius:14px;
+    padding:16px 18px; margin-bottom:14px;
+  }
+  .parecer-card h2{ font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; color:var(--accent); margin:0 0 8px; display:flex; align-items:center; gap:8px; }
+  .parecer-card p{ font-size:13.5px; line-height:1.6; margin:0 0 6px; color:var(--ink-secondary); }
+  .badge{ display:inline-block; font-size:11px; font-weight:800; padding:3px 9px; border-radius:999px; margin-left:6px; }
+  .badge-ok{ background:#E9F5E7; color:#1E5C2E; }
+  .badge-warn{ background:#FCF3DC; color:#8A5A00; }
+  .badge-danger{ background:#FBE8E7; color:#9C2B22; }
+
+  .final-title{ font-size:16px; font-weight:800; margin:26px 0 12px; display:flex; align-items:center; gap:8px; }
+  .final-title .badge{ margin-left:0; }
+  .indic-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; }
+  .indic-card{
+    border-radius:14px; padding:16px; border:1.5px solid var(--accent-border); background:var(--accent-surface);
+  }
+  .indic-card.is-ok{ border-color:#CFE6C8; background:#F3FAF1; }
+  .indic-card h3{ font-size:12.5px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; color:var(--ink-secondary); margin:0 0 6px; }
+  .indic-card .dose{ font-size:22px; font-weight:900; color:var(--accent); line-height:1.1; }
+  .indic-card .dose small{ font-size:13px; font-weight:700; }
+  .indic-card .produto{ font-size:12.5px; color:var(--ink-muted); margin-top:4px; }
+  .indic-card .total{ font-size:12.5px; color:var(--ink-muted); margin-top:8px; padding-top:8px; border-top:1px dashed var(--border-subtle); }
+  .empty-note{ font-size:13.5px; color:var(--ink-muted); font-style:italic; }
+  .foot-disclaimer{ font-size:11.5px; color:var(--ink-muted); margin-top:18px; line-height:1.6; }
+</style>
+</head>
+<body>
+<div class="devwrap">
+
+  <div class="devbanner">
+    🧪 Arquivo de <strong>desenvolvimento/teste</strong> — protótipo isolado do item 4.2 (Parecer Técnico Automatizado), fora do app principal.
+    As faixas de P/K e as doses de correção usadas aqui são valores de referência simplificados e
+    <strong>precisam ser conferidos/calibrados pelo engenheiro agrônomo responsável</strong> antes de qualquer uso real.
+  </div>
+
+  <h1>Parecer Técnico do Solo — protótipo</h1>
+  <div class="sub">Preencha a matriz técnica de um laudo (ou use os valores de exemplo já carregados) para ver como fica o parecer e a indicação final de correção.</div>
+
+  <form id="form">
+    <fieldset>
+      <legend>Camada 0-20 cm</legend>
+      <div class="grid">
+        <div class="field"><label>pH (CaCl₂)</label><input id="phCaCl2" type="number" step="0.01" value="4.6"></div>
+        <div class="field"><label>Ca²⁺ (cmolc/dm³)</label><input id="ca020" type="number" step="0.01" value="1.8"></div>
+        <div class="field"><label>Mg²⁺ (cmolc/dm³)</label><input id="mg020" type="number" step="0.01" value="0.6"></div>
+        <div class="field">
+          <label>K⁺</label>
+          <div class="row2">
+            <input id="k020" type="number" step="0.01" value="0.12">
+            <select id="kUnidade020">
+              <option value="cmolc" selected>cmolc/dm³</option>
+              <option value="mgdm3">mg/dm³</option>
+            </select>
+          </div>
+        </div>
+        <div class="field"><label>Al³⁺ (cmolc/dm³)</label><input id="al020" type="number" step="0.01" value="0.3"></div>
+        <div class="field"><label>H+Al (cmolc/dm³)</label><input id="hAl020" type="number" step="0.01" value="5.2"></div>
+        <div class="field"><label>Argila (%)</label><input id="argila020" type="number" step="1" value="35"></div>
+        <div class="field"><label>P disponível — Mehlich-1 (mg/dm³)</label><input id="p020" type="number" step="0.1" value="4.2"></div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Camada 20-40 cm (subsolo)</legend>
+      <div class="grid">
+        <div class="field"><label>Ca²⁺ (cmolc/dm³)</label><input id="ca2040" type="number" step="0.01" value="1.1"></div>
+        <div class="field"><label>Mg²⁺ (cmolc/dm³)</label><input id="mg2040" type="number" step="0.01" value="0.5"></div>
+        <div class="field"><label>K⁺ (cmolc/dm³)</label><input id="k2040" type="number" step="0.01" value="0.08"></div>
+        <div class="field"><label>Al³⁺ (cmolc/dm³)</label><input id="al2040" type="number" step="0.01" value="0.5"></div>
+        <div class="field"><label>H+Al (cmolc/dm³)</label><input id="hAl2040" type="number" step="0.01" value="5.6"></div>
+        <div class="field"><label>Argila (%)</label><input id="argila2040" type="number" step="1" value="38"></div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Manejo &amp; Área</legend>
+      <div class="grid">
+        <div class="field"><label>V₂ desejado (%)</label><input id="v2" type="number" step="1" value="70"></div>
+        <div class="field"><label>PRNT do calcário (%)</label><input id="prnt" type="number" step="1" value="85"></div>
+        <div class="field"><label>Profundidade de incorporação (cm)</label><input id="profundidade" type="number" step="1" value="20"></div>
+        <div class="field"><label>% da área aplicada</label><input id="areaAplicadaPct" type="number" step="1" value="100"></div>
+        <div class="field"><label>Área da lavoura (ha)</label><input id="areaHa" type="number" step="0.1" value="10"></div>
+      </div>
+    </fieldset>
+
+    <button type="submit">Gerar parecer</button>
+  </form>
+
+  <div class="resultado" id="resultado"></div>
+
+</div>
+
+<script src="../js/calculos.js"></script>
+<script>
+const {
+  calcularIndicesSolo, calcularCalagem, determinarTipoCalcario,
+  verificarNecessidadeGessagem, calcularGessagem, nutrientesGesso,
+  interpretarFosforo, interpretarPotassio,
+  calcularCorrecaoFosforo, calcularCorrecaoPotassio,
+} = Calculos;
+
+const $ = (id) => document.getElementById(id);
+const v = (id) => parseFloat($(id).value) || 0;
+const fmt = (n, casas = 2) => (Number(n) || 0).toLocaleString("pt-BR", { minimumFractionDigits: casas, maximumFractionDigits: casas });
+
+function interpretarPhCaCl2(ph) {
+  if (!ph) return "não informado";
+  if (ph < 4.5) return "extremamente ácido";
+  if (ph < 5.0) return "muito ácido";
+  if (ph < 5.5) return "ácido";
+  if (ph < 6.0) return "levemente ácido";
+  if (ph < 7.0) return "neutro";
+  return "alcalino";
+}
+
+function badgeClasseNutriente(classe) {
+  if (classe === "Muito Baixo" || classe === "Baixo") return "badge-danger";
+  if (classe === "Médio") return "badge-warn";
+  return "badge-ok";
+}
+
+function gerarParecer() {
+  const phCaCl2 = v("phCaCl2");
+  const idx020 = calcularIndicesSolo({ ca: v("ca020"), mg: v("mg020"), k: v("k020"), al: v("al020"), hAl: v("hAl020"), kUnidade: $("kUnidade020").value });
+  const idx2040 = calcularIndicesSolo({ ca: v("ca2040"), mg: v("mg2040"), k: v("k2040"), al: v("al2040"), hAl: v("hAl2040") });
+
+  const v2 = v("v2"), prnt = v("prnt"), profundidade = v("profundidade"), areaAplicadaPct = v("areaAplicadaPct") || 100;
+  const areaHa = v("areaHa");
+
+  const calagem = calcularCalagem({ v1: idx020.v, v2, t: idx020.ctcPh7, prnt, profundidade, areaAplicadaPct });
+  const tipoCalcario = determinarTipoCalcario({ mg: v("mg020"), caMg: idx020.caMg });
+
+  const gessagemCheck = verificarNecessidadeGessagem({ al: v("al2040"), m: idx2040.m, ca: v("ca2040"), v: idx2040.v });
+  const gesso = calcularGessagem({ argila: v("argila2040"), metodo: "argila", tSub: idx2040.ctcPh7, caSub: v("ca2040"), area: areaHa });
+  const nutGesso = nutrientesGesso(gesso.doseKgHa);
+
+  const fosforo = interpretarFosforo({ p: v("p020"), argila: v("argila020") });
+  const potassio = interpretarPotassio({ kCmolc: idx020.kCmolc, ctcPh7: idx020.ctcPh7 });
+  const correcaoP = calcularCorrecaoFosforo({ classe: fosforo.classe, area: areaHa });
+  const correcaoK = calcularCorrecaoPotassio({ classe: potassio.classe, area: areaHa });
+
+  // ---- textos do parecer (item 4.2) ----
+  const classePh = interpretarPhCaCl2(phCaCl2);
+  const gapV = v2 - idx020.v;
+  const textoAcidez = gapV <= 0
+    ? `O pH em CaCl₂ está <strong>${classePh}</strong> (${fmt(phCaCl2)}) e a saturação por bases atual (V₁ = ${fmt(idx020.v, 1)}%) já atingiu a meta definida (V₂ = ${fmt(v2, 1)}%) — não há necessidade de calagem para correção de acidez.`
+    : `O pH em CaCl₂ está <strong>${classePh}</strong> (${fmt(phCaCl2)}) e a saturação por bases atual (V₁ = ${fmt(idx020.v, 1)}%) está <strong>${fmt(gapV, 1)} pontos</strong> abaixo da meta (V₂ = ${fmt(v2, 1)}%) — a calagem indicada abaixo eleva o solo até o nível ideal.`;
+
+  const faixaCaMg = idx020.caMg > 4 ? "acima do ideal (excesso relativo de Ca frente ao Mg)" : idx020.caMg < 2 ? "abaixo do ideal (Mg relativamente baixo frente ao Ca)" : "dentro da faixa considerada equilibrada (2:1 a 4:1)";
+  const textoCations =
+    `A relação Ca:Mg é de <strong>${fmt(idx020.caMg, 1)}:1</strong>, ${faixaCaMg}. ` +
+    `O Potássio (K⁺) está classificado como <strong>${potassio.classe}</strong> (${fmt(idx020.kCmolc, 2)} cmolc/dm³, ocupando ${fmt(idx020.pctK, 1)}% da CTC a pH 7,0)` +
+    (correcaoK.necessario ? `, abaixo do nível considerado suficiente — recomenda-se correção (ver indicação final).` : `, em nível considerado suficiente.`);
+
+  const impedimentoSub = gessagemCheck.necessaria;
+  const textoSubsolo = impedimentoSub
+    ? `Foi identificado impedimento químico no subsolo (20-40 cm): ${gessagemCheck.motivos.join(" ")}`
+    : `Sem impedimento químico relevante no subsolo (20-40 cm) — Al³⁺ e saturação por alumínio (m%) dentro de limites aceitáveis.`;
+
+  const totalCalcarioT = calagem.ncAplicar * areaHa;
+  const totalGessoT = gesso.totalTArea;
+
+  // ---- monta a "INDICAÇÃO FINAL" só com o que o produtor precisa aplicar ----
+  const indicacoes = [];
+  if (calagem.ncAplicar > 0) {
+    indicacoes.push({
+      titulo: "Calagem", ok: false,
+      dose: `${fmt(calagem.ncAplicar)} t/ha`,
+      produto: `Calcário ${tipoCalcario.tipo} (PRNT ${fmt(prnt, 0)}%)`,
+      total: `Total na área: ${fmt(totalCalcarioT)} t (${fmt(areaHa, 1)} ha)`,
+    });
+  }
+  if (gessagemCheck.necessaria) {
+    indicacoes.push({
+      titulo: "Gessagem", ok: false,
+      dose: `${fmt(gesso.doseKgHa, 0)} kg/ha`,
+      produto: `Gesso agrícola — aporta ~${fmt(nutGesso.enxofreKgHa, 0)} kg/ha de S e ~${fmt(nutGesso.calcioKgHa, 0)} kg/ha de Ca`,
+      total: `Total na área: ${fmt(totalGessoT)} t (${fmt(areaHa, 1)} ha)`,
+    });
+  }
+  if (correcaoP.necessario) {
+    indicacoes.push({
+      titulo: `Fósforo (P₂O₅) — classe ${fosforo.classe}`, ok: false,
+      dose: `${fmt(correcaoP.doseP2O5HaKg, 0)} kg/ha de P₂O₅`,
+      produto: `≈ ${fmt(correcaoP.superSimplesHaKg, 0)} kg/ha de Superfosfato Simples (18%) — ou ${fmt(correcaoP.mapHaKg, 0)} kg/ha de MAP (52%)`,
+      total: `Total na área: ${fmt(correcaoP.totalSuperSimplesKg / 1000)} t de SSP (${fmt(areaHa, 1)} ha)`,
+    });
+  }
+  if (correcaoK.necessario) {
+    indicacoes.push({
+      titulo: `Potássio (K₂O) — classe ${potassio.classe}`, ok: false,
+      dose: `${fmt(correcaoK.doseK2OHaKg, 0)} kg/ha de K₂O`,
+      produto: `≈ ${fmt(correcaoK.kclHaKg, 0)} kg/ha de Cloreto de Potássio — KCl (60%)`,
+      total: `Total na área: ${fmt(correcaoK.totalKclKg / 1000)} t de KCl (${fmt(areaHa, 1)} ha)`,
+    });
+  }
+
+  // ---- renderiza ----
+  const cardsIndicacao = indicacoes.length
+    ? `<div class="indic-grid">${indicacoes.map(i => `
+        <div class="indic-card">
+          <h3>${i.titulo}</h3>
+          <div class="dose">${i.dose}</div>
+          <div class="produto">${i.produto}</div>
+          <div class="total">${i.total}</div>
+        </div>`).join("")}</div>`
+    : `<div class="indic-card is-ok"><p class="empty-note" style="margin:0;">Solo bem suprido em todos os parâmetros avaliados — sem necessidade de correção. Manter apenas a adubação de manutenção conforme a exportação de nutrientes da cultura (aba Estimativa de Produtividade).</p></div>`;
+
+  $("resultado").innerHTML = `
+    <div class="parecer-card">
+      <h2>🧪 Acidez</h2>
+      <p>${textoAcidez}</p>
+    </div>
+    <div class="parecer-card">
+      <h2>⚖️ Equilíbrio de Cátions
+        <span class="badge ${badgeClasseNutriente(potassio.classe)}">K: ${potassio.classe}</span>
+        <span class="badge ${badgeClasseNutriente(fosforo.classe)}">P: ${fosforo.classe}</span>
+      </h2>
+      <p>${textoCations}</p>
+    </div>
+    <div class="parecer-card">
+      <h2>${impedimentoSub ? "⚠️" : "✅"} Alerta de Subsolo</h2>
+      <p>${textoSubsolo}</p>
+    </div>
+
+    <div class="final-title">📋 Indicação Final — O que aplicar para corrigir o solo</div>
+    ${cardsIndicacao}
+
+    <div class="foot-disclaimer">
+      Estimativa técnica baseada no Manual de Adubação e Calagem para o Estado do Paraná (SBCS-NEPAR / IDR-Paraná / Embrapa),
+      com faixas de P e K simplificadas para este protótipo — sujeita a conferência e ajuste pelo engenheiro agrônomo responsável.
+    </div>
+  `;
+}
+
+$("form").addEventListener("submit", (e) => { e.preventDefault(); gerarParecer(); });
+gerarParecer(); // já gera com os valores de exemplo ao abrir
+</script>
+</body>
+</html>

@@ -830,9 +830,15 @@
               </tr>
               <tr>
                 <td>Argila</td>
-                <td class="sm-unit sm-dash" aria-hidden="true">—</td>
+                <td><input type="number" id="calArgila020" class="inp inp-sm inp-num" step="1" min="0" max="100" inputmode="decimal" placeholder="0"></td>
                 <td><input type="number" id="calArgila2040" class="inp inp-sm inp-num" step="1" min="0" max="100" inputmode="decimal" placeholder="0"></td>
                 <td class="sm-unit">%</td>
+              </tr>
+              <tr>
+                <td>P disponível</td>
+                <td><input type="number" id="calP020" class="inp inp-sm inp-num" step="0.1" min="0" inputmode="decimal" placeholder="0"></td>
+                <td class="sm-unit sm-dash" aria-hidden="true">—</td>
+                <td class="sm-unit">mg/dm³</td>
               </tr>
             </tbody>
           </table>
@@ -961,6 +967,31 @@
         </div>
       </section>
       </div>
+
+      <section id="calParecerSection" class="crm-card mt-4 hidden">
+        <div class="crm-card-header flex-wrap gap-x-3 gap-y-2">
+          <h2 class="crm-card-title"><span aria-hidden="true"><svg class="ti ti-file-report icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /><path d="M9 9l1 0" /><path d="M9 13l6 0" /><path d="M9 17l6 0" /></svg></span>Parecer Técnico Automatizado</h2>
+          <div class="ctc-badges" id="calParecerBadges"></div>
+        </div>
+
+        <div class="parecer-block">
+          <div class="parecer-block-title"><svg class="ti ti-flask icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3l6 0" /><path d="M10 9l4 0" /><path d="M10 3v6l-4 11a.7 .7 0 0 0 .5 1h11a.7 .7 0 0 0 .5 -1l-4 -11v-6" /></svg>Acidez</div>
+          <p class="parecer-block-text" id="calParecerAcidez">—</p>
+        </div>
+        <div class="parecer-block">
+          <div class="parecer-block-title"><svg class="ti ti-triangle-square-circle icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M15 3l6 9l-6 9h-6" /></svg>Equilíbrio de Cátions</div>
+          <p class="parecer-block-text" id="calParecerCations">—</p>
+        </div>
+        <div class="parecer-block">
+          <div class="parecer-block-title" id="calParecerSubsoloTitle"><svg class="ti ti-alert-triangle icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4" /><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z" /><path d="M12 16h.01" /></svg>Alerta de Subsolo</div>
+          <p class="parecer-block-text" id="calParecerSubsolo">—</p>
+        </div>
+
+        <div class="parecer-final-title">Indicação Final — O que aplicar para corrigir o solo</div>
+        <div id="calParecerIndicacoes"></div>
+
+        <p class="mt-3 text-[10.5px] leading-snug text-muted">Faixas de referência de Fósforo e Potássio e doses de correção simplificadas — não variam por cultura; confira e calibre com o engenheiro agrônomo responsável antes da aplicação.</p>
+      </section>
 
       <section id="calMemoriaBox" class="mt-4">
         <button type="button" id="calMemoriaToggle" class="mem-toggle flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-[13px] font-extrabold text-ink" aria-expanded="false" aria-controls="calMemoriaPanel">

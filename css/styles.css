@@ -977,6 +977,37 @@
   .ctc-subgauge-fill.is-ok{ background:#5C8A26; }
   .ctc-subgauge-fill.is-alerta{ background:#9C2B22; }
 
+  /* Parecer Técnico Automatizado (aba Calagem & Gessagem) — três blocos de
+     texto (Acidez, Equilíbrio de Cátions, Alerta de Subsolo) seguidos da
+     indicação final de correção (grid de cards, um por corretivo/nutriente). */
+  .parecer-block{ margin-top:14px; }
+  .parecer-block-title{
+    display:flex; align-items:center; gap:6px;
+    font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:.04em;
+    color:var(--accent);
+  }
+  .parecer-block-title.is-alerta{ color:#9C2B22; }
+  .parecer-block-text{ margin-top:4px; font-size:13px; line-height:1.6; color:var(--ink-secondary); }
+
+  .parecer-final-title{
+    margin-top:20px; margin-bottom:10px;
+    font-size:14px; font-weight:800; color:var(--ink-primary);
+    display:flex; align-items:center; gap:6px;
+  }
+  .parecer-indic-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
+  .parecer-indic-card{
+    border-radius:12px; padding:13px 14px;
+    border:1.5px solid var(--accent-border); background:var(--accent-surface);
+  }
+  .parecer-indic-card-title{ font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; color:var(--ink-secondary); }
+  .parecer-indic-dose{ margin-top:4px; font-size:19px; font-weight:900; color:var(--accent); line-height:1.15; font-family:"SFMono-Regular",Consolas,monospace; }
+  .parecer-indic-produto{ margin-top:3px; font-size:11.5px; color:var(--ink-muted); line-height:1.4; }
+  .parecer-indic-total{ margin-top:7px; padding-top:7px; border-top:1px dashed var(--border-subtle); font-size:11.5px; color:var(--ink-muted); }
+  .parecer-empty-note{
+    border-radius:12px; padding:13px 14px; border:1.5px solid #CFE6C8; background:#F3FAF1;
+    font-size:13px; font-style:italic; color:var(--ink-muted); line-height:1.5;
+  }
+
   /* Utilities de superfície/borda a partir dos design tokens — pra componentes
      JS (calAddEmbalagem() em app.js) que não precisam de uma classe própria. */
   .bg-surface-subtle{ background:var(--surface-subtle); }

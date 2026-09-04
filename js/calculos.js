@@ -187,6 +187,193 @@ const Calculos = (function () {
     return { enxofreKgHa: d * 0.15, calcioKgHa: d * 0.18 };
   }
 
+  // ---------- Parecer Técnico: Indicação de Correção de Fósforo e Potássio ----------
+  // Complementa a Calagem & Gessagem acima (que já resolve Ca/Mg/Al/pH) com a
+  // leitura de P e K do laudo e a indicação final de quanto adubo corretivo
+  // aplicar. PROTÓTIPO/DEV: as faixas de interpretação e as doses de correção
+  // abaixo são valores de referência simplificados (não variam por cultura),
+  // inspirados no Manual de Adubação e Calagem para os Estados do RS/SC e no
+  // Manual SBCS-NEPAR/PR — como todo o resto desta aba, são estimativa técnica
+  // e precisam ser conferidos/calibrados pelo engenheiro agrônomo responsável
+  // antes de qualquer uso em laudo real ou aplicação em campo.
+
+  // Classe textural do solo pela % de argila — define a faixa de leitura do
+  // Fósforo (solo mais argiloso "segura" mais P adsorvido, então precisa de
+  // teor mais alto no laudo pra ser considerado bem suprido).
+  function classeTextural(argilaPct) {
+    const a = Number(argilaPct) || 0;
+    if (a > 60) return 1;
+    if (a > 40) return 2;
+    if (a > 20) return 3;
+    return 4;
+  }
+
+  // Faixas de P disponível (mg/dm³, extrator Mehlich-1) por classe textural —
+  // limite superior de cada faixa (Muito Baixo/Baixo/Médio/Alto; acima do
+  // último limite é Muito Alto).
+  const FAIXAS_FOSFORO = {
+    1: { baixo: 2.7, medio: 5.4, alto: 8.0, muitoAlto: 16.0 },
+    2: { baixo: 4.0, medio: 8.0, alto: 12.0, muitoAlto: 24.0 },
+    3: { baixo: 6.6, medio: 13.2, alto: 20.0, muitoAlto: 40.0 },
+    4: { baixo: 10.0, medio: 20.0, alto: 30.0, muitoAlto: 60.0 },
+  };
+
+  // Classe de CTC a pH 7,0 (cmolc/dm³) — define a faixa de leitura do
+  // Potássio trocável (CTC maior retém mais K, então precisa de teor mais
+  // alto no laudo pra ser considerado bem suprido).
+  function classeCtc(ctcPh7) {
+    const t = Number(ctcPh7) || 0;
+    if (t <= 7.5) return 1;
+    if (t <= 15.0) return 2;
+    if (t <= 22.5) return 3;
+    return 4;
+  }
+
+  // Faixas de K trocável (cmolc/dm³) por classe de CTC — mesmo formato de FAIXAS_FOSFORO.
+  const FAIXAS_POTASSIO = {
+    1: { baixo: 0.10, medio: 0.20, alto: 0.30, muitoAlto: 0.60 },
+    2: { baixo: 0.15, medio: 0.30, alto: 0.45, muitoAlto: 0.90 },
+    3: { baixo: 0.20, medio: 0.40, alto: 0.60, muitoAlto: 1.20 },
+    4: { baixo: 0.25, medio: 0.50, alto: 0.75, muitoAlto: 1.50 },
+  };
+
+  // Aplica uma faixa {baixo, medio, alto, muitoAlto} a um valor lido do laudo,
+  // devolvendo a classe de suficiência do nutriente.
+  function classificarFaixa(valor, faixa) {
+    const v = Number(valor) || 0;
+    if (v <= faixa.baixo) return "Muito Baixo";
+    if (v <= faixa.medio) return "Baixo";
+    if (v <= faixa.alto) return "Médio";
+    if (v <= faixa.muitoAlto) return "Alto";
+    return "Muito Alto";
+  }
+
+  function interpretarFosforo({ p = 0, argila = 0 } = {}) {
+    const classeArgila = classeTextural(argila);
+    return { classe: classificarFaixa(p, FAIXAS_FOSFORO[classeArgila]), classeTextural: classeArgila, p: Number(p) || 0 };
+  }
+
+  function interpretarPotassio({ kCmolc = 0, ctcPh7 = 0 } = {}) {
+    const classeCtcSolo = classeCtc(ctcPh7);
+    return { classe: classificarFaixa(kCmolc, FAIXAS_POTASSIO[classeCtcSolo]), classeCtc: classeCtcSolo, kCmolc: Number(kCmolc) || 0 };
+  }
+
+  // Dose de correção (kg/ha do nutriente puro) pra elevar a faixa atual até
+  // "Alto" — valores fixos de referência, iguais para qualquer cultura; "Alto"
+  // e "Muito Alto" não entram em correção, só em adubação de manutenção (fora
+  // do escopo desta função — ver calcularNecessidadeNutrientes, que cobre a
+  // exportação pela produtividade-alvo).
+  const DOSE_CORRECAO_P2O5 = { "Muito Baixo": 120, "Baixo": 80, "Médio": 40, "Alto": 0, "Muito Alto": 0 };
+  const DOSE_CORRECAO_K2O = { "Muito Baixo": 100, "Baixo": 60, "Médio": 30, "Alto": 0, "Muito Alto": 0 };
+
+  // Teor de nutriente ativo dos corretivos mais comuns — converte kg/ha de
+  // P₂O₅/K₂O puro em kg/ha de produto comercial.
+  const TEOR_SUPER_SIMPLES_P2O5 = 0.18; // Superfosfato Simples (SSP), 18% P₂O₅
+  const TEOR_MAP_P2O5 = 0.52;           // MAP, 52% P₂O₅
+  const TEOR_KCL_K2O = 0.60;            // Cloreto de Potássio (KCl), 60% K₂O
+
+  function calcularCorrecaoFosforo({ classe, area = 0 } = {}) {
+    const doseP2O5HaKg = DOSE_CORRECAO_P2O5[classe] || 0;
+    const areaN = Number(area) || 0;
+    return {
+      necessario: doseP2O5HaKg > 0,
+      doseP2O5HaKg,
+      superSimplesHaKg: doseP2O5HaKg / TEOR_SUPER_SIMPLES_P2O5,
+      mapHaKg: doseP2O5HaKg / TEOR_MAP_P2O5,
+      totalSuperSimplesKg: (doseP2O5HaKg / TEOR_SUPER_SIMPLES_P2O5) * areaN,
+      totalMapKg: (doseP2O5HaKg / TEOR_MAP_P2O5) * areaN,
+    };
+  }
+
+  function calcularCorrecaoPotassio({ classe, area = 0 } = {}) {
+    const doseK2OHaKg = DOSE_CORRECAO_K2O[classe] || 0;
+    const areaN = Number(area) || 0;
+    return {
+      necessario: doseK2OHaKg > 0,
+      doseK2OHaKg,
+      kclHaKg: doseK2OHaKg / TEOR_KCL_K2O,
+      totalKclKg: (doseK2OHaKg / TEOR_KCL_K2O) * areaN,
+    };
+  }
+
+  // pH em CaCl₂ — faixas de interpretação padrão (Embrapa/SBCS), usadas no
+  // Parecer Técnico Automatizado abaixo.
+  function interpretarPhCaCl2(ph) {
+    const v = Number(ph) || 0;
+    if (!v) return "não informado";
+    if (v < 4.5) return "extremamente ácido";
+    if (v < 5.0) return "muito ácido";
+    if (v < 5.5) return "ácido";
+    if (v < 6.0) return "levemente ácido";
+    if (v < 7.0) return "neutro";
+    return "alcalino";
+  }
+
+  // Parecer Técnico Automatizado (item 4.2): a partir de tudo que a aba de
+  // Calagem & Gessagem já calculou (índices, calagem, gessagem, correção de P
+  // e K), monta os três blocos de texto — Acidez, Equilíbrio de Cátions,
+  // Alerta de Subsolo — e a lista de indicações finais de correção. Devolve
+  // texto plano (sem HTML/markdown), pronto pra ser embutido tanto na tela
+  // quanto no PDF e na mensagem de WhatsApp — cada um decide só a
+  // formatação/markup ao redor (negrito, badge, cor). `fmtDec(n, casas)` é o
+  // formatador de número (pt-BR) do chamador — mesma ideia de
+  // montarVeredicto() acima, pra manter esta função pura e testável sem
+  // depender de locale.
+  function gerarParecerTecnico(d, fmtDec) {
+    const fd = fmtDec || ((n, casas = 2) => (Number(n) || 0).toFixed(casas));
+    const classePh = interpretarPhCaCl2(d.phCaCl2);
+    const gapV = (Number(d.v2) || 0) - (Number(d.v1) || 0);
+    const textoAcidez = gapV <= 0
+      ? `pH ${classePh} (${fd(d.phCaCl2, 2)}) · V₁ ${fd(d.v1, 1)}% — meta V₂ ${fd(d.v2, 1)}% já atingida.`
+      : `pH ${classePh} (${fd(d.phCaCl2, 2)}) · V₁ ${fd(d.v1, 1)}% → V₂ ${fd(d.v2, 1)}% (faltam ${fd(gapV, 1)} pts).`;
+
+    const caMgN = Number(d.caMg) || 0;
+    const faixaCaMg = caMgN > 4 ? "alto" : caMgN < 2 ? "baixo" : "equilibrado";
+    const textoCations =
+      `Ca:Mg ${fd(d.caMg, 1)}:1 (${faixaCaMg}) · K ${d.classeK} (${fd(d.pctK, 1)}% da CTC)` +
+      (d.necessitaK ? " — abaixo do suficiente." : " — suficiente.");
+
+    const textoSubsolo = d.gessagemNecessaria
+      ? `Impedimento químico no subsolo (${(d.motivosGessagem || []).length} critério(s) — ver Gessagem).`
+      : "Sem impedimento químico no subsolo.";
+
+    const indicacoes = [];
+    if (d.necessitaCalagem && d.calagem) {
+      indicacoes.push({
+        chave: "calagem", titulo: "Calagem",
+        dose: `${fd(d.calagem.ncAplicar, 2)} t/ha`,
+        produto: `Calcário ${d.calagem.tipo} (PRNT ${fd(d.calagem.prnt, 0)}%)`,
+        total: `Total: ${fd(d.calagem.totalT, 2)} t`,
+      });
+    }
+    if (d.gessagemNecessaria && d.gesso) {
+      indicacoes.push({
+        chave: "gessagem", titulo: "Gessagem",
+        dose: `${fd(d.gesso.doseKgHa, 0)} kg/ha`,
+        produto: `~${fd(d.gesso.enxofreKgHa, 0)} kg/ha S · ~${fd(d.gesso.calcioKgHa, 0)} kg/ha Ca`,
+        total: `Total: ${fd(d.gesso.totalT, 2)} t`,
+      });
+    }
+    if (d.necessitaP && d.correcaoP) {
+      indicacoes.push({
+        chave: "fosforo", titulo: `Fósforo — classe ${d.classeP}`,
+        dose: `${fd(d.correcaoP.doseP2O5HaKg, 0)} kg/ha P₂O₅`,
+        produto: `≈ ${fd(d.correcaoP.superSimplesHaKg, 0)} kg/ha SSP (18%) ou ${fd(d.correcaoP.mapHaKg, 0)} kg/ha MAP (52%)`,
+        total: `Total: ${fd(d.correcaoP.totalSuperSimplesKg / 1000, 2)} t SSP`,
+      });
+    }
+    if (d.necessitaK && d.correcaoK) {
+      indicacoes.push({
+        chave: "potassio", titulo: `Potássio — classe ${d.classeK}`,
+        dose: `${fd(d.correcaoK.doseK2OHaKg, 0)} kg/ha K₂O`,
+        produto: `≈ ${fd(d.correcaoK.kclHaKg, 0)} kg/ha KCl (60%)`,
+        total: `Total: ${fd(d.correcaoK.totalKclKg / 1000, 2)} t KCl`,
+      });
+    }
+
+    return { classePh, textoAcidez, textoCations, textoSubsolo, indicacoes, semNecessidadeCorrecao: indicacoes.length === 0 };
+  }
+
   // ---------- Comparador de Formulações: Custo por Ponto de Nutriente ----------
   // Ajuda a comparar adubos comerciais não só pelo preço da embalagem, mas pelo
   // custo real de cada kg de nutriente ativo (N + P₂O₅ + K₂O) que ela entrega —
@@ -496,6 +683,20 @@ const Calculos = (function () {
       : `• _Subsolo sem impedimento químico crítico — gessagem dispensada._`;
     blocos.push(gessagemTexto);
 
+    if (r.parecer) {
+      blocos.push(
+        `📋 *PARECER TÉCNICO*\n` +
+        `🧪 _Acidez:_ ${r.parecer.textoAcidez}\n\n` +
+        `⚖️ _Equilíbrio de Cátions:_ ${r.parecer.textoCations}\n\n` +
+        `${r.parecer.textoSubsolo.startsWith("Sem") ? "✅" : "⚠️"} _Subsolo:_ ${r.parecer.textoSubsolo}`
+      );
+      let indicacaoTexto = `🎯 *INDICAÇÃO FINAL — O QUE APLICAR:*`;
+      indicacaoTexto += r.parecer.semNecessidadeCorrecao
+        ? `\n_Solo bem suprido em todos os parâmetros avaliados — sem necessidade de correção além do já indicado acima._`
+        : "\n" + r.parecer.indicacoes.map((i) => `• *${i.titulo}:* ${i.dose}\n  ↳ ${i.produto}\n  ↳ ${i.total}`).join("\n");
+      blocos.push(indicacaoTexto);
+    }
+
     blocos.push(`──────────────────────\n_Baseado no Manual de Adubação e Calagem para o Estado do Paraná (SBCS-NEPAR)_`);
     return blocos.join("\n\n");
   }
@@ -522,6 +723,19 @@ const Calculos = (function () {
     verificarNecessidadeGessagem,
     calcularGessagem,
     nutrientesGesso,
+    classeTextural,
+    classeCtc,
+    classificarFaixa,
+    FAIXAS_FOSFORO,
+    FAIXAS_POTASSIO,
+    interpretarFosforo,
+    interpretarPotassio,
+    DOSE_CORRECAO_P2O5,
+    DOSE_CORRECAO_K2O,
+    calcularCorrecaoFosforo,
+    calcularCorrecaoPotassio,
+    interpretarPhCaCl2,
+    gerarParecerTecnico,
     calcularConcentracaoTotalNutrientes,
     calcularCustoPorKgNutriente,
     identificarMelhorCustoBeneficio,
