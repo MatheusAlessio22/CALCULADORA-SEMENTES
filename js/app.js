@@ -128,6 +128,18 @@ const cropVariant = {}; // guarda a variante escolhida por cultura (ex.: milho -
 
 const tabs = document.querySelectorAll(".tab-btn");
 
+// Altura da área realmente visível da tela, usada pelas listas suspensas
+// (seletor personalizado e sugestão de cultivar/formulação) pra decidir
+// quanto espaço têm embaixo do campo. window.innerHeight não serve pra isso
+// no celular: no Android costuma encolher junto com o teclado virtual (então
+// listas perto do topo da tela achavam que não tinham espaço embaixo e
+// abriam pra cima sem necessidade), e no iOS Safari não encolhe nunca (o
+// teclado só cobre por cima, sem entrar na conta) — em ambos os casos a
+// altura "de verdade" é a do visualViewport, não a do innerHeight.
+function alturaViewportVisivel(){
+  return window.visualViewport ? (window.visualViewport.offsetTop + window.visualViewport.height) : window.innerHeight;
+}
+
 // Seletor personalizado: troca a lista nativa do <select> (impossível de
 // estilizar de verdade em todo navegador — no iPhone vira sempre uma rodinha
 // do sistema) por uma lista HTML nossa, com a cara do resto do app. O
@@ -216,7 +228,7 @@ function enhanceSelect(selectEl){
     list.style.width = minW + "px";
     const leftPos = Math.min(Math.max(8, rect.left), window.innerWidth - minW - 8);
     list.style.left = leftPos + "px";
-    const espacoAbaixo = window.innerHeight - rect.bottom;
+    const espacoAbaixo = alturaViewportVisivel() - rect.bottom;
     const abrePraCima = espacoAbaixo < list.offsetHeight + 6 && rect.top > list.offsetHeight + 6;
     list.style.top = abrePraCima ? (rect.top - list.offsetHeight - 6) + "px" : (rect.bottom + 6) + "px";
   }
@@ -248,6 +260,11 @@ function enhanceSelect(selectEl){
     document.addEventListener("click", onOutsideClick);
     window.addEventListener("scroll", closeOnScroll, { capture: true, once: true, passive: true });
     window.addEventListener("resize", positionList);
+    // No celular, abrir/fechar o teclado (ex.: campo de texto perdendo o foco
+    // pra este botão) muda o visualViewport sem disparar "resize" no window
+    // no iOS Safari — sem isso a lista podia ficar reposicionada com base numa
+    // altura de tela que já não vale mais.
+    if(window.visualViewport) window.visualViewport.addEventListener("resize", positionList);
   }
   function close(){
     if(!isOpen()) return;
@@ -268,6 +285,7 @@ function enhanceSelect(selectEl){
     document.removeEventListener("click", onOutsideClick);
     window.removeEventListener("scroll", closeOnScroll, true);
     window.removeEventListener("resize", positionList);
+    if(window.visualViewport) window.visualViewport.removeEventListener("resize", positionList);
   }
   function onOutsideClick(e){
     if(!wrap.contains(e.target)) close();
@@ -315,11 +333,12 @@ for(let t=5;t<=10;t++){
 enhanceSelect(transSel);
 enhanceSelect($("espacamento"));
 
-// ---------- Busca/sugestão de cultivar (soja, milho, feijão, trigo) ----------
-// Catálogo em js/cultivares.js — ainda vazio, então a lista nunca aparece
-// hoje; o campo continua um texto livre normal, pronto pra quando os dados
-// forem cadastrados. Não se aplica à adubação: lá o campo é a formulação NPK
-// (aplicarFormulacao() já cuida disso, sem nenhuma relação com este código).
+// ---------- Busca/sugestão de cultivar (soja, milho, feijão, trigo, adubação) ----------
+// Catálogo em js/cultivares.js. Na adubação o campo é a "Formulação cotada":
+// a busca sugere os produtos do catálogo, e escolher um da lista também
+// aciona aplicarFormulacao() pra preencher N/P/K a partir do NPK embutido no
+// nome (quando o nome não traz número — ex.: produtos foliares — a
+// formulação continua pesquisável, só não preenche N/P/K sozinha).
 // A lista de sugestões abre "flutuando" fixa na tela (portada pro <body>),
 // mesmo esquema do seletor de espaçamento/transpasse — assim não vira scroll
 // da coluna quando abre perto da borda inferior.
@@ -339,7 +358,7 @@ if(cultivarSupportsPopover){
 }
 
 function cultivarCatalogo(){
-  return currentCrop !== "adubacao" ? (CULTIVARES[currentCrop] || []) : [];
+  return CULTIVARES[currentCrop] || [];
 }
 
 function posicionarCultivarList(){
@@ -347,14 +366,28 @@ function posicionarCultivarList(){
   cultivarList.style.left = rect.left + "px";
   cultivarList.style.width = rect.width + "px";
   cultivarList.style.top = (rect.bottom + 6) + "px";
+  // Trava a altura máxima pelo espaço realmente livre abaixo do campo (ver
+  // alturaViewportVisivel) — sem isso, com o teclado do celular aberto, a
+  // lista podia nascer com altura de sobra e ficar com metade escondida atrás
+  // do teclado, dando a impressão de que ela "sumiu" ou abriu no lugar errado.
+  const espacoAbaixo = alturaViewportVisivel() - (rect.bottom + 6) - 8;
+  cultivarList.style.maxHeight = Math.max(120, espacoAbaixo) + "px";
 }
 
 function cultivarListaAberta(){
   return cultivarSupportsPopover ? cultivarList.matches(":popover-open") : !cultivarList.classList.contains("hidden");
 }
-// Mesma lógica de enhanceSelect(): fecha na primeira rolagem detectada em vez
-// de perseguir o campo pela tela a cada evento de scroll (reflow síncrono).
-function fecharCultivarListOnScroll(){ fecharCultivarList(); }
+// Mesma lógica de enhanceSelect(): fecha na primeira rolagem detectada fora da
+// própria lista, em vez de perseguir o campo pela tela a cada evento de scroll
+// (reflow síncrono). Como scroll não borbulha mas a fase de captura passa por
+// window a caminho de qualquer alvo, rolar dentro da lista (que tem overflow
+// próprio) também dispara esse listener — por isso ignoramos quando o alvo é
+// a própria cultivarList, senão a lista fecharia assim que o usuário tentasse
+// rolar as sugestões.
+function fecharCultivarListOnScroll(e){
+  if(cultivarList.contains(e.target)) return;
+  fecharCultivarList();
+}
 function fecharCultivarList(){
   if(!cultivarListaAberta()){ cultivarActiveIndex = -1; return; }
   if(cultivarSupportsPopover){
@@ -370,8 +403,10 @@ function fecharCultivarList(){
   cultivarList.style.left = "";
   cultivarList.style.top = "";
   cultivarList.style.width = "";
+  cultivarList.style.maxHeight = "";
   window.removeEventListener("scroll", fecharCultivarListOnScroll, true);
   window.removeEventListener("resize", posicionarCultivarList);
+  if(window.visualViewport) window.visualViewport.removeEventListener("resize", posicionarCultivarList);
   document.removeEventListener("click", onCultivarOutsideClick);
 }
 function onCultivarOutsideClick(e){
@@ -395,6 +430,7 @@ function selecionarCultivar(item){
   cultivarInput.value = item.nome;
   fecharCultivarList();
   mostrarPmsCultivar(item);
+  aplicarFormulacao(); // na adubação, o NPK embutido no nome escolhido preenche os campos
   calc();
 }
 // PMS/PMG só aparece quando o texto digitado bate exatamente com um item do
@@ -437,12 +473,15 @@ function renderCultivarSugestoes(){
   posicionarCultivarList();
   const ativo = cultivarList.children[cultivarActiveIndex];
   cultivarInput.setAttribute("aria-activedescendant", ativo ? ativo.id : "");
-  window.addEventListener("scroll", fecharCultivarListOnScroll, { capture: true, once: true, passive: true });
+  window.addEventListener("scroll", fecharCultivarListOnScroll, { capture: true, passive: true });
   window.addEventListener("resize", posicionarCultivarList);
+  // iOS Safari não dispara "resize" no window quando o teclado abre/fecha —
+  // só no visualViewport. Sem isso, no celular a lista ficava presa na
+  // posição/altura calculada antes do teclado abrir.
+  if(window.visualViewport) window.visualViewport.addEventListener("resize", posicionarCultivarList);
   document.addEventListener("click", onCultivarOutsideClick);
 }
 cultivarInput.addEventListener("input", () => {
-  if(currentCrop === "adubacao") return; // aqui o campo é a formulação NPK, sem busca
   cultivarActiveIndex = -1;
   renderCultivarSugestoes();
   const exato = cultivarCatalogo().find(i => i.nome.toLowerCase() === cultivarInput.value.trim().toLowerCase());

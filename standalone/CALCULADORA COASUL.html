@@ -3924,8 +3924,99 @@ const CULTIVARES = {
     { nome: "SYN7G17 (DEFENDER)", pms: null },
   ],
 
-  feijao: [],
-  trigo: [],
+  feijao: [
+    { nome: "ANFC5 (CARIOCA)", pms: null },
+    { nome: "ANFC9 (CARIOCA)", pms: null },
+    { nome: "ANFC22 (CARIOCA)", pms: null },
+    { nome: "ANFC29 (CARIOCA)", pms: null },
+    { nome: "BRS ESTEIO (PRETO)", pms: null },
+    { nome: "BRS FP403 (PRETO)", pms: null },
+    { nome: "BRS FS311 (RAJADO)", pms: null },
+    { nome: "IAC NELORE (CARIOCA)", pms: null },
+    { nome: "IAC VELOZ (PRETO)", pms: null },
+    { nome: "IAC-1849 POLACO (CARIOCA)", pms: null },
+    { nome: "IAC-1850 (CARIOCA)", pms: null },
+    { nome: "IAC-2051 (CARIOCA)", pms: null },
+    { nome: "IAC-2358 UNAMAX (PRETO)", pms: null },
+    { nome: "IPR AGUIA (CARIOCA)", pms: null },
+    { nome: "IPR QUIRIQUIRI (CARIOCA)", pms: null },
+    { nome: "IPR SABIA (CARIOCA)", pms: null },
+    { nome: "IPR TAPICURU (PRETO)", pms: null },
+    { nome: "IPR TUIUIU (PRETO)", pms: null },
+    { nome: "IPR URUTAU (PRETO)", pms: null },
+  ],
+  trigo: [
+    { nome: "ORS BLINDADO", pms: null },
+    { nome: "ORS FALCAO", pms: null },
+    { nome: "ORS FEROZ", pms: null },
+    { nome: "ORS FERRARI", pms: null },
+    { nome: "ORS GUARDIAO", pms: null },
+    { nome: "ORS SENNA", pms: null },
+    { nome: "TBIO ASTRO", pms: null },
+    { nome: "TBIO ATON", pms: null },
+    { nome: "TBIO AUDAZ", pms: null },
+    { nome: "TBIO BIO182385 (TALISMA)", pms: null },
+    { nome: "TBIO BIO182455 (TITAN)", pms: null },
+    { nome: "TBIO BIO198020 (ENERGIX 8020)", pms: null },
+    { nome: "TBIO CALIBRE", pms: null },
+    { nome: "TBIO ENERGIX 201", pms: null },
+    { nome: "TBIO ENERGIX 202", pms: null },
+    { nome: "TBIO ENERGIX 203", pms: null },
+    { nome: "TBIO ENERGIX 204", pms: null },
+    { nome: "TBIO LENOX (PASTEJO)", pms: null },
+    { nome: "TBIO MOTRIZ", pms: null },
+    { nome: "TBIO PONTEIRO", pms: null },
+    { nome: "TBIO SONIC", pms: null },
+    { nome: "TBIO TORUK", pms: null },
+    { nome: "TBIO TRUNFO", pms: null },
+    { nome: "TBIO WBC201347 (VELOZ)", pms: null },
+    { nome: "TBIO WBC221301 (DINAMO)", pms: null },
+  ],
+
+  // Formulações/produtos de adubo cotados pelo cliente — pms não se aplica
+  // aqui (fica sempre null), é só pra reaproveitar o mesmo mecanismo de
+  // busca/sugestão do campo. O NPK é lido do próprio nome quando presente
+  // (ver lerFormulacao() em app.js); itens sem número no nome (ex.: "Ureia
+  // Granulada", produtos foliares) continuam pesquisáveis mas não preenchem
+  // N/P/K sozinhos — o usuário completa manualmente.
+  adubacao: [
+    { nome: "02.23.23 CIBRA/BRFERTIL", pms: null },
+    { nome: "02.23.23 MISTURA DE GRANULOS", pms: null },
+    { nome: "02.23.23 STRATUN MOSAIC", pms: null },
+    { nome: "02.23.23 EVOLUTION TOPMIX YARA", pms: null },
+    { nome: "04.23.20 +0,18B PLUS BAG COASUL/MOSAIC", pms: null },
+    { nome: "04.30.10 MISTURA DE GRANULOS", pms: null },
+    { nome: "HAKAPHOS AZUL 20.05.05 COMPO", pms: null },
+    { nome: "11.52.00 MAP", pms: null },
+    { nome: "12.31.17 EVOLUTION TOPMIX YARA", pms: null },
+    { nome: "12.32.18 MISTURA DE GRANULOS", pms: null },
+    { nome: "13.24.12 YARAMILA", pms: null },
+    { nome: "YARAMILA PRATICALE 22.10.10 2%S 0,1%ZN", pms: null },
+    { nome: "08.20.15 MG BRFERTIL/COONAGRO/FERTIPAR", pms: null },
+    { nome: "08.20.15 YARA/MOSAIC MISTURA DE GRANULOS", pms: null },
+    { nome: "09.15.15 YARABASA POWERSTART", pms: null },
+    { nome: "10.15.15 MG CIBRA/BRFERTIL/CONAGRO/FERTIPAR", pms: null },
+    { nome: "10.15.15 MISTURA DE GRANULOS", pms: null },
+    { nome: "10.20.18 +0,16B PERFORMA PLUS MOSAIC", pms: null },
+    { nome: "03.21.21 NPK 7CA 5S+MICROS YARABASA", pms: null },
+    { nome: "ASPIRE 00.00.58+0,5B (KCL+B) MOSAIC", pms: null },
+    { nome: "BAKPRO", pms: null },
+    { nome: "BASFOLIAR BLACK EVOLUTION COMPO", pms: null },
+    { nome: "BASFOLIAR CITOBOR COMPO", pms: null },
+    { nome: "BASFOLIAR COMOL HC (Mo12% Co0,2%) COMPO", pms: null },
+    { nome: "BASFOLIAR COMOL TOP (Mo12% Co0,2%) COMPO", pms: null },
+    { nome: "BIOATIVADOR FOLHA (Mn0,85% Zn0,85% Mg1% N2,5% S21% COT4,7%)", pms: null },
+    { nome: "BIOATIVADOR RAIZ (N4,7% Zn0,75% COT4,7%) NORTOX", pms: null },
+    { nome: "CLORETO DE POTASSIO", pms: null },
+    { nome: "33.00.00 UREIA PROTEGIDA", pms: null },
+    { nome: "UREIA PROTEGIDA 45.00.00", pms: null },
+    { nome: "UREIA GRANULADA", pms: null },
+    { nome: "COOPER N 33.00.00 FECOAGRO", pms: null },
+    { nome: "COOPER N 40.00.00 FECOAGRO", pms: null },
+    { nome: "SULFATO DE AMONIA GRANULADO", pms: null },
+    { nome: "YARA BELA 27.00.00", pms: null },
+    { nome: "SUPERFOSFATO SIMPLES", pms: null },
+  ],
 };
 
 
@@ -4058,6 +4149,18 @@ const cropVariant = {}; // guarda a variante escolhida por cultura (ex.: milho -
 
 const tabs = document.querySelectorAll(".tab-btn");
 
+// Altura da área realmente visível da tela, usada pelas listas suspensas
+// (seletor personalizado e sugestão de cultivar/formulação) pra decidir
+// quanto espaço têm embaixo do campo. window.innerHeight não serve pra isso
+// no celular: no Android costuma encolher junto com o teclado virtual (então
+// listas perto do topo da tela achavam que não tinham espaço embaixo e
+// abriam pra cima sem necessidade), e no iOS Safari não encolhe nunca (o
+// teclado só cobre por cima, sem entrar na conta) — em ambos os casos a
+// altura "de verdade" é a do visualViewport, não a do innerHeight.
+function alturaViewportVisivel(){
+  return window.visualViewport ? (window.visualViewport.offsetTop + window.visualViewport.height) : window.innerHeight;
+}
+
 // Seletor personalizado: troca a lista nativa do <select> (impossível de
 // estilizar de verdade em todo navegador — no iPhone vira sempre uma rodinha
 // do sistema) por uma lista HTML nossa, com a cara do resto do app. O
@@ -4146,7 +4249,7 @@ function enhanceSelect(selectEl){
     list.style.width = minW + "px";
     const leftPos = Math.min(Math.max(8, rect.left), window.innerWidth - minW - 8);
     list.style.left = leftPos + "px";
-    const espacoAbaixo = window.innerHeight - rect.bottom;
+    const espacoAbaixo = alturaViewportVisivel() - rect.bottom;
     const abrePraCima = espacoAbaixo < list.offsetHeight + 6 && rect.top > list.offsetHeight + 6;
     list.style.top = abrePraCima ? (rect.top - list.offsetHeight - 6) + "px" : (rect.bottom + 6) + "px";
   }
@@ -4178,6 +4281,11 @@ function enhanceSelect(selectEl){
     document.addEventListener("click", onOutsideClick);
     window.addEventListener("scroll", closeOnScroll, { capture: true, once: true, passive: true });
     window.addEventListener("resize", positionList);
+    // No celular, abrir/fechar o teclado (ex.: campo de texto perdendo o foco
+    // pra este botão) muda o visualViewport sem disparar "resize" no window
+    // no iOS Safari — sem isso a lista podia ficar reposicionada com base numa
+    // altura de tela que já não vale mais.
+    if(window.visualViewport) window.visualViewport.addEventListener("resize", positionList);
   }
   function close(){
     if(!isOpen()) return;
@@ -4198,6 +4306,7 @@ function enhanceSelect(selectEl){
     document.removeEventListener("click", onOutsideClick);
     window.removeEventListener("scroll", closeOnScroll, true);
     window.removeEventListener("resize", positionList);
+    if(window.visualViewport) window.visualViewport.removeEventListener("resize", positionList);
   }
   function onOutsideClick(e){
     if(!wrap.contains(e.target)) close();
@@ -4245,11 +4354,12 @@ for(let t=5;t<=10;t++){
 enhanceSelect(transSel);
 enhanceSelect($("espacamento"));
 
-// ---------- Busca/sugestão de cultivar (soja, milho, feijão, trigo) ----------
-// Catálogo em js/cultivares.js — ainda vazio, então a lista nunca aparece
-// hoje; o campo continua um texto livre normal, pronto pra quando os dados
-// forem cadastrados. Não se aplica à adubação: lá o campo é a formulação NPK
-// (aplicarFormulacao() já cuida disso, sem nenhuma relação com este código).
+// ---------- Busca/sugestão de cultivar (soja, milho, feijão, trigo, adubação) ----------
+// Catálogo em js/cultivares.js. Na adubação o campo é a "Formulação cotada":
+// a busca sugere os produtos do catálogo, e escolher um da lista também
+// aciona aplicarFormulacao() pra preencher N/P/K a partir do NPK embutido no
+// nome (quando o nome não traz número — ex.: produtos foliares — a
+// formulação continua pesquisável, só não preenche N/P/K sozinha).
 // A lista de sugestões abre "flutuando" fixa na tela (portada pro <body>),
 // mesmo esquema do seletor de espaçamento/transpasse — assim não vira scroll
 // da coluna quando abre perto da borda inferior.
@@ -4269,7 +4379,7 @@ if(cultivarSupportsPopover){
 }
 
 function cultivarCatalogo(){
-  return currentCrop !== "adubacao" ? (CULTIVARES[currentCrop] || []) : [];
+  return CULTIVARES[currentCrop] || [];
 }
 
 function posicionarCultivarList(){
@@ -4277,14 +4387,28 @@ function posicionarCultivarList(){
   cultivarList.style.left = rect.left + "px";
   cultivarList.style.width = rect.width + "px";
   cultivarList.style.top = (rect.bottom + 6) + "px";
+  // Trava a altura máxima pelo espaço realmente livre abaixo do campo (ver
+  // alturaViewportVisivel) — sem isso, com o teclado do celular aberto, a
+  // lista podia nascer com altura de sobra e ficar com metade escondida atrás
+  // do teclado, dando a impressão de que ela "sumiu" ou abriu no lugar errado.
+  const espacoAbaixo = alturaViewportVisivel() - (rect.bottom + 6) - 8;
+  cultivarList.style.maxHeight = Math.max(120, espacoAbaixo) + "px";
 }
 
 function cultivarListaAberta(){
   return cultivarSupportsPopover ? cultivarList.matches(":popover-open") : !cultivarList.classList.contains("hidden");
 }
-// Mesma lógica de enhanceSelect(): fecha na primeira rolagem detectada em vez
-// de perseguir o campo pela tela a cada evento de scroll (reflow síncrono).
-function fecharCultivarListOnScroll(){ fecharCultivarList(); }
+// Mesma lógica de enhanceSelect(): fecha na primeira rolagem detectada fora da
+// própria lista, em vez de perseguir o campo pela tela a cada evento de scroll
+// (reflow síncrono). Como scroll não borbulha mas a fase de captura passa por
+// window a caminho de qualquer alvo, rolar dentro da lista (que tem overflow
+// próprio) também dispara esse listener — por isso ignoramos quando o alvo é
+// a própria cultivarList, senão a lista fecharia assim que o usuário tentasse
+// rolar as sugestões.
+function fecharCultivarListOnScroll(e){
+  if(cultivarList.contains(e.target)) return;
+  fecharCultivarList();
+}
 function fecharCultivarList(){
   if(!cultivarListaAberta()){ cultivarActiveIndex = -1; return; }
   if(cultivarSupportsPopover){
@@ -4300,8 +4424,10 @@ function fecharCultivarList(){
   cultivarList.style.left = "";
   cultivarList.style.top = "";
   cultivarList.style.width = "";
+  cultivarList.style.maxHeight = "";
   window.removeEventListener("scroll", fecharCultivarListOnScroll, true);
   window.removeEventListener("resize", posicionarCultivarList);
+  if(window.visualViewport) window.visualViewport.removeEventListener("resize", posicionarCultivarList);
   document.removeEventListener("click", onCultivarOutsideClick);
 }
 function onCultivarOutsideClick(e){
@@ -4325,6 +4451,7 @@ function selecionarCultivar(item){
   cultivarInput.value = item.nome;
   fecharCultivarList();
   mostrarPmsCultivar(item);
+  aplicarFormulacao(); // na adubação, o NPK embutido no nome escolhido preenche os campos
   calc();
 }
 // PMS/PMG só aparece quando o texto digitado bate exatamente com um item do
@@ -4367,12 +4494,15 @@ function renderCultivarSugestoes(){
   posicionarCultivarList();
   const ativo = cultivarList.children[cultivarActiveIndex];
   cultivarInput.setAttribute("aria-activedescendant", ativo ? ativo.id : "");
-  window.addEventListener("scroll", fecharCultivarListOnScroll, { capture: true, once: true, passive: true });
+  window.addEventListener("scroll", fecharCultivarListOnScroll, { capture: true, passive: true });
   window.addEventListener("resize", posicionarCultivarList);
+  // iOS Safari não dispara "resize" no window quando o teclado abre/fecha —
+  // só no visualViewport. Sem isso, no celular a lista ficava presa na
+  // posição/altura calculada antes do teclado abrir.
+  if(window.visualViewport) window.visualViewport.addEventListener("resize", posicionarCultivarList);
   document.addEventListener("click", onCultivarOutsideClick);
 }
 cultivarInput.addEventListener("input", () => {
-  if(currentCrop === "adubacao") return; // aqui o campo é a formulação NPK, sem busca
   cultivarActiveIndex = -1;
   renderCultivarSugestoes();
   const exato = cultivarCatalogo().find(i => i.nome.toLowerCase() === cultivarInput.value.trim().toLowerCase());
