@@ -541,10 +541,14 @@
     to{ opacity:1; transform:scale(1); }
   }
   /* elemento em [popover] (Popover API, ver enhanceSelect() em app.js): o
-     navegador já cuida de position:fixed e do estado inicial oculto — zera só
-     a margem que a folha de estilo nativa do popover adiciona, o resto da
-     aparência vem das regras acima. */
-  .csel-list[popover]{ margin:0; overflow-y:auto; }
+     navegador cuida do estado inicial oculto (display:none até showPopover()),
+     mas o position:fixed que ele aplica por padrão é regra de user-agent — CSS
+     de autor (como o `.csel-list{ position:absolute }` acima) tem prioridade
+     sobre user-agent independente de especificidade, então sem essa regra
+     explícita a lista virava position:absolute e, com a página rolada,
+     abria longe do campo (offset igual ao scroll acumulado da página). Por
+     isso o position:fixed precisa ser reafirmado aqui, e não só assumido. */
+  .csel-list[popover]{ position:fixed; margin:0; overflow-y:auto; }
   .csel-option{
     padding:8px 12px; border-radius:8px;
     font-family:Inter,"Segoe UI",system-ui,-apple-system,sans-serif;
