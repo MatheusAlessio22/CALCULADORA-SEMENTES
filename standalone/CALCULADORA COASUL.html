@@ -4794,106 +4794,170 @@ for(let t=5;t<=10;t++){
 enhanceSelect(transSel);
 enhanceSelect($("espacamento"));
 
-// ---------- Busca/sugestão de cultivar (soja, milho, feijão, trigo, adubação) ----------
-// Catálogo em js/cultivares.js. Na adubação o campo é a "Formulação cotada":
-// a busca sugere os produtos do catálogo, e escolher um da lista também
-// aciona aplicarFormulacao() pra preencher N/P/K a partir do NPK embutido no
-// nome (quando o nome não traz número — ex.: produtos foliares — a
-// formulação continua pesquisável, só não preenche N/P/K sozinha).
-// A lista de sugestões abre "flutuando" fixa na tela (portada pro <body>),
-// mesmo esquema do seletor de espaçamento/transpasse — assim não vira scroll
-// da coluna quando abre perto da borda inferior.
-const cultivarInput = $("cultivar");
-const cultivarList = $("cultivarSuggestList");
+// ---------- Motor de sugestão "flutuante" reutilizável ----------
+// Uma única lista flutuante (#cultivarSuggestList) é retargetada pro campo que
+// estiver com foco no momento (ver `ligarBuscaSugerida`) — usada pelo campo
+// "Cultivar cotada"/"Formulação cotada" principal e pelos campos de
+// formulação do comparador (ver renderComparador() mais abaixo), todos com o
+// mesmo catálogo/comportamento de busca.
+// A lista abre "flutuando" fixa na tela (portada pro <body>), mesmo esquema
+// do seletor de espaçamento/transpasse — assim não vira scroll da coluna
+// quando abre perto da borda inferior.
 const cultivarPmsHint = $("cultivarPmsHint");
-const cultivarWrapOriginal = cultivarList.parentNode;
-let cultivarActiveIndex = -1;
+const sugestList = $("cultivarSuggestList");
+const sugestWrapOriginal = sugestList.parentNode;
+let sugestInput = null; // campo atualmente "dono" da lista aberta (ou null)
+let sugestCatalogo = () => [];
+let sugestOnSelect = null;
+let sugestActiveIndex = -1;
 
 // Mesmo suporte a Popover API do enhanceSelect() acima (ver comentário lá):
 // quando disponível, a lista renderiza na top layer sem precisar ser movida
 // pro <body> nem reposicionada a cada scroll.
-const cultivarSupportsPopover = typeof HTMLElement !== "undefined" && "popover" in HTMLElement.prototype;
-if(cultivarSupportsPopover){
-  cultivarList.classList.remove("hidden");
-  cultivarList.popover = "manual";
+const sugestSupportsPopover = typeof HTMLElement !== "undefined" && "popover" in HTMLElement.prototype;
+if(sugestSupportsPopover){
+  sugestList.classList.remove("hidden");
+  sugestList.popover = "manual";
 }
 
 function cultivarCatalogo(){
   return CULTIVARES[currentCrop] || [];
 }
 
-function posicionarCultivarList(){
-  const rect = cultivarInput.getBoundingClientRect();
-  cultivarList.style.left = rect.left + "px";
-  cultivarList.style.width = rect.width + "px";
-  cultivarList.style.top = (rect.bottom + 6) + "px";
+function posicionarSugestList(){
+  if(!sugestInput) return;
+  const rect = sugestInput.getBoundingClientRect();
+  sugestList.style.left = rect.left + "px";
+  sugestList.style.width = rect.width + "px";
+  sugestList.style.top = (rect.bottom + 6) + "px";
   // Trava a altura máxima pelo espaço realmente livre abaixo do campo (ver
   // alturaViewportVisivel) — sem isso, com o teclado do celular aberto, a
   // lista podia nascer com altura de sobra e ficar com metade escondida atrás
   // do teclado, dando a impressão de que ela "sumiu" ou abriu no lugar errado.
   const espacoAbaixo = alturaViewportVisivel() - (rect.bottom + 6) - 8;
-  cultivarList.style.maxHeight = Math.max(120, espacoAbaixo) + "px";
+  sugestList.style.maxHeight = Math.max(120, espacoAbaixo) + "px";
 }
 
-function cultivarListaAberta(){
-  return cultivarSupportsPopover ? cultivarList.matches(":popover-open") : !cultivarList.classList.contains("hidden");
+function sugestListaAberta(){
+  return sugestSupportsPopover ? sugestList.matches(":popover-open") : !sugestList.classList.contains("hidden");
 }
 // Mesma lógica de enhanceSelect(): fecha na primeira rolagem detectada fora da
 // própria lista, em vez de perseguir o campo pela tela a cada evento de scroll
 // (reflow síncrono). Como scroll não borbulha mas a fase de captura passa por
 // window a caminho de qualquer alvo, rolar dentro da lista (que tem overflow
 // próprio) também dispara esse listener — por isso ignoramos quando o alvo é
-// a própria cultivarList, senão a lista fecharia assim que o usuário tentasse
+// a própria sugestList, senão a lista fecharia assim que o usuário tentasse
 // rolar as sugestões.
-function fecharCultivarListOnScroll(e){
-  if(cultivarList.contains(e.target)) return;
-  fecharCultivarList();
+function fecharSugestListOnScroll(e){
+  if(sugestList.contains(e.target)) return;
+  fecharSugestList();
 }
-function fecharCultivarList(){
-  if(!cultivarListaAberta()){ cultivarActiveIndex = -1; return; }
-  if(cultivarSupportsPopover){
-    cultivarList.hidePopover();
+function fecharSugestList(){
+  if(!sugestListaAberta()){ sugestActiveIndex = -1; sugestInput = null; return; }
+  if(sugestSupportsPopover){
+    sugestList.hidePopover();
   } else {
-    cultivarList.classList.add("hidden");
-    cultivarWrapOriginal.appendChild(cultivarList);
-    cultivarList.style.position = "";
+    sugestList.classList.add("hidden");
+    sugestWrapOriginal.appendChild(sugestList);
+    sugestList.style.position = "";
   }
-  cultivarActiveIndex = -1;
-  cultivarInput.setAttribute("aria-expanded", "false");
-  cultivarInput.removeAttribute("aria-activedescendant");
-  cultivarList.style.left = "";
-  cultivarList.style.top = "";
-  cultivarList.style.width = "";
-  cultivarList.style.maxHeight = "";
-  window.removeEventListener("scroll", fecharCultivarListOnScroll, true);
-  window.removeEventListener("resize", posicionarCultivarList);
-  if(window.visualViewport) window.visualViewport.removeEventListener("resize", posicionarCultivarList);
-  document.removeEventListener("click", onCultivarOutsideClick);
+  if(sugestInput){
+    sugestInput.setAttribute("aria-expanded", "false");
+    sugestInput.removeAttribute("aria-activedescendant");
+  }
+  sugestActiveIndex = -1;
+  sugestInput = null;
+  sugestList.style.left = "";
+  sugestList.style.top = "";
+  sugestList.style.width = "";
+  sugestList.style.maxHeight = "";
+  window.removeEventListener("scroll", fecharSugestListOnScroll, true);
+  window.removeEventListener("resize", posicionarSugestList);
+  if(window.visualViewport) window.visualViewport.removeEventListener("resize", posicionarSugestList);
+  document.removeEventListener("click", onSugestOutsideClick);
 }
-function onCultivarOutsideClick(e){
-  if(!cultivarInput.contains(e.target) && !cultivarList.contains(e.target)) fecharCultivarList();
+function onSugestOutsideClick(e){
+  if(sugestInput && !sugestInput.contains(e.target) && !sugestList.contains(e.target)) fecharSugestList();
 }
-function atualizarCultivarAtivo(opts){
+function atualizarSugestAtivo(opts){
   opts.forEach((li, i) => {
-    const ativo = i === cultivarActiveIndex;
+    const ativo = i === sugestActiveIndex;
     li.classList.toggle("is-active", ativo);
     li.setAttribute("aria-selected", ativo ? "true" : "false");
   });
-  const ativo = opts[cultivarActiveIndex];
+  const ativo = opts[sugestActiveIndex];
   if(ativo){
     ativo.scrollIntoView({ block: "nearest" });
-    cultivarInput.setAttribute("aria-activedescendant", ativo.id);
-  } else {
-    cultivarInput.removeAttribute("aria-activedescendant");
+    if(sugestInput) sugestInput.setAttribute("aria-activedescendant", ativo.id);
+  } else if(sugestInput){
+    sugestInput.removeAttribute("aria-activedescendant");
   }
 }
-function selecionarCultivar(item){
-  cultivarInput.value = item.nome;
-  fecharCultivarList();
-  mostrarPmsCultivar(item);
-  aplicarFormulacao(); // na adubação, o NPK embutido no nome escolhido preenche os campos
-  calc();
+function renderSugestoes(){
+  const input = sugestInput;
+  const termo = input.value.trim().toLowerCase();
+  const catalogo = sugestCatalogo();
+  const bateram = termo ? catalogo.filter(item => item.nome.toLowerCase().includes(termo)) : [];
+  if(bateram.length === 0){ fecharSugestList(); return; }
+
+  sugestList.innerHTML = "";
+  bateram.forEach((item, i) => {
+    const li = document.createElement("li");
+    const ativo = i === sugestActiveIndex;
+    li.id = "cultivarSuggestList-opt-" + i;
+    li.className = "csel-option" + (ativo ? " is-active" : "");
+    li.textContent = item.nome;
+    li.setAttribute("role", "option");
+    li.setAttribute("aria-selected", ativo ? "true" : "false");
+    li.addEventListener("click", () => sugestOnSelect(item));
+    sugestList.appendChild(li);
+  });
+
+  if(sugestSupportsPopover){
+    if(!sugestList.matches(":popover-open")) sugestList.showPopover();
+  } else {
+    document.body.appendChild(sugestList);
+    sugestList.style.position = "fixed";
+    sugestList.classList.remove("hidden");
+  }
+  input.setAttribute("aria-expanded", "true");
+  posicionarSugestList();
+  const ativo = sugestList.children[sugestActiveIndex];
+  input.setAttribute("aria-activedescendant", ativo ? ativo.id : "");
+  window.addEventListener("scroll", fecharSugestListOnScroll, { capture: true, passive: true });
+  window.addEventListener("resize", posicionarSugestList);
+  // iOS Safari não dispara "resize" no window quando o teclado abre/fecha —
+  // só no visualViewport. Sem isso, no celular a lista ficava presa na
+  // posição/altura calculada antes do teclado abrir.
+  if(window.visualViewport) window.visualViewport.addEventListener("resize", posicionarSugestList);
+  document.addEventListener("click", onSugestOutsideClick);
 }
+// Liga a busca/sugestão flutuante a um campo de texto: `catalogo()` retorna a
+// lista atual de itens { nome, ... } e `onSelect(item)` decide o que fazer ao
+// escolher um (preencher o campo, fechar a lista, disparar recálculo etc.).
+function ligarBuscaSugerida(input, { catalogo, onSelect, aoDigitar }){
+  input.setAttribute("role", "combobox");
+  input.setAttribute("aria-autocomplete", "list");
+  input.setAttribute("aria-controls", "cultivarSuggestList");
+  input.addEventListener("input", () => {
+    sugestInput = input;
+    sugestCatalogo = catalogo;
+    sugestOnSelect = onSelect;
+    sugestActiveIndex = -1;
+    renderSugestoes();
+    if(aoDigitar) aoDigitar();
+  });
+  input.addEventListener("keydown", (e) => {
+    if(sugestInput !== input || !sugestListaAberta()) return;
+    const opts = Array.from(sugestList.children);
+    if(e.key === "ArrowDown"){ e.preventDefault(); sugestActiveIndex = Math.min(sugestActiveIndex + 1, opts.length - 1); atualizarSugestAtivo(opts); }
+    else if(e.key === "ArrowUp"){ e.preventDefault(); sugestActiveIndex = Math.max(sugestActiveIndex - 1, 0); atualizarSugestAtivo(opts); }
+    else if(e.key === "Enter"){ if(sugestActiveIndex >= 0){ e.preventDefault(); opts[sugestActiveIndex].click(); } }
+    else if(e.key === "Escape"){ fecharSugestList(); }
+    else if(e.key === "Tab"){ fecharSugestList(); }
+  });
+}
+
 // PMS/PMG só aparece quando o texto digitado bate exatamente com um item do
 // catálogo que tenha esse dado — não é obrigatório escolher da lista.
 function mostrarPmsCultivar(item){
@@ -4904,59 +4968,43 @@ function mostrarPmsCultivar(item){
     show(cultivarPmsHint, false);
   }
 }
-function renderCultivarSugestoes(){
-  const termo = cultivarInput.value.trim().toLowerCase();
-  const catalogo = cultivarCatalogo();
-  const bateram = termo ? catalogo.filter(item => item.nome.toLowerCase().includes(termo)) : [];
-  if(bateram.length === 0){ fecharCultivarList(); return; }
 
-  cultivarList.innerHTML = "";
-  bateram.forEach((item, i) => {
-    const li = document.createElement("li");
-    const ativo = i === cultivarActiveIndex;
-    li.id = "cultivarSuggestList-opt-" + i;
-    li.className = "csel-option" + (ativo ? " is-active" : "");
-    li.textContent = item.nome;
-    li.setAttribute("role", "option");
-    li.setAttribute("aria-selected", ativo ? "true" : "false");
-    li.addEventListener("click", () => selecionarCultivar(item));
-    cultivarList.appendChild(li);
+// Campo principal "Cultivar cotada"/"Formulação cotada" (soja, milho, feijão,
+// trigo, adubação — catálogo por cultura em js/cultivares.js). Na adubação,
+// escolher um item da lista também aciona aplicarFormulacao() pra preencher
+// N/P/K a partir do NPK embutido no nome (quando o nome não traz número —
+// ex.: produtos foliares — a formulação continua pesquisável, só não
+// preenche N/P/K sozinha).
+const cultivarInput = $("cultivar");
+ligarBuscaSugerida(cultivarInput, {
+  catalogo: cultivarCatalogo,
+  onSelect: (item) => {
+    cultivarInput.value = item.nome;
+    fecharSugestList();
+    mostrarPmsCultivar(item);
+    aplicarFormulacao();
+    calc();
+  },
+  aoDigitar: () => {
+    const exato = cultivarCatalogo().find(i => i.nome.toLowerCase() === cultivarInput.value.trim().toLowerCase());
+    mostrarPmsCultivar(exato);
+  },
+});
+
+// Campos de formulação do comparador (aba Adubação/Ureia → "Comparar
+// Formulações") — mesmo catálogo de adubo do campo principal, mas sem PMS
+// nem preenchimento de N/P/K (aqui o texto vira NPK só na hora de comparar,
+// via lerFormulacao() dentro de updateComparador()).
+function ligarBuscaFormulaComparador(input, aoEscolher){
+  ligarBuscaSugerida(input, {
+    catalogo: () => CULTIVARES.adubacao,
+    onSelect: (item) => {
+      input.value = item.nome;
+      fecharSugestList();
+      aoEscolher(item);
+    },
   });
-
-  if(cultivarSupportsPopover){
-    if(!cultivarList.matches(":popover-open")) cultivarList.showPopover();
-  } else {
-    document.body.appendChild(cultivarList);
-    cultivarList.style.position = "fixed";
-    cultivarList.classList.remove("hidden");
-  }
-  cultivarInput.setAttribute("aria-expanded", "true");
-  posicionarCultivarList();
-  const ativo = cultivarList.children[cultivarActiveIndex];
-  cultivarInput.setAttribute("aria-activedescendant", ativo ? ativo.id : "");
-  window.addEventListener("scroll", fecharCultivarListOnScroll, { capture: true, passive: true });
-  window.addEventListener("resize", posicionarCultivarList);
-  // iOS Safari não dispara "resize" no window quando o teclado abre/fecha —
-  // só no visualViewport. Sem isso, no celular a lista ficava presa na
-  // posição/altura calculada antes do teclado abrir.
-  if(window.visualViewport) window.visualViewport.addEventListener("resize", posicionarCultivarList);
-  document.addEventListener("click", onCultivarOutsideClick);
 }
-cultivarInput.addEventListener("input", () => {
-  cultivarActiveIndex = -1;
-  renderCultivarSugestoes();
-  const exato = cultivarCatalogo().find(i => i.nome.toLowerCase() === cultivarInput.value.trim().toLowerCase());
-  mostrarPmsCultivar(exato);
-});
-cultivarInput.addEventListener("keydown", (e) => {
-  if(!cultivarListaAberta()) return;
-  const opts = Array.from(cultivarList.children);
-  if(e.key === "ArrowDown"){ e.preventDefault(); cultivarActiveIndex = Math.min(cultivarActiveIndex + 1, opts.length - 1); atualizarCultivarAtivo(opts); }
-  else if(e.key === "ArrowUp"){ e.preventDefault(); cultivarActiveIndex = Math.max(cultivarActiveIndex - 1, 0); atualizarCultivarAtivo(opts); }
-  else if(e.key === "Enter"){ if(cultivarActiveIndex >= 0){ e.preventDefault(); opts[cultivarActiveIndex].click(); } }
-  else if(e.key === "Escape"){ fecharCultivarList(); }
-  else if(e.key === "Tab"){ fecharCultivarList(); }
-});
 
 // espaçamentos padrão; cada cultura pode ter a própria lista (ex.: trigo só 0,17)
 const ESPACAMENTOS_PADRAO = ["0.40","0.42","0.45","0.50"];
@@ -5122,7 +5170,7 @@ function selectCrop(crop){
   show($("prodCard"), !ehAdubo);
   $("cultivarLabel").textContent = ehAdubo ? "Formulação cotada" : "Cultivar cotada";
   $("cultivar").placeholder = ehAdubo ? "Ex.: 04-14-08 ou Ureia" : "Ex.: BRS 404";
-  fecharCultivarList();
+  fecharSugestList();
   mostrarPmsCultivar(ehAdubo ? null : cultivarCatalogo().find(i => i.nome.toLowerCase() === $("cultivar").value.trim().toLowerCase()));
   renderVariantToggle(crop);
 
@@ -5999,6 +6047,7 @@ function renderComparador(){
     inpPreco.value = row.preco;
     inpFormula.addEventListener("input", e => { row.texto = e.target.value; updateComparador(); });
     inpPreco.addEventListener("input", e => { row.preco = e.target.value; updateComparador(); });
+    ligarBuscaFormulaComparador(inpFormula, (item) => { row.texto = item.nome; updateComparador(); });
 
     div.querySelectorAll(".comp-chip").forEach(chip => {
       chip.addEventListener("click", () => {
@@ -6397,6 +6446,7 @@ $("compEquivFormula").closest("div").querySelectorAll(".comp-chip").forEach(chip
   });
 });
 $("compEquivFormula").addEventListener("input", updateComparador);
+ligarBuscaFormulaComparador($("compEquivFormula"), () => updateComparador());
 $("compEquivSacasAlq").addEventListener("input", updateComparador);
 $("compEquivPreco").addEventListener("input", updateComparador);
 $("compCriterio").querySelectorAll("button").forEach(btn => {
